@@ -1,0 +1,36 @@
+{
+  "name": "lifeor2",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "convex:dev": "python3 scripts/local_convex.py dev",
+    "build": "next build",
+    "start": "next start",
+    "local:setup": "python3 scripts/local_convex.py setup",
+    "typecheck": "tsc --noEmit --incremental false"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "^0.10.10",
+    "@tailwindcss/postcss": "^4.1.18",
+    "autoprefixer": "^10.4.23",
+    "better-auth": "^1.4.17",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "convex": "^1.31.5",
+    "lucide-react": "^0.562.0",
+    "next": "^16.1.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.4"
+  }
+}

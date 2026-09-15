@@ -1,0 +1,48 @@
+"use client";
+
+import { Sidebar } from "@/components/sidebar";
+import { useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.push("/login");
+    }
+  }, [session, isPending, router]);
+
+  // Show loading state while checking authentication
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, don't render the dashboard (redirect is happening)
+  if (!session) {
+    return null;
+  }
+
+  return (
+    <div className="h-full relative">
+      <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80">
+        <Sidebar />
+      </div>
+      <main className="md:pl-72 h-full">
+        <div className="p-8 h-full">{children}</div>
+      </main>
+    </div>
+  );
+}

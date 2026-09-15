@@ -1,2 +1,61 @@
 # Auto Claude data directory
 .auto-claude/
+
+# Auto Claude generated files
+.auto-claude-security.json
+.auto-claude-status
+.claude_settings.json
+.worktrees/
+.security-key
+logs/security/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+build/
+
+# Production
+dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment files (keep sanitized examples)
+.env*
+!.env*.example
+
+# Vercel
+.vercel
+
+# Convex
+.convex/
+convex/_generated/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Python tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Test reports and runtime logs
+playwright-report/
+test-results/
+*.log
