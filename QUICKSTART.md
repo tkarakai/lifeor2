@@ -131,6 +131,15 @@ This project uses its own database directory and dedicated ports, without a Conv
 
 ## Troubleshooting
 
+### Empty records or missing test dataset after restarting
+
+Check **Account** above the dataset selector. Records and datasets belong to the
+email used at login; another email creates a separate account with an empty Live
+dataset. Sign out and use the same email as before, then select the desired
+dataset. Restarting `bun run convex:dev` or `bun dev` does not reset the database.
+The family sample is prepared for the account that runs the sample loader, not
+automatically for every account.
+
 ### `ManagedTeamCannotCreateProjects` or project access errors
 
 These come from the managed-project configuration path. Complete `local:setup` and use `bun run convex:dev`. The standalone workflow uses `CONVEX_SELF_HOSTED_URL` and an admin key, not a managed `CONVEX_DEPLOYMENT`.

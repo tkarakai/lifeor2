@@ -24,7 +24,10 @@ export default function DatasetsPage() {
       title="Datasets"
       description="Keep Live and test records separate in the same database. Each dataset has its own entities, arrangements, transactions, tags and documents."
     >
-      <Panel title="Your datasets">
+      <Panel
+        title="Your datasets"
+        description="Datasets belong to the account shown in the sidebar. Signing in with a different email opens a separate set of datasets."
+      >
         <ul className="divide-y">
           {datasets.map((d) => (
             <li

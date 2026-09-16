@@ -3,7 +3,7 @@ import { DatasetSwitcher } from "./dataset-switcher";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { signOut } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 import { Action } from "@/components/record-ui";
 const routes = [
   ["Records", "/dashboard"],
@@ -24,6 +24,7 @@ const routes = [
 ];
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto bg-secondary p-5">
       <Link
@@ -32,6 +33,12 @@ export function Sidebar() {
       >
         LifeOR2
       </Link>
+      <div className="space-y-1 px-3" aria-label="Signed-in account">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Account
+        </p>
+        <p className="break-all text-sm">{session?.user.email}</p>
+      </div>
       <DatasetSwitcher />
       <nav aria-label="Main navigation" className="flex-1 space-y-1">
         {routes.map(([label, href]) => (
