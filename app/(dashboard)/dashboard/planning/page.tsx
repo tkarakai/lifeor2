@@ -6,6 +6,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import {
   Page,
   Panel,
+  Collection,
+  WorkspaceTabs,
   Editor,
   Form,
   TextField,
@@ -169,28 +171,58 @@ function Schedules() {
       ) : schedules.length === 0 ? (
         <Empty>No commitment schedules.</Empty>
       ) : (
-        schedules.map((s) => (
-          <div key={s._id} className="space-y-3 border-t pt-3">
-            <h3 className="font-medium">{s.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              Revision {s.revision}
-            </p>
-            {s.versions
-              .filter((v) => v.revision === s.revision)
-              .map((v) => (
-                <p key={v._id} className="text-sm">
-                  {v.amount
+        <Collection label="schedules">
+          {schedules.map((s) => (
+            <Panel
+              key={s._id}
+              title={s.name}
+              description={
+                s.versions
+                  .filter((v) => v.revision === s.revision)
+                  .map(
+                    (v) =>
+                      `${v.start_date} → ${v.end_date ?? "Open-ended"} · ${v.timezone}`,
+                  )
+                  .join(" · ") || `Revision ${s.revision}`
+              }
+              context={s.versions
+                .filter((v) => v.revision === s.revision)
+                .map(
+                  (v) =>
+                    `Every ${v.recurrence.interval} ${v.recurrence.frequency}`,
+                )
+                .join(" · ")}
+              summaryLabel="Scheduled amount"
+              summary={s.versions
+                .filter((v) => v.revision === s.revision)
+                .map((v) =>
+                  v.amount
                     ? formatMoney(v.amount.minor_units, v.amount.currency)
-                    : v.variable_rule}{" "}
-                  · every {v.recurrence.interval} {v.recurrence.frequency} ·{" "}
-                  {v.start_date} → {v.end_date ?? "Open-ended"} · {v.timezone}
-                </p>
-              ))}
-            <RecordDetails
-              target={{ kind: "commitment_schedule", id: s._id }}
-            />
-          </div>
-        ))
+                    : v.variable_rule,
+                )
+                .join(" · ")}
+            >
+              <h3 className="font-medium">{s.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                Revision {s.revision}
+              </p>
+              {s.versions
+                .filter((v) => v.revision === s.revision)
+                .map((v) => (
+                  <p key={v._id} className="text-sm">
+                    {v.amount
+                      ? formatMoney(v.amount.minor_units, v.amount.currency)
+                      : v.variable_rule}{" "}
+                    · every {v.recurrence.interval} {v.recurrence.frequency} ·{" "}
+                    {v.start_date} → {v.end_date ?? "Open-ended"} · {v.timezone}
+                  </p>
+                ))}
+              <RecordDetails
+                target={{ kind: "commitment_schedule", id: s._id }}
+              />
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Panel>
   );
@@ -205,153 +237,202 @@ export default function PlanningPage() {
   const createFlow = useMutation(api.planning.createExpectedFlow);
   return (
     <Page
-      title="Planning records"
-      description="Keep plans, schedules, and expected flows separate from actual occurrences and the ledger. These records do not calculate forecasts."
+      title="Planning"
+      description="Build plans, manage recurring commitments, and track expected payments."
     >
-      <Panel title="Plans">
-        <Editor title="New plan">
-          <Form
-            label="Create plan"
-            onSave={(data) => createPlan({ name: textValue(data, "name") })}
-          >
-            <TextField label="Plan name" name="name" required />
-          </Form>
-        </Editor>
-        {plans === undefined ? (
-          <Loading />
-        ) : plans.length === 0 ? (
-          <Empty>No plans yet.</Empty>
-        ) : (
-          plans.map((plan) => (
-            <div key={plan._id} className="space-y-3 border-t pt-4">
-              <h3 className="font-semibold">{plan.name}</h3>
-              <Editor title="Versions & budget targets">
-                <PlanningVersions planId={plan._id} />
-              </Editor>
-              <RecordDetails target={{ kind: "plan", id: plan._id }} />
-            </div>
-          ))
-        )}
-      </Panel>
-      <PlanningScenarios />
-      <Schedules />
-      <PlanningAssumptions />
-      <Panel
-        title="Expected flows"
-        description="Manually recorded expectations; fulfillment references an actual posting."
-      >
-        <Editor title="New expected flow">
-          <Form
-            label="Record expected flow"
-            onSave={(data) =>
-              createFlow({
-                expected_date: textValue(data, "date"),
-                ...moneyFieldsValue(data),
-                account_id: optionalText(data, "account") as
-                  | Id<"ledger_account">
-                  | undefined,
-                obligation_id: textValue(data, "source").startsWith(
-                  "obligation:",
-                )
-                  ? (textValue(data, "source").slice(
-                      11,
-                    ) as Id<"monetary_obligation">)
-                  : undefined,
-                assumption_id: textValue(data, "source").startsWith(
-                  "assumption:",
-                )
-                  ? (textValue(data, "source").slice(
-                      11,
-                    ) as Id<"forecast_assumption">)
-                  : undefined,
-                occurrence_key: textValue(data, "occurrence"),
-                input_revision: Number(textValue(data, "revision")),
-              })
-            }
-          >
-            <MoneyFields />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextField
-                label="Expected date"
-                name="date"
-                type="date"
-                required
-              />
-              <TextField
-                label="Occurrence key"
-                name="occurrence"
-                required
-                hint="A stable identifier for this particular expected occurrence."
-              />
-              <TextField
-                label="Input revision"
-                name="revision"
-                type="number"
-                value="1"
-                required
-              />
-              <SelectField
-                label="Ledger account (optional)"
-                name="account"
-                options={(accounts ?? [])
-                  .filter((a) => a.type === "Asset" || a.type === "Liability")
-                  .map((a) => ({
-                    value: a._id,
-                    label: `${a.name} · ${a.currency}`,
-                  }))}
-              />
-              <SelectField
-                label="Source obligation or assumption"
-                name="source"
-                required
-                options={[
-                  ...(obligations ?? []).map((o) => ({
-                    value: `obligation:${o._id}`,
-                    label: `Obligation · ${o.due_date} · ${formatMoney(o.outstanding_minor_units, o.currency)}`,
-                  })),
-                  ...(assumptions ?? []).map((a) => ({
-                    value: `assumption:${a._id}`,
-                    label: `Assumption · ${a.name}`,
-                  })),
-                ]}
-              />
-            </div>
-          </Form>
-        </Editor>
-        {flows === undefined ? (
-          <Loading />
-        ) : flows.length === 0 ? (
-          <Empty>No expected flows recorded.</Empty>
-        ) : (
-          flows.map((flow) => (
-            <div key={flow._id} className="space-y-3 border-t pt-4">
-              <h3 className="font-medium">
-                {flow.expected_date} ·{" "}
-                {formatMoney(flow.minor_units, flow.currency)}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {flow.occurrence_key} · Remaining{" "}
-                {formatMoney(flow.remaining_minor_units, flow.currency)}
-              </p>
-              {flow.cancelled_at !== undefined ? (
-                <p className="text-sm text-muted-foreground">
-                  Cancelled: {flow.cancel_reason}
-                </p>
-              ) : flow.obligation_id ? (
-                <p className="text-sm text-muted-foreground">
-                  Settle the linked obligation in Finance → Obligations; the
-                  remaining expectation updates automatically.
-                </p>
-              ) : (
-                <Editor title="Link actual fulfillment">
-                  <Fulfill id={flow._id} currency={flow.currency} />
-                </Editor>
-              )}
-              <RecordDetails target={{ kind: "expected_flow", id: flow._id }} />
-            </div>
-          ))
-        )}
-      </Panel>
+      <WorkspaceTabs
+        tabs={[
+          {
+            label: "Plans",
+            content: (
+              <>
+                {" "}
+                <Panel title="Plans">
+                  <Editor title="New plan">
+                    <Form
+                      label="Create plan"
+                      onSave={(data) =>
+                        createPlan({ name: textValue(data, "name") })
+                      }
+                    >
+                      <TextField label="Plan name" name="name" required />
+                    </Form>
+                  </Editor>
+                  {plans === undefined ? (
+                    <Loading />
+                  ) : plans.length === 0 ? (
+                    <Empty>No plans yet.</Empty>
+                  ) : (
+                    <Collection label="plans">
+                      {plans.map((plan) => (
+                        <Panel key={plan._id} title={plan.name}>
+                          <h3 className="font-semibold">{plan.name}</h3>
+                          <Editor title="Versions & budget targets">
+                            <PlanningVersions planId={plan._id} />
+                          </Editor>
+                          <RecordDetails
+                            target={{ kind: "plan", id: plan._id }}
+                          />
+                        </Panel>
+                      ))}
+                    </Collection>
+                  )}
+                </Panel>
+              </>
+            ),
+          },
+          { label: "Schedules", content: <Schedules /> },
+          {
+            label: "Expected flows",
+            content: (
+              <>
+                {" "}
+                <Panel
+                  title="Expected flows"
+                  description="Manually recorded expectations; fulfillment references an actual posting."
+                >
+                  <Editor title="New expected flow">
+                    <Form
+                      label="Record expected flow"
+                      onSave={(data) =>
+                        createFlow({
+                          expected_date: textValue(data, "date"),
+                          ...moneyFieldsValue(data),
+                          account_id: optionalText(data, "account") as
+                            | Id<"ledger_account">
+                            | undefined,
+                          obligation_id: textValue(data, "source").startsWith(
+                            "obligation:",
+                          )
+                            ? (textValue(data, "source").slice(
+                                11,
+                              ) as Id<"monetary_obligation">)
+                            : undefined,
+                          assumption_id: textValue(data, "source").startsWith(
+                            "assumption:",
+                          )
+                            ? (textValue(data, "source").slice(
+                                11,
+                              ) as Id<"forecast_assumption">)
+                            : undefined,
+                          occurrence_key: textValue(data, "occurrence"),
+                          input_revision: Number(textValue(data, "revision")),
+                        })
+                      }
+                    >
+                      <MoneyFields />
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <TextField
+                          label="Expected date"
+                          name="date"
+                          type="date"
+                          required
+                        />
+                        <TextField
+                          label="Occurrence key"
+                          name="occurrence"
+                          required
+                          hint="A stable identifier for this particular expected occurrence."
+                        />
+                        <TextField
+                          label="Input revision"
+                          name="revision"
+                          type="number"
+                          value="1"
+                          required
+                        />
+                        <SelectField
+                          label="Ledger account (optional)"
+                          name="account"
+                          options={(accounts ?? [])
+                            .filter(
+                              (a) =>
+                                a.type === "Asset" || a.type === "Liability",
+                            )
+                            .map((a) => ({
+                              value: a._id,
+                              label: `${a.name} · ${a.currency}`,
+                            }))}
+                        />
+                        <SelectField
+                          label="Source obligation or assumption"
+                          name="source"
+                          required
+                          options={[
+                            ...(obligations ?? []).map((o) => ({
+                              value: `obligation:${o._id}`,
+                              label: `Obligation · ${o.due_date} · ${formatMoney(o.outstanding_minor_units, o.currency)}`,
+                            })),
+                            ...(assumptions ?? []).map((a) => ({
+                              value: `assumption:${a._id}`,
+                              label: `Assumption · ${a.name}`,
+                            })),
+                          ]}
+                        />
+                      </div>
+                    </Form>
+                  </Editor>
+                  {flows === undefined ? (
+                    <Loading />
+                  ) : flows.length === 0 ? (
+                    <Empty>No expected flows recorded.</Empty>
+                  ) : (
+                    <Collection label="expected flows">
+                      {flows.map((flow) => (
+                        <Panel
+                          key={flow._id}
+                          title={flow.occurrence_key}
+                          description={flow.expected_date}
+                          summary={`${formatMoney(flow.remaining_minor_units, flow.currency)} remaining`}
+                          category={
+                            flow.cancelled_at !== undefined
+                              ? "Cancelled"
+                              : flow.remaining_minor_units === 0
+                                ? "Fulfilled"
+                                : "Expected"
+                          }
+                        >
+                          <h3 className="font-medium">
+                            {flow.expected_date} ·{" "}
+                            {formatMoney(flow.minor_units, flow.currency)}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {flow.occurrence_key} · Remaining{" "}
+                            {formatMoney(
+                              flow.remaining_minor_units,
+                              flow.currency,
+                            )}
+                          </p>
+                          {flow.cancelled_at !== undefined ? (
+                            <p className="text-sm text-muted-foreground">
+                              Cancelled: {flow.cancel_reason}
+                            </p>
+                          ) : flow.obligation_id ? (
+                            <p className="text-sm text-muted-foreground">
+                              Settle the linked obligation in Finance →
+                              Obligations; the remaining expectation updates
+                              automatically.
+                            </p>
+                          ) : (
+                            <Editor title="Link actual fulfillment">
+                              <Fulfill id={flow._id} currency={flow.currency} />
+                            </Editor>
+                          )}
+                          <RecordDetails
+                            target={{ kind: "expected_flow", id: flow._id }}
+                          />
+                        </Panel>
+                      ))}
+                    </Collection>
+                  )}
+                </Panel>
+              </>
+            ),
+          },
+          { label: "Assumptions", content: <PlanningAssumptions /> },
+          { label: "Scenarios", content: <PlanningScenarios /> },
+        ]}
+      />
     </Page>
   );
 }

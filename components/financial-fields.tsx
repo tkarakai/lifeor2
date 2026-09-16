@@ -22,6 +22,7 @@ export function MoneyFields({
     <div className="grid gap-4 sm:grid-cols-2">
       <TextField
         label={label}
+        inputMode="decimal"
         name={`${prefix}amount`}
         required
         hint="Decimal amount in the selected currency; no rounding."

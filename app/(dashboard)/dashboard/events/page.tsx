@@ -5,6 +5,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import {
   Page,
   Panel,
+  Collection,
   Editor,
   Form,
   TextField,
@@ -128,72 +129,86 @@ export default function EventsPage() {
     <Page
       title="Events"
       description="Record what actually happened. Planned and expected occurrences belong in Planning."
+      actions={
+        <>
+          <Editor title="Record an actual event">
+            <EventForm />
+          </Editor>
+        </>
+      }
     >
-      <Editor title="Record an actual event">
-        <EventForm />
-      </Editor>
       {events === undefined ? (
         <Loading />
       ) : events.length === 0 ? (
         <Empty>No actual events recorded yet.</Empty>
       ) : (
-        events.map((event) => (
-          <Panel
-            key={event._id}
-            title={event.title || event.kind}
-            description={`${event.kind} · ${new Date(event.occurred_at).toLocaleString()}${event.corrects_id ? " · Correction" : ""}`}
-          >
-            <Editor title="Affected records">
-              <EventLinks eventId={event._id} />
-            </Editor>
-            <RecordDetails target={{ kind: "event", id: event._id }} />
-            {event.voided_at !== undefined ? (
-              <p className="text-sm text-muted-foreground">
-                Voided: {event.void_reason}
-              </p>
-            ) : (
-              <>
-                <Editor title="Void event">
-                  <Form
-                    label="Void event"
-                    onSave={(data) =>
-                      voidEvent({
-                        id: event._id,
-                        reason: textValue(data, "reason"),
-                      })
-                    }
-                  >
-                    <p className="text-sm text-muted-foreground">
-                      Voiding retains history. Financial events with posted
-                      journals require a journal correction.
-                    </p>
-                    <TextField label="Reason" name="reason" required />
-                  </Form>
-                </Editor>
-                <Editor title="Correct this event">
-                  <p className="text-sm text-muted-foreground">
-                    Creates a new occurrence linked to this record, retaining
-                    the original.
-                  </p>
-                  <EventForm corrects={event} />
-                </Editor>
-              </>
-            )}
-            {event.payload_json !== "{}" && (
-              <Editor title="Preserved source payload">
-                <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs">
-                  {event.payload_json}
-                </pre>
-              </Editor>
-            )}
-            <Action
-              confirm="Archive this event? Financial records and occurrence history are retained."
-              onClick={() => remove({ id: event._id })}
+        <Collection label="events">
+          {events.map((event) => (
+            <Panel
+              key={event._id}
+              category={event.voided_at !== undefined ? "Voided" : event.kind}
+              title={event.title || event.kind}
+              context={
+                event.void_reason
+                  ? `Void reason: ${event.void_reason}`
+                  : event.ended_at !== undefined
+                    ? `Ended ${new Date(event.ended_at).toLocaleString()}`
+                    : undefined
+              }
+              description={`${event.kind} · ${new Date(event.occurred_at).toLocaleString()}${event.corrects_id ? " · Correction" : ""}`}
             >
-              Archive
-            </Action>
-          </Panel>
-        ))
+              <Editor title="Affected records">
+                <EventLinks eventId={event._id} />
+              </Editor>
+              <RecordDetails target={{ kind: "event", id: event._id }} />
+              {event.voided_at !== undefined ? (
+                <p className="text-sm text-muted-foreground">
+                  Voided: {event.void_reason}
+                </p>
+              ) : (
+                <>
+                  <Editor title="Void event">
+                    <Form
+                      label="Void event"
+                      onSave={(data) =>
+                        voidEvent({
+                          id: event._id,
+                          reason: textValue(data, "reason"),
+                        })
+                      }
+                    >
+                      <p className="text-sm text-muted-foreground">
+                        Voiding retains history. Financial events with posted
+                        journals require a journal correction.
+                      </p>
+                      <TextField label="Reason" name="reason" required />
+                    </Form>
+                  </Editor>
+                  <Editor title="Correct this event">
+                    <p className="text-sm text-muted-foreground">
+                      Creates a new occurrence linked to this record, retaining
+                      the original.
+                    </p>
+                    <EventForm corrects={event} />
+                  </Editor>
+                </>
+              )}
+              {event.payload_json !== "{}" && (
+                <Editor title="Preserved source payload">
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs">
+                    {event.payload_json}
+                  </pre>
+                </Editor>
+              )}
+              <Action
+                confirm="Archive this event? Financial records and occurrence history are retained."
+                onClick={() => remove({ id: event._id })}
+              >
+                Archive
+              </Action>
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Page>
   );

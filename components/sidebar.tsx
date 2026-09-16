@@ -2,70 +2,107 @@
 import { DatasetSwitcher } from "./dataset-switcher";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { signOut, useSession } from "@/lib/auth-client";
 import { Action } from "@/components/record-ui";
-const routes = [
-  ["Observatory", "/dashboard/insights"],
-  ["Records", "/dashboard"],
-  ["Entities", "/dashboard/entities"],
-  ["Arrangements", "/dashboard/arrangements"],
-  ["Types & templates", "/dashboard/arrangements/types"],
-  ["Events", "/dashboard/events"],
-  ["Measurements", "/dashboard/measurements"],
-  ["Tags", "/dashboard/tags"],
-  ["Finance", "/dashboard/finance"],
-  ["Charts & accounts", "/dashboard/finance/accounts"],
-  ["Journal entries", "/dashboard/finance/entries"],
-  ["Reports", "/dashboard/finance/reports"],
-  ["Obligations", "/dashboard/finance/obligations"],
-  ["Planning", "/dashboard/planning"],
-  ["Trash", "/dashboard/trash"],
-  ["Datasets", "/dashboard/datasets"],
+import {
+  Aperture,
+  BookOpen,
+  Users,
+  Network,
+  Shapes,
+  CalendarDays,
+  Ruler,
+  Tags,
+  Wallet,
+  Landmark,
+  List,
+  ChartNoAxesCombined,
+  HandCoins,
+  Telescope,
+  Trash2,
+  Database,
+  type LucideIcon,
+} from "lucide-react";
+import "@/components/records.css";
+const groups: { label: string; routes: [string, string, LucideIcon][] }[] = [
+  {
+    label: "Explore",
+    routes: [
+      ["Observatory", "/dashboard/insights", Aperture],
+      ["Records overview", "/dashboard", BookOpen],
+    ],
+  },
+  {
+    label: "Life & relationships",
+    routes: [
+      ["Entities", "/dashboard/entities", Users],
+      ["Arrangements", "/dashboard/arrangements", Network],
+      ["Types & templates", "/dashboard/arrangements/types", Shapes],
+      ["Events", "/dashboard/events", CalendarDays],
+      ["Measurements", "/dashboard/measurements", Ruler],
+      ["Tags & projects", "/dashboard/tags", Tags],
+    ],
+  },
+  {
+    label: "Money & planning",
+    routes: [
+      ["Finance overview", "/dashboard/finance", Wallet],
+      ["Charts & accounts", "/dashboard/finance/accounts", Landmark],
+      ["Journal entries", "/dashboard/finance/entries", List],
+      ["Reports", "/dashboard/finance/reports", ChartNoAxesCombined],
+      ["Obligations", "/dashboard/finance/obligations", HandCoins],
+      ["Planning", "/dashboard/planning", Telescope],
+    ],
+  },
+  {
+    label: "Workspace",
+    routes: [
+      ["Trash", "/dashboard/trash", Trash2],
+      ["Datasets", "/dashboard/datasets", Database],
+    ],
+  },
 ];
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto bg-secondary p-5">
-      <Link
-        href="/dashboard"
-        className="px-3 text-2xl font-bold tracking-tight"
-      >
-        LifeOR2
+    <div className="app-sidebar">
+      <Link href="/dashboard" className="app-brand">
+        <Aperture size={25} strokeWidth={1.25} />
+        <span>
+          LifeOR<span className="app-brand-number">2</span>
+        </span>
       </Link>
-      <div className="space-y-1 px-3" aria-label="Signed-in account">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Account
-        </p>
-        <p className="break-all text-sm">{session?.user.email}</p>
-      </div>
       <DatasetSwitcher />
-      <nav aria-label="Main navigation" className="flex-1 space-y-1">
-        {routes.map(([label, href]) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={pathname === href ? "page" : undefined}
-            className={cn(
-              "block rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring",
-              pathname === href
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground",
-            )}
-          >
-            {label}
-          </Link>
+      <nav aria-label="Main navigation">
+        {groups.map((group) => (
+          <div className="app-nav-group" key={group.label}>
+            <p>{group.label}</p>
+            {group.routes.map(([label, href, Icon]) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={pathname === href ? "page" : undefined}
+              >
+                <Icon size={16} strokeWidth={1.5} />
+                <span>{label}</span>
+                {pathname === href && <i />}
+              </Link>
+            ))}
+          </div>
         ))}
       </nav>
-      <Action
-        onClick={async () => {
-          await signOut();
-          window.location.assign("/login");
-        }}
-      >
-        Sign out
-      </Action>
+      <div className="app-account" aria-label="Signed-in account">
+        <span>{session?.user.email}</span>
+        <Action
+          onClick={async () => {
+            await signOut();
+            window.location.assign("/login");
+          }}
+        >
+          Sign out
+        </Action>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import {
   Page,
   Panel,
+  Collection,
   Editor,
   Form,
   TextField,
@@ -40,7 +41,7 @@ function Roles({ arrangementId }: { arrangementId: Id<"arrangement"> }) {
       {definitions
         .filter((role) => !role.archived)
         .map((role) => (
-          <div key={role._id} className="space-y-3 rounded-md border p-4">
+          <div key={role._id} className="record-line space-y-3">
             <h3 className="font-semibold">
               {role.name}{" "}
               <span className="text-sm font-normal text-muted-foreground">
@@ -174,6 +175,64 @@ export default function ArrangementsPage() {
     <Page
       title="Arrangements"
       description="Continuing relationships and agreements with their own roles and assignments."
+      actions={
+        <>
+          <Editor title="New arrangement">
+            {types === undefined ? (
+              <Loading />
+            ) : types.length === 0 ? (
+              <Empty>
+                Create an arrangement type first.{" "}
+                <Link
+                  className="underline"
+                  href="/dashboard/arrangements/types"
+                >
+                  Open types & templates →
+                </Link>
+              </Empty>
+            ) : (
+              <>
+                <Form
+                  label="Create arrangement"
+                  onSave={(data) =>
+                    create({
+                      typeId: textValue(data, "type") as Id<"arrangement_type">,
+                      name: textValue(data, "name"),
+                      valid_from: dateValue(data, "start")!,
+                      valid_to: dateValue(data, "end"),
+                    })
+                  }
+                >
+                  <TextField label="Name" name="name" required />
+                  <SelectField
+                    label="Type"
+                    name="type"
+                    required
+                    options={types.map((t) => ({
+                      value: t._id,
+                      label: t.name,
+                    }))}
+                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <TextField
+                      label="Start"
+                      name="start"
+                      type="datetime-local"
+                      value={localDateTime()}
+                      required
+                    />
+                    <TextField
+                      label="End (exclusive, optional)"
+                      name="end"
+                      type="datetime-local"
+                    />
+                  </div>
+                </Form>
+              </>
+            )}
+          </Editor>
+        </>
+      }
     >
       <Link
         className="inline-block text-sm underline underline-offset-4"
@@ -181,118 +240,85 @@ export default function ArrangementsPage() {
       >
         Manage types & role templates →
       </Link>
-      {types === undefined ? (
-        <Loading />
-      ) : types.length === 0 ? (
-        <Empty>Create an arrangement type first using the link above.</Empty>
-      ) : (
-        <Editor title="New arrangement">
-          <Form
-            label="Create arrangement"
-            onSave={(data) =>
-              create({
-                typeId: textValue(data, "type") as Id<"arrangement_type">,
-                name: textValue(data, "name"),
-                valid_from: dateValue(data, "start")!,
-                valid_to: dateValue(data, "end"),
-              })
-            }
-          >
-            <TextField label="Name" name="name" required />
-            <SelectField
-              label="Type"
-              name="type"
-              required
-              options={types.map((t) => ({ value: t._id, label: t.name }))}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextField
-                label="Start"
-                name="start"
-                type="datetime-local"
-                value={localDateTime()}
-                required
-              />
-              <TextField
-                label="End (exclusive, optional)"
-                name="end"
-                type="datetime-local"
-              />
-            </div>
-          </Form>
-        </Editor>
-      )}
+
       {arrangements === undefined ? (
         <Loading />
       ) : arrangements.length === 0 ? (
         <Empty>No arrangements yet.</Empty>
       ) : (
-        arrangements.map((a) => (
-          <Panel
-            key={a._id}
-            title={a.name || a.kind}
-            description={`${a.kind} · ${dateLabel(a.valid_from)} → ${dateLabel(a.valid_to)}`}
-          >
-            <Editor title="Edit arrangement">
-              <Form
-                onSave={(data) =>
-                  update({
-                    id: a._id,
-                    name: textValue(data, "name"),
-                    lifecycle: textValue(data, "lifecycle") as
-                      | "draft"
-                      | "active"
-                      | "ended",
-                    effectiveAt: dateValue(data, "effective")!,
-                    expectedRevision: a.revision,
-                    valid_to: dateValue(data, "end"),
-                  })
-                }
-              >
-                <TextField
-                  label="Name"
-                  name="name"
-                  value={a.name || a.kind}
-                  required
-                />
-                <SelectField
-                  label="Lifecycle"
-                  name="lifecycle"
-                  value={a.lifecycle || "active"}
-                  options={options(["draft", "active", "ended"])}
-                  required
-                />
-                <div className="grid gap-4 sm:grid-cols-2">
+        <Collection label="arrangements">
+          {arrangements.map((a) => (
+            <Panel
+              key={a._id}
+              category={a.kind}
+              summary={a.lifecycle || "active"}
+              summaryLabel="Lifecycle"
+              title={a.name || a.kind}
+              description={`${a.kind} · ${dateLabel(a.valid_from)} → ${dateLabel(a.valid_to)}`}
+            >
+              <Editor title="Edit arrangement" inline>
+                <Form
+                  onSave={(data) =>
+                    update({
+                      id: a._id,
+                      name: textValue(data, "name"),
+                      lifecycle: textValue(data, "lifecycle") as
+                        | "draft"
+                        | "active"
+                        | "ended",
+                      effectiveAt: dateValue(data, "effective")!,
+                      expectedRevision: a.revision,
+                      valid_to: dateValue(data, "end"),
+                    })
+                  }
+                >
                   <TextField
-                    label="Change effective at"
-                    name="effective"
-                    type="datetime-local"
-                    value={localDateTime(Math.max(a.valid_from, Date.now()))}
+                    label="Name"
+                    name="name"
+                    value={a.name || a.kind}
                     required
                   />
-                  <TextField
-                    label="End (exclusive, optional)"
-                    name="end"
-                    type="datetime-local"
-                    value={
-                      a.valid_to === undefined ? "" : localDateTime(a.valid_to)
-                    }
+                  <SelectField
+                    label="Lifecycle"
+                    name="lifecycle"
+                    value={a.lifecycle || "active"}
+                    options={options(["draft", "active", "ended"])}
+                    required
                   />
-                </div>
-              </Form>
-            </Editor>
-            <Editor title="Roles & assignments">
-              <Roles arrangementId={a._id} />
-            </Editor>
-            <RecordDetails target={{ kind: "arrangement", id: a._id }} />
-            <Action
-              confirm="Archive this arrangement? This retains its history and does not change its end date."
-              onClick={() => remove({ id: a._id })}
-            >
-              Archive
-            </Action>
-          </Panel>
-        ))
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <TextField
+                      label="Change effective at"
+                      name="effective"
+                      type="datetime-local"
+                      value={localDateTime(Math.max(a.valid_from, Date.now()))}
+                      required
+                    />
+                    <TextField
+                      label="End (exclusive, optional)"
+                      name="end"
+                      type="datetime-local"
+                      value={
+                        a.valid_to === undefined
+                          ? ""
+                          : localDateTime(a.valid_to)
+                      }
+                    />
+                  </div>
+                </Form>
+              </Editor>
+              <Editor title="Roles & assignments">
+                <Roles arrangementId={a._id} />
+              </Editor>
+              <RecordDetails target={{ kind: "arrangement", id: a._id }} />
+              <Action
+                confirm="Archive this arrangement? This retains its history and does not change its end date."
+                onClick={() => remove({ id: a._id })}
+              >
+                Archive
+              </Action>
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Page>
   );

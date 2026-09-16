@@ -6,6 +6,7 @@ import { useDataset } from "@/lib/dataset";
 import {
   Page,
   Panel,
+  Editor,
   Action,
   Form,
   TextField,
@@ -23,6 +24,19 @@ export default function DatasetsPage() {
     <Page
       title="Datasets"
       description="Keep Live and test records separate in the same database. Each dataset has its own entities, arrangements, transactions, tags and documents."
+      actions={
+        <Editor title="New test dataset">
+          {" "}
+          <Form
+            label="Create dataset"
+            onSave={async (d) => {
+              await create({ name: textValue(d, "name") });
+            }}
+          >
+            <TextField label="Dataset name" name="name" required />
+          </Form>
+        </Editor>
+      }
     >
       <Panel
         title="Your datasets"
@@ -62,19 +76,7 @@ export default function DatasetsPage() {
           ))}
         </ul>
       </Panel>
-      <Panel
-        title="Create an empty test dataset"
-        description="Start a separate workspace for your own experiments."
-      >
-        <Form
-          label="Create dataset"
-          onSave={async (d) => {
-            await create({ name: textValue(d, "name") });
-          }}
-        >
-          <TextField label="Dataset name" name="name" required />
-        </Form>
-      </Panel>
+
       <Panel
         title="Morgan family sample"
         description={`Fictional USD records through ${SAMPLE_AS_OF}. Creates test-data1, or resumes the existing family sample without duplicating transactions.`}

@@ -124,7 +124,7 @@ function AttributionForm({
         earned/incurred results and the bank line for cash received/paid.
       </p>
       {portions.map((p, index) => (
-        <div key={index} className="space-y-4 rounded-md border p-4">
+        <div key={index} className="record-line space-y-4">
           <h4 className="font-medium">Portion {index + 1}</h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={`Signed amount (${posting.currency})`}>

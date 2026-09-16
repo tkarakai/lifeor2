@@ -7,6 +7,8 @@ import {
   Page,
   Action,
   Panel,
+  Collection,
+  WorkspaceTabs,
   Form,
   TextField,
   SelectField,
@@ -48,178 +50,228 @@ export default function AccountsPage() {
     <Page
       title="Charts & accounts"
       description="A chart holds ledger accounts for one reporting scope. Each account has its own currency."
-    >
-      <Editor title="New chart of accounts">
-        <Form
-          label="Create chart"
-          onSave={(data) =>
-            createChart({
-              name: textValue(data, "name"),
-              reportingEntityId: optionalText(data, "entity") as
-                | Id<"entity">
-                | undefined,
-            })
-          }
-        >
-          <TextField label="Chart name" name="name" required />
-          <SelectField
-            label="Reporting entity (optional)"
-            name="entity"
-            options={(entities ?? []).map((e) => ({
-              value: e._id,
-              label: e.display_name,
-            }))}
-          />
-        </Form>
-      </Editor>
-      {charts === undefined ? (
-        <Loading />
-      ) : charts.length === 0 ? (
-        <Empty>Create your first chart above, then add ledger accounts.</Empty>
-      ) : (
+      actions={
         <>
-          <Field label="Chart of accounts">
-            <select
-              className={controlClass}
-              value={chartId}
-              onChange={(e) => setSelection(e.target.value)}
-            >
-              {charts.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Editor title="Edit chart">
-            <Form
-              key={chartId}
-              onSave={(data) =>
-                updateChart({
-                  id: chartId as Id<"chart_of_accounts">,
-                  name: textValue(data, "name"),
-                })
-              }
-            >
-              <TextField
-                label="Chart name"
-                name="name"
-                value={charts.find((c) => c._id === chartId)?.name}
-                required
-              />
-            </Form>
-            <Action
-              confirm="Archive this chart? Its ledger records will be retained."
-              onClick={async () => {
-                await updateChart({
-                  id: chartId as Id<"chart_of_accounts">,
-                  archived: true,
-                });
-                setSelection("");
-              }}
-            >
-              Archive chart
-            </Action>
-          </Editor>
-          <RecordDetails
-            key={chartId}
-            target={{ kind: "chart_of_accounts", id: chartId! }}
-          />
-          <Editor title="New ledger account">
-            <Form
-              label="Create account"
-              onSave={(data) => {
-                const type = textValue(
-                  data,
-                  "type",
-                ) as (typeof accountTypes)[number];
-                return createAccount({
-                  chartId: chartId as Id<"chart_of_accounts">,
-                  name: textValue(data, "name"),
-                  type,
-                  normal_balance:
-                    type === "Asset" || type === "Expense" ? "Debit" : "Credit",
-                  currency: textValue(data, "currency"),
-                  parent_account_id: optionalText(data, "parent") as
-                    | Id<"ledger_account">
-                    | undefined,
-                });
-              }}
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
-                <TextField label="Account name" name="name" required />
+          {chartId ? (
+            <Editor title="New ledger account">
+              <Form
+                label="Create account"
+                onSave={(data) => {
+                  const type = textValue(
+                    data,
+                    "type",
+                  ) as (typeof accountTypes)[number];
+                  return createAccount({
+                    chartId: chartId as Id<"chart_of_accounts">,
+                    name: textValue(data, "name"),
+                    type,
+                    normal_balance:
+                      type === "Asset" || type === "Expense"
+                        ? "Debit"
+                        : "Credit",
+                    currency: textValue(data, "currency"),
+                    parent_account_id: optionalText(data, "parent") as
+                      | Id<"ledger_account">
+                      | undefined,
+                  });
+                }}
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField label="Account name" name="name" required />
+                  <SelectField
+                    label="Type"
+                    name="type"
+                    value="Asset"
+                    options={options(accountTypes)}
+                    required
+                  />
+                  <SelectField
+                    label="Currency"
+                    name="currency"
+                    value="USD"
+                    options={options(Object.keys(currencyScales))}
+                    required
+                  />
+                  <SelectField
+                    label="Parent account (optional)"
+                    name="parent"
+                    options={(accounts ?? []).map((a) => ({
+                      value: a._id,
+                      label: a.name,
+                    }))}
+                  />
+                </div>
+              </Form>
+            </Editor>
+          ) : (
+            <Editor title="New chart of accounts">
+              <Form
+                label="Create chart"
+                onSave={(data) =>
+                  createChart({
+                    name: textValue(data, "name"),
+                    reportingEntityId: optionalText(data, "entity") as
+                      | Id<"entity">
+                      | undefined,
+                  })
+                }
+              >
+                <TextField label="Chart name" name="name" required />
                 <SelectField
-                  label="Type"
-                  name="type"
-                  value="Asset"
-                  options={options(accountTypes)}
-                  required
-                />
-                <SelectField
-                  label="Currency"
-                  name="currency"
-                  value="USD"
-                  options={options(Object.keys(currencyScales))}
-                  required
-                />
-                <SelectField
-                  label="Parent account (optional)"
-                  name="parent"
-                  options={(accounts ?? []).map((a) => ({
-                    value: a._id,
-                    label: a.name,
+                  label="Reporting entity (optional)"
+                  name="entity"
+                  options={(entities ?? []).map((e) => ({
+                    value: e._id,
+                    label: e.display_name,
                   }))}
                 />
-              </div>
-            </Form>
-          </Editor>
-          {accounts === undefined ? (
-            <Loading />
-          ) : accounts.length === 0 ? (
-            <Empty>This chart has no ledger accounts.</Empty>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {accounts.map((a) => (
-                <Panel
-                  key={a._id}
-                  title={a.name}
-                  description={`${a.type} · ${a.currency} · Normal balance: ${a.normal_balance}`}
-                >
-                  <Editor title="Edit account">
-                    <Form
-                      onSave={(data) =>
-                        updateAccount({
-                          id: a._id,
-                          name: textValue(data, "name"),
-                        })
-                      }
-                    >
-                      <TextField
-                        label="Account name"
-                        name="name"
-                        value={a.name}
-                        required
-                      />
-                    </Form>
-                    <Action
-                      confirm="Archive this account? Its historical postings remain in reports."
-                      onClick={() =>
-                        updateAccount({ id: a._id, archived: true })
-                      }
-                    >
-                      Archive account
-                    </Action>
-                  </Editor>
-                  <RecordDetails
-                    target={{ kind: "ledger_account", id: a._id }}
-                  />
-                </Panel>
-              ))}
-            </div>
+              </Form>
+            </Editor>
           )}
         </>
-      )}
-      <FinancialAccounts />
+      }
+    >
+      <WorkspaceTabs
+        tabs={[
+          {
+            label: "Ledger accounts",
+            content: (
+              <>
+                {charts === undefined ? (
+                  <Loading />
+                ) : charts.length === 0 ? (
+                  <Empty>
+                    Create your first chart above, then add ledger accounts.
+                  </Empty>
+                ) : (
+                  <>
+                    <div className="record-context-bar">
+                      <Field label="Chart of accounts">
+                        <select
+                          className={controlClass}
+                          value={chartId}
+                          onChange={(e) => setSelection(e.target.value)}
+                        >
+                          {charts.map((c) => (
+                            <option key={c._id} value={c._id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Editor title="Edit chart">
+                        <Form
+                          key={chartId}
+                          onSave={(data) =>
+                            updateChart({
+                              id: chartId as Id<"chart_of_accounts">,
+                              name: textValue(data, "name"),
+                            })
+                          }
+                        >
+                          <TextField
+                            label="Chart name"
+                            name="name"
+                            value={charts.find((c) => c._id === chartId)?.name}
+                            required
+                          />
+                        </Form>
+                        <Action
+                          confirm="Archive this chart? Its ledger records will be retained."
+                          onClick={async () => {
+                            await updateChart({
+                              id: chartId as Id<"chart_of_accounts">,
+                              archived: true,
+                            });
+                            setSelection("");
+                          }}
+                        >
+                          Archive chart
+                        </Action>
+                      </Editor>
+                      <RecordDetails
+                        key={chartId}
+                        target={{ kind: "chart_of_accounts", id: chartId! }}
+                      />
+                      <Editor title="New chart of accounts">
+                        <Form
+                          label="Create chart"
+                          onSave={(data) =>
+                            createChart({
+                              name: textValue(data, "name"),
+                              reportingEntityId: optionalText(
+                                data,
+                                "entity",
+                              ) as Id<"entity"> | undefined,
+                            })
+                          }
+                        >
+                          <TextField label="Chart name" name="name" required />
+                          <SelectField
+                            label="Reporting entity (optional)"
+                            name="entity"
+                            options={(entities ?? []).map((e) => ({
+                              value: e._id,
+                              label: e.display_name,
+                            }))}
+                          />
+                        </Form>
+                      </Editor>
+                    </div>
+
+                    {accounts === undefined ? (
+                      <Loading />
+                    ) : accounts.length === 0 ? (
+                      <Empty>This chart has no ledger accounts.</Empty>
+                    ) : (
+                      <Collection label="accounts">
+                        {accounts.map((a) => (
+                          <Panel
+                            key={a._id}
+                            category={a.type}
+                            title={a.name}
+                            description={`${a.type} · ${a.currency} · Normal balance: ${a.normal_balance}`}
+                          >
+                            <Editor title="Edit account" inline>
+                              <Form
+                                onSave={(data) =>
+                                  updateAccount({
+                                    id: a._id,
+                                    name: textValue(data, "name"),
+                                  })
+                                }
+                              >
+                                <TextField
+                                  label="Account name"
+                                  name="name"
+                                  value={a.name}
+                                  required
+                                />
+                              </Form>
+                              <Action
+                                confirm="Archive this account? Its historical postings remain in reports."
+                                onClick={() =>
+                                  updateAccount({ id: a._id, archived: true })
+                                }
+                              >
+                                Archive account
+                              </Action>
+                            </Editor>
+                            <RecordDetails
+                              target={{ kind: "ledger_account", id: a._id }}
+                            />
+                          </Panel>
+                        ))}
+                      </Collection>
+                    )}
+                  </>
+                )}
+              </>
+            ),
+          },
+          { label: "Bank & loan mappings", content: <FinancialAccounts /> },
+        ]}
+      />
     </Page>
   );
 }

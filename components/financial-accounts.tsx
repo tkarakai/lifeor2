@@ -4,6 +4,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
   Panel,
+  Collection,
   Editor,
   Form,
   TextField,
@@ -87,22 +88,34 @@ export function FinancialAccounts() {
       ) : mappings.length === 0 ? (
         <Empty>No financial account mappings.</Empty>
       ) : (
-        mappings.map((m) => (
-          <div key={m._id} className="space-y-3 border-t pt-4">
-            <h3 className="font-medium">
-              {arrangements?.find((a) => a._id === m.arrangement_id)?.name ??
-                m.kind}{" "}
-              →{" "}
-              {accounts?.find((a) => a._id === m.ledger_account_id)?.name ??
-                "Archived ledger account"}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {m.kind} · {m.currency}
-              {m.identifier && ` · ${m.identifier}`}
-            </p>
-            <RecordDetails target={{ kind: "financial_account", id: m._id }} />
-          </div>
-        ))
+        <Collection label="account mappings">
+          {mappings.map((m) => (
+            <Panel
+              key={m._id}
+              title={
+                accounts?.find((a) => a._id === m.ledger_account_id)?.name ??
+                m.kind
+              }
+              category={m.kind}
+              description={m.currency}
+            >
+              <h3 className="font-medium">
+                {arrangements?.find((a) => a._id === m.arrangement_id)?.name ??
+                  m.kind}{" "}
+                →{" "}
+                {accounts?.find((a) => a._id === m.ledger_account_id)?.name ??
+                  "Archived ledger account"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {m.kind} · {m.currency}
+                {m.identifier && ` · ${m.identifier}`}
+              </p>
+              <RecordDetails
+                target={{ kind: "financial_account", id: m._id }}
+              />
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Panel>
   );

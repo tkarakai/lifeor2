@@ -218,7 +218,7 @@ export function PlanningVersions({ planId }: { planId: Id<"plan"> }) {
         <Empty>No versions yet. Create a draft to add budget targets.</Empty>
       ) : (
         versions.map((v) => (
-          <div key={v._id} className="space-y-4 rounded-md border p-4">
+          <div key={v._id} className="record-line space-y-4">
             <h4 className="font-medium">
               Version {v.revision} · {v.status}
             </h4>

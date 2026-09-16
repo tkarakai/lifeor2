@@ -4,6 +4,7 @@ import { api } from "@/convex/_generated/api";
 import {
   Page,
   Panel,
+  Collection,
   Form,
   TextField,
   Editor,
@@ -21,43 +22,50 @@ export default function EntitiesPage() {
   return (
     <Page
       title="Entities"
-      description="Identify a specific person, organization, animal, service, or asset. Roles belong to arrangements."
+      description="The people, places, and things in your life. Keep their details and history together."
+      actions={
+        <>
+          <Editor
+            title="New entity"
+            description="Give this record a recognizable name and a kind to keep your directory organized."
+          >
+            <Form
+              label="Create entity"
+              onSave={(data) =>
+                create({
+                  display_name: textValue(data, "name"),
+                  kind: textValue(data, "kind"),
+                })
+              }
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextField label="Display name" name="name" required />
+                <TextField
+                  label="Kind"
+                  name="kind"
+                  value="Person"
+                  required
+                  hint="Use any descriptive kind, such as Person, Household, or Vehicle."
+                />
+              </div>
+            </Form>
+          </Editor>
+        </>
+      }
     >
-      <Editor title="New entity">
-        <Form
-          label="Create entity"
-          onSave={(data) =>
-            create({
-              display_name: textValue(data, "name"),
-              kind: textValue(data, "kind"),
-            })
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Display name" name="name" required />
-            <TextField
-              label="Kind"
-              name="kind"
-              value="Person"
-              required
-              hint="Use any descriptive kind, such as Person, Household, or Vehicle."
-            />
-          </div>
-        </Form>
-      </Editor>
       {entities === undefined ? (
         <Loading />
       ) : entities.length === 0 ? (
         <Empty>No entities yet. Create the first one above.</Empty>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <Collection label="entities">
           {entities.map((entity) => (
             <Panel
               key={entity._id}
+              category={entity.kind}
               title={entity.display_name}
-              description={entity.kind}
             >
-              <Editor title="Edit entity">
+              <Editor title="Edit entity" inline>
                 <Form
                   onSave={(data) =>
                     update({
@@ -68,18 +76,21 @@ export default function EntitiesPage() {
                     })
                   }
                 >
-                  <TextField
-                    label="Display name"
-                    name="name"
-                    value={entity.display_name}
-                    required
-                  />
-                  <TextField
-                    label="Kind"
-                    name="kind"
-                    value={entity.kind}
-                    required
-                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <TextField
+                      label="Display name"
+                      name="name"
+                      value={entity.display_name}
+                      required
+                    />
+                    <TextField
+                      label="Kind"
+                      name="kind"
+                      value={entity.kind}
+                      required
+                      hint="For example: Person, Household, or Vehicle."
+                    />
+                  </div>
                 </Form>
               </Editor>
               <RecordDetails target={{ kind: "entity", id: entity._id }} />
@@ -91,7 +102,7 @@ export default function EntitiesPage() {
               </Action>
             </Panel>
           ))}
-        </div>
+        </Collection>
       )}
     </Page>
   );

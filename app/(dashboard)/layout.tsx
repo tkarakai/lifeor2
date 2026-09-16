@@ -3,9 +3,9 @@
 import { DatasetProvider } from "@/lib/dataset";
 import { Sidebar } from "@/components/sidebar";
 import { useSession } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useConvexAuth } from "convex/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function DashboardLayout({
   children,
@@ -14,6 +14,11 @@ export default function DashboardLayout({
 }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+  const mobileMenu = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (mobileMenu.current) mobileMenu.current.open = false;
+  }, [pathname]);
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   useEffect(() => {
@@ -41,18 +46,18 @@ export default function DashboardLayout({
   return (
     <DatasetProvider>
       <div className="h-full relative">
-        <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80">
+        <div className="hidden h-full md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 z-80">
           <Sidebar />
         </div>
-        <div className="border-b md:hidden">
-          <details>
+        <div className="border-b bg-[#edf0e7] text-[#203d35] md:hidden">
+          <details ref={mobileMenu}>
             <summary className="cursor-pointer p-4 font-semibold">
               LifeOR2 · Menu
             </summary>
             <Sidebar />
           </details>
         </div>
-        <main className="md:pl-72 h-full">
+        <main className="md:pl-60 h-full">
           <div className="p-4 sm:p-8 h-full">{children}</div>
         </main>
       </div>

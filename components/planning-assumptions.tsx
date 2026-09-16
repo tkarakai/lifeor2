@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@/lib/dataset";
 import { api } from "@/convex/_generated/api";
 import {
   Panel,
+  Collection,
   Editor,
   Form,
   TextField,
@@ -63,25 +64,43 @@ export function PlanningAssumptions() {
       ) : assumptions.length === 0 ? (
         <Empty>No assumptions recorded.</Empty>
       ) : (
-        assumptions.map((a) => (
-          <div key={a._id} className="space-y-3 border-t pt-4">
-            <h3 className="font-medium">{a.name}</h3>
-            <p className="text-sm">
-              {a.value.kind === "amount"
-                ? formatMoney(
-                    a.value.amount.minor_units,
-                    a.value.amount.currency,
-                  )
-                : a.value.kind === "timing"
-                  ? a.value.date
-                  : "Effective interval"}{" "}
-              · {a.source}
-            </p>
-            <RecordDetails
-              target={{ kind: "forecast_assumption", id: a._id }}
-            />
-          </div>
-        ))
+        <Collection label="assumptions">
+          {assumptions.map((a) => (
+            <Panel
+              key={a._id}
+              title={a.name}
+              category={a.value.kind}
+              description={a.source}
+              summaryLabel="Assumed value"
+              summary={
+                a.value.kind === "amount"
+                  ? formatMoney(
+                      a.value.amount.minor_units,
+                      a.value.amount.currency,
+                    )
+                  : a.value.kind === "timing"
+                    ? a.value.date
+                    : "Effective interval"
+              }
+            >
+              <h3 className="font-medium">{a.name}</h3>
+              <p className="text-sm">
+                {a.value.kind === "amount"
+                  ? formatMoney(
+                      a.value.amount.minor_units,
+                      a.value.amount.currency,
+                    )
+                  : a.value.kind === "timing"
+                    ? a.value.date
+                    : "Effective interval"}{" "}
+                · {a.source}
+              </p>
+              <RecordDetails
+                target={{ kind: "forecast_assumption", id: a._id }}
+              />
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Panel>
   );

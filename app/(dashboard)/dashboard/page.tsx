@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Page, Panel } from "@/components/record-ui";
+import { ArrowUpRight } from "lucide-react";
+import { Page } from "@/components/record-ui";
 const sections = [
   [
     "Family observatory",
@@ -44,16 +45,18 @@ export default function DashboardPage() {
       title="Your records"
       description="Keep identity, relationships, actual occurrences, and financial records connected."
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        {sections.map(([title, description, path]) => (
-          <Panel key={path} title={title} description={description}>
-            <Link
-              className="text-sm font-medium underline underline-offset-4"
-              href={`/dashboard/${path}`}
-            >
-              Open {title.toLowerCase()} →
-            </Link>
-          </Panel>
+      <div className="record-directory">
+        {sections.map(([title, description, path], index) => (
+          <Link key={path} href={`/dashboard/${path}`}>
+            <span className="record-directory-number">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <div>
+              <h2>{title}</h2>
+              <p>{description}</p>
+            </div>
+            <ArrowUpRight size={20} strokeWidth={1.5} />
+          </Link>
         ))}
       </div>
     </Page>

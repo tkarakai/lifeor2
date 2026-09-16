@@ -13,7 +13,8 @@
     "local:configure": "python3 scripts/local_convex.py configure",
     "convex:stop": "python3 scripts/local_convex.py stop",
     "test:local": "python3 -m unittest discover -s tests/python",
-    "seed:family": "bun scripts/seed-family.ts"
+    "seed:family": "bun scripts/seed-family.ts",
+    "test:ui": "node scripts/test-records-ui.cjs"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.10.10",
@@ -39,6 +40,7 @@
     "convex-test": "0.0.41",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.4",
+    "playwright": "^1.63.0",
     "typescript": "^5.9.3",
     "vitest": "^5.0.1"
   }

@@ -5,6 +5,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import {
   Page,
   Panel,
+  Collection,
   Editor,
   Form,
   TextField,
@@ -64,48 +65,54 @@ export default function TagsPage() {
     <Page
       title="Tags"
       description="Group related records with simple tags. Projects are tags, with notes and explicitly selected records."
+      actions={
+        <>
+          <Editor title="New tag">
+            <Form
+              label="Create tag"
+              onSave={(data) => create({ name: textValue(data, "name") })}
+            >
+              <TextField label="Tag name" name="name" required />
+            </Form>
+          </Editor>
+        </>
+      }
     >
-      <Editor title="New tag">
-        <Form
-          label="Create tag"
-          onSave={(data) => create({ name: textValue(data, "name") })}
-        >
-          <TextField label="Tag name" name="name" required />
-        </Form>
-      </Editor>
       {tags === undefined ? (
         <Loading />
       ) : tags.length === 0 ? (
         <Empty>No tags yet.</Empty>
       ) : (
-        tags.map((tag) => (
-          <Panel key={tag._id} title={tag.name}>
-            <Editor title="Edit tag">
-              <Form
-                onSave={(data) =>
-                  update({ id: tag._id, name: textValue(data, "name") })
-                }
+        <Collection label="tags">
+          {tags.map((tag) => (
+            <Panel key={tag._id} title={tag.name}>
+              <Editor title="Edit tag" inline>
+                <Form
+                  onSave={(data) =>
+                    update({ id: tag._id, name: textValue(data, "name") })
+                  }
+                >
+                  <TextField
+                    label="Tag name"
+                    name="name"
+                    value={tag.name}
+                    required
+                  />
+                </Form>
+              </Editor>
+              <Editor title="Tagged records">
+                <Assignments tagId={tag._id} />
+              </Editor>
+              <RecordDetails target={{ kind: "tag", id: tag._id }} />
+              <Action
+                confirm="Archive this tag? Existing history is retained."
+                onClick={() => update({ id: tag._id, archived: true })}
               >
-                <TextField
-                  label="Tag name"
-                  name="name"
-                  value={tag.name}
-                  required
-                />
-              </Form>
-            </Editor>
-            <Editor title="Tagged records">
-              <Assignments tagId={tag._id} />
-            </Editor>
-            <RecordDetails target={{ kind: "tag", id: tag._id }} />
-            <Action
-              confirm="Archive this tag? Existing history is retained."
-              onClick={() => update({ id: tag._id, archived: true })}
-            >
-              Archive
-            </Action>
-          </Panel>
-        ))
+                Archive
+              </Action>
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Page>
   );

@@ -1,10 +1,10 @@
 "use client";
-import { useState } from "react";
 import { useQuery, useMutation } from "@/lib/dataset";
 import { api } from "@/convex/_generated/api";
 import {
   Page,
   Panel,
+  Collection,
   Action,
   Empty,
   Loading,
@@ -56,34 +56,22 @@ function DeleteReview({ target }: { target: RecordTarget }) {
 export default function TrashPage() {
   const rows = useQuery(api.trash.list, {}),
     restore = useMutation(api.trash.restore);
-  const [filter, setFilter] = useState("");
   return (
     <Page
       title="Trash"
       description="Restore archived records or permanently delete unused ones. Referenced records and posted accounting history remain protected."
     >
-      <input
-        aria-label="Filter archived records"
-        className="w-full rounded-md border p-3"
-        placeholder="Filter by name or type…"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-      />
       {!rows ? (
         <Loading />
       ) : rows.length === 0 ? (
         <Empty>No archived records in this dataset.</Empty>
       ) : (
-        rows
-          .filter((r) =>
-            (r.name + " " + r.target.kind)
-              .toLowerCase()
-              .includes(filter.toLowerCase()),
-          )
-          .map((r) => (
+        <Collection label="archived records">
+          {rows.map((r) => (
             <Panel
               key={r.target.id}
               title={r.name}
+              category={r.target.kind.replaceAll("_", " ")}
               description={r.target.kind.replaceAll("_", " ")}
             >
               <Action
@@ -95,7 +83,8 @@ export default function TrashPage() {
                 <DeleteReview target={r.target as RecordTarget} />
               </Editor>
             </Panel>
-          ))
+          ))}
+        </Collection>
       )}
     </Page>
   );

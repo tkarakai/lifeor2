@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
   Panel,
+  Collection,
   Editor,
   Form,
   TextField,
@@ -134,15 +135,17 @@ export function PlanningScenarios() {
       ) : scenarios.length === 0 ? (
         <Empty>No scenarios yet.</Empty>
       ) : (
-        scenarios.map((s) => (
-          <div key={s._id} className="space-y-4 border-t pt-4">
-            <h3 className="font-medium">{s.name}</h3>
-            <Editor title="Scenario versions">
-              <Versions scenarioId={s._id} />
-            </Editor>
-            <RecordDetails target={{ kind: "scenario", id: s._id }} />
-          </div>
-        ))
+        <Collection label="scenarios">
+          {scenarios.map((s) => (
+            <Panel key={s._id} title={s.name}>
+              <h3 className="font-medium">{s.name}</h3>
+              <Editor title="Scenario versions">
+                <Versions scenarioId={s._id} />
+              </Editor>
+              <RecordDetails target={{ kind: "scenario", id: s._id }} />
+            </Panel>
+          ))}
+        </Collection>
       )}
     </Panel>
   );
