@@ -7,7 +7,10 @@ import { financeSchema } from "./schema/finance";
 import { foundationSchema } from "./schema/foundation";
 import { planningSchema } from "./schema/planning";
 
+import { datasetSchema } from "./schema/datasets";
+
 const schema = defineSchema({
+  ...datasetSchema,
   ...foundationSchema,
   ...planningSchema,
   // Authentication is handled by @convex-dev/better-auth component

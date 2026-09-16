@@ -1,6 +1,6 @@
 import { entityAt } from "./lib/history";
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query } from "./lib/scoped";
 import { authComponent } from "./auth";
 import { owned, requireUser, expected } from "./lib/access";
 import { nonempty, changeTimeline, selectRevision } from "./lib/domain";

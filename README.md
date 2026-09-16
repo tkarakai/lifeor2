@@ -28,6 +28,8 @@ Stop each terminal with Ctrl+C. Use `bun run convex:stop` to stop this projectâ€
 
 The redesigned backbone includes concrete entities, custom arrangement types and local roles, tags, actual events, typed measurements, Git-owned Markdown details, dedicated charts, exact-money journals, obligations, and immutable planning inputs. The UI exposes these records and a per-currency trial balance. Authentication uses Better Auth magic-link tokens entered as login codes.
 
+Use the sidebar **Dataset** selector to switch between Live and test workspaces in the same database. **Datasets** can create empty test workspaces or prepare the fictional Morgan family sample. **Trash** restores archived records or permanently deletes unused ones after a dependency review. See [dataset and sample decisions](docs/decisions/datasets-trash-and-family-sample.md).
+
 The [redesign specification](docs/design/redesign-spec.md) is implemented and the existing local data migrated. See [implementation decisions and validation](docs/decisions/redesign-implementation.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). Forecast calculation, bank import, advanced reconciliation UI, and analytics remain outside this foundation release. The [original specification](docs/design/spec_0.1.md) is historical context.
 
 ## Local architecture

@@ -163,7 +163,13 @@ The component definition belongs in `convex/convex.config.ts`. Wait for `bun run
 
 ## First application workflow
 
-After login: create a `ChartOfAccounts` arrangement, create Cash and Revenue ledger accounts, record an event, and create a balanced journal entry (Cash +100, Revenue -100, same currency). Then inspect Finance → Reports.
+After login, choose **Live** or a test dataset in the sidebar. **Datasets → Prepare / resume family sample** creates a fictional family workspace with realistic transactions and Git-backed notes; then select **test-data1**. **Create an empty test dataset** starts a separate workspace for your own experiments. Existing records stay in Live.
+
+For a manual finance check, use **Finance → Charts & accounts** to create a chart and Cash/Revenue ledger accounts, record an event, then create a balanced journal entry (Cash +100, Revenue -100, same currency). Inspect Finance → Reports.
+
+To remove an archived record, open **Trash**, choose **Review permanent deletion**, and type `DELETE`. Trash also offers **Restore**. References to other records must be resolved before deletion; posted accounting history and published plan snapshots stay protected. Historical Git commits are retained.
+
+See [dataset and sample decisions](docs/decisions/datasets-trash-and-family-sample.md) for the sample assumptions, isolation rules and local operator commands.
 
 This is a suggested manual check, not a claim that every finance workflow is tested. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 

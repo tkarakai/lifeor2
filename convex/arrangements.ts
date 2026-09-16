@@ -1,6 +1,6 @@
 import { arrangementAt, roleAt, assignmentAt } from "./lib/history";
 import { v } from "convex/values";
-import { mutation, query, type MutationCtx } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./lib/scoped";
 import type { Id } from "./_generated/dataModel";
 import { authComponent } from "./auth";
 import { owned, requireUser, expected } from "./lib/access";

@@ -1,4 +1,4 @@
-import { defineTable } from "convex/server";
+import { scopedTable as defineTable } from "./datasets";
 import { v } from "convex/values";
 import {
   root,

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query } from "./lib/scoped";
 import { target } from "./schema/shared";
 import { owned, ownedTarget, requireUser, evidence } from "./lib/access";
 import { decimal, nonempty, instant, scale } from "./lib/domain";

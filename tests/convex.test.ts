@@ -94,8 +94,8 @@ test("component user IDs support creation, and ownership protects reads/updates/
     kind: "Person",
     display_name: "Alice",
   });
-  expect(await alice.query(api.entities.list)).toHaveLength(1);
-  expect(await bob.query(api.entities.list)).toEqual([]);
+  expect(await alice.query(api.entities.list, {})).toHaveLength(1);
+  expect(await bob.query(api.entities.list, {})).toEqual([]);
   await expect(bob.query(api.entities.get, { id })).rejects.toThrow(
     "access denied",
   );
@@ -110,7 +110,7 @@ test("component user IDs support creation, and ownership protects reads/updates/
     "Updated",
   );
   await alice.mutation(api.entities.remove, { id });
-  expect(await alice.query(api.entities.list)).toEqual([]);
+  expect(await alice.query(api.entities.list, {})).toEqual([]);
 });
 
 test("anonymous lists are empty, writes require a session", async () => {
@@ -120,7 +120,7 @@ test("anonymous lists are empty, writes require a session", async () => {
     api.events.list,
     api.arrangements.list,
   ])
-    expect(await t.query(query)).toEqual([]);
+    expect(await t.query(query, {})).toEqual([]);
   await expect(
     t.mutation(api.entities.create, {
       kind: "Person",

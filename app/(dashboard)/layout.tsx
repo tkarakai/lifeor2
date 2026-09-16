@@ -1,5 +1,6 @@
 "use client";
 
+import { DatasetProvider } from "@/lib/dataset";
 import { Sidebar } from "@/components/sidebar";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -38,21 +39,23 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-full relative">
-      <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80">
-        <Sidebar />
-      </div>
-      <div className="border-b md:hidden">
-        <details>
-          <summary className="cursor-pointer p-4 font-semibold">
-            LifeOR2 · Menu
-          </summary>
+    <DatasetProvider>
+      <div className="h-full relative">
+        <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80">
           <Sidebar />
-        </details>
+        </div>
+        <div className="border-b md:hidden">
+          <details>
+            <summary className="cursor-pointer p-4 font-semibold">
+              LifeOR2 · Menu
+            </summary>
+            <Sidebar />
+          </details>
+        </div>
+        <main className="md:pl-72 h-full">
+          <div className="p-4 sm:p-8 h-full">{children}</div>
+        </main>
       </div>
-      <main className="md:pl-72 h-full">
-        <div className="p-4 sm:p-8 h-full">{children}</div>
-      </main>
-    </div>
+    </DatasetProvider>
   );
 }

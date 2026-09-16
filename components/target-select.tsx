@@ -1,5 +1,5 @@
 "use client";
-import { useQuery } from "convex/react";
+import { useQuery } from "@/lib/dataset";
 import { api } from "@/convex/_generated/api";
 import { SelectField } from "@/components/record-ui";
 import type { Infer } from "convex/values";

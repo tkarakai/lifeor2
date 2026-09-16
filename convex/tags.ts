@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query } from "./lib/scoped";
 import { authComponent } from "./auth";
 import { owned, ownedTarget, requireUser } from "./lib/access";
 import { nonempty } from "./lib/domain";

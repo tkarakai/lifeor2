@@ -560,7 +560,7 @@ test("rent credit, partial cash settlement, capacity and reversal remain distinc
     minor_units: 100000,
     settlement_date: "2026-01-03",
   });
-  expect((await alice.query(api.obligations.list))[0]).toMatchObject({
+  expect((await alice.query(api.obligations.list, {}))[0]).toMatchObject({
     outstanding_minor_units: 80000,
     settled_minor_units: 100000,
     approved_minor_units: 180000,
@@ -580,7 +580,7 @@ test("rent credit, partial cash settlement, capacity and reversal remain distinc
     reason: "Returned receipt",
   });
   expect(
-    (await alice.query(api.obligations.list))[0].outstanding_minor_units,
+    (await alice.query(api.obligations.list, {}))[0].outstanding_minor_units,
   ).toBe(180000);
   expect(
     (await alice.query(api.finance.getAccountBalance, { accountId: cash }))
@@ -903,7 +903,7 @@ test("derived measurements capture immutable input facts and independent apprais
     id: house,
     display_name: "Renamed",
   });
-  const rows = await alice.query(api.measurements.list);
+  const rows = await alice.query(api.measurements.list, {});
   expect(rows).toHaveLength(3);
   expect(rows[2].input_snapshot?.[0].captured).toContain('"decimal":"450000"');
 });
@@ -1099,7 +1099,7 @@ test("full rent receipt gives zero outstanding and exactly 180000 cash after 200
     minor_units: 180000,
     settlement_date: "2026-01-01",
   });
-  expect((await alice.query(api.obligations.list))[0]).toMatchObject({
+  expect((await alice.query(api.obligations.list, {}))[0]).toMatchObject({
     outstanding_minor_units: 0,
     settled_minor_units: 180000,
     approved_minor_units: 180000,
@@ -1246,10 +1246,10 @@ test("explicit legacy recurrence migrates once to a schedule with source evidenc
     (await t.mutation(internal.migrations.applyBatch, { stage: "measurement" }))
       .skipped,
   ).toBe(1);
-  const schedules = await alice.query(api.obligations.listSchedules);
+  const schedules = await alice.query(api.obligations.listSchedules, {});
   expect(schedules).toHaveLength(1);
   expect(schedules[0].versions[0].amount?.minor_units).toBe(200000);
-  expect(await alice.query(api.measurements.list)).toEqual([]);
+  expect(await alice.query(api.measurements.list, {})).toEqual([]);
   await t.run(async (ctx) => {
     expect((await ctx.db.get(id))!.value_json).toBe(payload);
     expect(await ctx.db.query("evidence_item").collect()).toHaveLength(1);

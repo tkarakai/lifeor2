@@ -21,23 +21,24 @@ export function parseTarget(value: unknown): DetailsTarget {
   documentPath(target.id);
   return { kind: target.kind, id: target.id };
 }
-export function detailsService() {
+export function detailsService(datasetId?: string | null) {
+  const scope = datasetId ? { datasetId } : {};
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
   const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
   if (!convexUrl || !convexSiteUrl) throw new DetailsError("configuration", "Authentication service is not configured.", 503);
   const auth = convexBetterAuthNextJs({ convexUrl, convexSiteUrl });
   // Typed function references allow independent server/backend builds without weakening the wire contract.
   const currentUser = makeFunctionReference<"query", Record<string, never>, { _id: string } | null>("auth:getCurrentUser");
-  const get = makeFunctionReference<"query", { id: string }, DetailsLocator | null>("details:get");
-  const forTarget = makeFunctionReference<"query", { target: DetailsTarget }, DetailsLocator | null>("details:forTarget");
-  const ensure = makeFunctionReference<"mutation", { target: DetailsTarget; repositoryKey: string }, DetailsLocator>("details:ensure");
-  const observe = makeFunctionReference<"mutation", { id: string; commit?: string; availability: "available" | "missing" | "unreadable" }, unknown>("details:observe");
+  const get = makeFunctionReference<"query", { id: string; datasetId?: string }, DetailsLocator | null>("details:get");
+  const forTarget = makeFunctionReference<"query", { target: DetailsTarget; datasetId?: string }, DetailsLocator | null>("details:forTarget");
+  const ensure = makeFunctionReference<"mutation", { target: DetailsTarget; repositoryKey: string; datasetId?: string }, DetailsLocator>("details:ensure");
+  const observe = makeFunctionReference<"mutation", { id: string; datasetId?: string; commit?: string; availability: "available" | "missing" | "unreadable" }, unknown>("details:observe");
   const backend: DetailsBackend = {
     currentUser: () => auth.fetchAuthQuery(currentUser, {}),
-    get: id => auth.fetchAuthQuery(get, { id }),
-    forTarget: target => auth.fetchAuthQuery(forTarget, { target }),
-    ensure: (target, repositoryKey) => auth.fetchAuthMutation(ensure, { target, repositoryKey }),
-    observe: async (id, commit, availability) => { await auth.fetchAuthMutation(observe, { id, ...(commit ? { commit } : {}), availability }); },
+    get: id => auth.fetchAuthQuery(get, { id, ...scope }),
+    forTarget: target => auth.fetchAuthQuery(forTarget, { target, ...scope }),
+    ensure: (target, repositoryKey) => auth.fetchAuthMutation(ensure, { target, repositoryKey, ...scope }),
+    observe: async (id, commit, availability) => { await auth.fetchAuthMutation(observe, { ...scope, id, ...(commit ? { commit } : {}), availability }); },
   };
   const repositoryKey = process.env.DETAILS_REPOSITORY_KEY ?? "local";
   const repository = new GitDetailsRepository({

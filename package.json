@@ -12,7 +12,8 @@
     "test": "vitest run",
     "local:configure": "python3 scripts/local_convex.py configure",
     "convex:stop": "python3 scripts/local_convex.py stop",
-    "test:local": "python3 -m unittest discover -s tests/python"
+    "test:local": "python3 -m unittest discover -s tests/python",
+    "seed:family": "bun scripts/seed-family.ts"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.10.10",
@@ -22,6 +23,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.31.5",
+    "convex-helpers": "0.1.111",
     "lucide-react": "^0.562.0",
     "next": "^16.1.4",
     "react": "^19.2.3",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { useDataset } from "@/lib/dataset";
 import { Button } from "./ui/button";
 import { MarkdownDetails } from "./markdown-details";
 import { parseDetails } from "../lib/details/frontmatter";
@@ -25,6 +26,10 @@ export function DetailsEditor(props: DetailsEditorProps) {
   return <Editor key={`${props.target.kind}:${props.target.id}`} {...props} />;
 }
 function Editor({ target, title = "Details", className = "", readOnly = false, onSaved }: DetailsEditorProps) {
+  const { id: datasetId } = useDataset();
+  function datasetRequest<T>(url: string, init?: RequestInit) {
+    return request<T>(url, { ...init, headers: { ...init?.headers, "x-lifeor-dataset": datasetId } });
+  }
   const labelId = useId();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [draft, setDraft] = useState("");
@@ -44,13 +49,13 @@ function Editor({ target, title = "Details", className = "", readOnly = false, o
     const controller = new AbortController();
     setBusy(true); setError(null);
     const params = new URLSearchParams({ kind: target.kind, id: target.id });
-    request<Snapshot>(`/api/details?${params}`, { signal: controller.signal }).then(value => {
+    datasetRequest<Snapshot>(`/api/details?${params}`, { signal: controller.signal }).then(value => {
       setSnapshot(value); setDraft(value.source ?? "");
       setNotice(value.cache === "pending" ? "The document is committed in Git; its database cache will retry on the next read." : null);
     }).catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Details could not be loaded."); })
       .finally(() => { if (!controller.signal.aborted) setBusy(false); });
     return () => controller.abort();
-  }, [target.kind, target.id, reload]);
+  }, [target.kind, target.id, datasetId, reload]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
@@ -61,7 +66,7 @@ function Editor({ target, title = "Details", className = "", readOnly = false, o
     if (!snapshot) return;
     setBusy(true); setError(null); setNotice(null);
     try {
-      const value = await request<Snapshot>(documentId ? `/api/details/${encodeURIComponent(documentId)}` : "/api/details", {
+      const value = await datasetRequest<Snapshot>(documentId ? `/api/details/${encodeURIComponent(documentId)}` : "/api/details", {
         method: documentId ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, source: draft, expectedCommit: snapshot.commit }),
       });
@@ -74,7 +79,7 @@ function Editor({ target, title = "Details", className = "", readOnly = false, o
     setTab("history"); setPinned(null); setDiff(null);
     if (!documentId) return;
     setBusy(true); setError(null);
-    try { const value = await request<{ revisions: DocumentRevision[] }>(`/api/details/${encodeURIComponent(documentId)}/history`); setRevisions(value.revisions); }
+    try { const value = await datasetRequest<{ revisions: DocumentRevision[] }>(`/api/details/${encodeURIComponent(documentId)}/history`); setRevisions(value.revisions); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "History could not be loaded."); }
     finally { setBusy(false); }
   }
@@ -83,11 +88,11 @@ function Editor({ target, title = "Details", className = "", readOnly = false, o
     setBusy(true); setError(null); setPinned(null); setDiff(null);
     try {
       const root = `/api/details/${encodeURIComponent(documentId)}`;
-      const value = await request<Snapshot>(`${root}/revisions/${revision.commit}`);
+      const value = await datasetRequest<Snapshot>(`${root}/revisions/${revision.commit}`);
       setPinned(value);
       const previous = revisions[index + 1];
       if (previous) {
-        const result = await request<{ diff: string }>(`${root}/diff?${new URLSearchParams({ from: previous.commit, to: revision.commit })}`);
+        const result = await datasetRequest<{ diff: string }>(`${root}/diff?${new URLSearchParams({ from: previous.commit, to: revision.commit })}`);
         setDiff(result.diff);
       }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Revision could not be loaded."); }

@@ -4,6 +4,8 @@ Updated September 16, 2026. The [redesign specification](docs/design/redesign-sp
 
 ## Implemented
 
+- Named, isolated Live/test datasets in one DB instance, with a sidebar switcher and resumable fictional family seed.
+- Trash with archive restoration, dependency review, and protected permanent deletion.
 - Concrete entity instances with effective/recorded history.
 - Freely authored arrangement types, copied role templates, arrangement-local role definitions, dated assignments, and independent sub-arrangements.
 - Many-to-many tags, including project groupings. No project or collection primitive.
@@ -17,7 +19,7 @@ Updated September 16, 2026. The [redesign specification](docs/design/redesign-sp
 
 ## Verified
 
-- 83 automated JavaScript/TypeScript tests across eight files pass, including the independent financial/planning audit regressions.
+- 88 automated JavaScript/TypeScript tests across nine files pass, including the independent financial/planning audit regressions.
 - 14 Python lifecycle/export-verification tests pass.
 - Full application/backend TypeScript checks pass.
 - Production build passes (existing workspace-root and Browserslist-age warnings are nonblocking).
@@ -25,7 +27,10 @@ Updated September 16, 2026. The [redesign specification](docs/design/redesign-sp
 - Browser testing found a stale in-memory auth token during identity switching. Login, signup and sign-out now perform full navigation to discard the old Convex connection. The refreshed session creates records under the correct owner and accesses their Git details.
 - Rehearsal and live migrations each ran twice; replay created no duplicates. Full snapshot comparisons preserved 10 entities, one arrangement, four auth users, all existing sessions and original owners. No rejects, warnings, issues, or legacy Property records require review.
 
-See [implementation decisions and evidence](docs/decisions/redesign-implementation.md), [backend](docs/decisions/backend-redesign.md), [UI](docs/decisions/ui-redesign.md), [Git details](docs/decisions/git-details.md), and [planning corrections](docs/decisions/planning-integration.md).
+- Dataset backfill assigned 69 existing records to Live; comparison with the pre-change backup found no other value changes. The newest data-bearing local account has the Morgan family sample: 31 entities, 27 arrangements, three charts, 51 ledger accounts, 308 posted journals, 738 postings, 19 obligations and 18 Git documents.
+- Browser verification covered sample-loader retry, switching Live ↔ test-data1, Markdown notes, balanced trial balance, and create/archive/restore/permanent-delete of a disposable test record. That test record was removed and the selection restored to Live.
+
+See [dataset, deletion and sample decisions](docs/decisions/datasets-trash-and-family-sample.md), [implementation decisions and evidence](docs/decisions/redesign-implementation.md), [backend](docs/decisions/backend-redesign.md), [UI](docs/decisions/ui-redesign.md), [Git details](docs/decisions/git-details.md), and [planning corrections](docs/decisions/planning-integration.md).
 
 ## Deliberate boundaries
 

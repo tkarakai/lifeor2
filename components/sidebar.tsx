@@ -1,4 +1,5 @@
 "use client";
+import { DatasetSwitcher } from "./dataset-switcher";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,8 @@ const routes = [
   ["Reports", "/dashboard/finance/reports"],
   ["Obligations", "/dashboard/finance/obligations"],
   ["Planning", "/dashboard/planning"],
+  ["Trash", "/dashboard/trash"],
+  ["Datasets", "/dashboard/datasets"],
 ];
 export function Sidebar() {
   const pathname = usePathname();
@@ -29,6 +32,7 @@ export function Sidebar() {
       >
         LifeOR2
       </Link>
+      <DatasetSwitcher />
       <nav aria-label="Main navigation" className="flex-1 space-y-1">
         {routes.map(([label, href]) => (
           <Link

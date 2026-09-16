@@ -1,5 +1,5 @@
 import { v, type Infer } from "convex/values";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./lib/scoped";
 import type { Doc, Id } from "./_generated/dataModel";
 import { owned, ownedTarget, requireUser } from "./lib/access";
 import {
