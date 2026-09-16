@@ -39,6 +39,25 @@ export const manifest = {
   actual_boundary: v.number(),
 };
 export const planningSchema = {
+  cash_flow_route: defineTable({
+    ...root,
+    source: v.union(
+      v.object({
+        kind: v.literal("monetary_obligation"),
+        id: v.id("monetary_obligation"),
+      }),
+      v.object({
+        kind: v.literal("commitment_schedule"),
+        id: v.id("commitment_schedule"),
+      }),
+    ),
+    currency: v.string(),
+    from_account_id: v.optional(v.id("ledger_account")),
+    to_account_id: v.optional(v.id("ledger_account")),
+    cash_minor_units: v.optional(v.number()),
+    monthly_days: v.optional(v.array(v.number())),
+    revision: v.number(),
+  }),
   commitment_schedule: defineTable({
     ...root,
     arrangement_id: v.id("arrangement"),

@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "local:setup": "python3 scripts/local_convex.py setup",
-    "typecheck": "tsc --noEmit --incremental false",
+    "typecheck": "tsc --noEmit --incremental false && tsc --project convex/tsconfig.json --noEmit",
     "test": "vitest run",
     "local:configure": "python3 scripts/local_convex.py configure",
     "convex:stop": "python3 scripts/local_convex.py stop",

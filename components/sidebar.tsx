@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { signOut, useSession } from "@/lib/auth-client";
 import { Action } from "@/components/record-ui";
 const routes = [
+  ["Observatory", "/dashboard/insights"],
   ["Records", "/dashboard"],
   ["Entities", "/dashboard/entities"],
   ["Arrangements", "/dashboard/arrangements"],

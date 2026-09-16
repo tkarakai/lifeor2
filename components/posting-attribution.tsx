@@ -115,7 +115,13 @@ function AttributionForm({
         Explain the existing{" "}
         {formatMoney(posting.minor_units!, posting.currency)} posting. Portions
         must sum to its signed amount; each portion’s beneficiary shares must
-        total 10,000 basis points (100%).
+        total 10,000 basis points (100%). Assign rent and mortgage activity to
+        the house, salary to the earner, insurance and fuel to the car, a shared
+        TV to the family, or a personal art kit to that family member. Split
+        portions to share a cost across several subjects. Beneficiaries answer
+        who benefited; the counterparty is the other party, such as the employer
+        or shop. Classify each relevant posting: the income/expense line for
+        earned/incurred results and the bank line for cash received/paid.
       </p>
       {portions.map((p, index) => (
         <div key={index} className="space-y-4 rounded-md border p-4">
@@ -129,14 +135,15 @@ function AttributionForm({
                 required
               />
             </Field>
-            <Field label="Subject (what it was for)">
+            <Field label="Earner / cost subject (person, asset or family)">
               <select
                 className={controlClass}
                 value={p.subject}
                 onChange={(e) =>
                   change(index, {
                     subject: e.target.value,
-                    unclassified: !e.target.value && !p.arrangement,
+                    unclassified:
+                      !e.target.value && !p.arrangement && !p.counterparty,
                   })
                 }
               >
@@ -151,7 +158,8 @@ function AttributionForm({
                 onChange={(e) =>
                   change(index, {
                     arrangement: e.target.value,
-                    unclassified: !e.target.value && !p.subject,
+                    unclassified:
+                      !e.target.value && !p.subject && !p.counterparty,
                   })
                 }
               >
@@ -168,7 +176,11 @@ function AttributionForm({
                 className={controlClass}
                 value={p.counterparty}
                 onChange={(e) =>
-                  change(index, { counterparty: e.target.value })
+                  change(index, {
+                    counterparty: e.target.value,
+                    unclassified:
+                      !e.target.value && !p.subject && !p.arrangement,
+                  })
                 }
               >
                 <option value="">Not recorded</option>

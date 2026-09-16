@@ -30,7 +30,7 @@ The redesigned backbone includes concrete entities, custom arrangement types and
 
 Use the sidebar **Dataset** selector to switch between Live and test workspaces in the same database. **Datasets** can create empty test workspaces or prepare the fictional Morgan family sample. **Trash** restores archived records or permanently deletes unused ones after a dependency review. See [dataset and sample decisions](docs/decisions/datasets-trash-and-family-sample.md).
 
-The [redesign specification](docs/design/redesign-spec.md) is implemented and the existing local data migrated. See [implementation decisions and validation](docs/decisions/redesign-implementation.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). Forecast calculation, bank import, advanced reconciliation UI, and analytics remain outside this foundation release. The [original specification](docs/design/spec_0.1.md) is historical context.
+The [redesign specification](docs/design/redesign-spec.md) is implemented and the existing local data migrated. See [implementation decisions and validation](docs/decisions/redesign-implementation.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). The **Observatory** adds 27 interactive views for finances, family relationships, ownership, events, measurements, obligations, budgets, and exploratory planning. Use **All views** to compare variations and star the ones you want in **My collection**. See the [visual explorer guide](docs/decisions/visual-observatory.md). A persisted forecast calculation engine, bank import, and advanced reconciliation UI remain outside this release. The [original specification](docs/design/spec_0.1.md) is historical context.
 
 ## Local architecture
 

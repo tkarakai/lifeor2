@@ -2,6 +2,11 @@ import Link from "next/link";
 import { Page, Panel } from "@/components/record-ui";
 const sections = [
   [
+    "Family observatory",
+    "27 interactive views of your money, family, history, and possibilities ahead.",
+    "insights",
+  ],
+  [
     "Entities",
     "People, organizations, animals, and identifiable assets.",
     "entities",

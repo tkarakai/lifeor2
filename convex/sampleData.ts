@@ -8,7 +8,7 @@ import { query, scopedWriter } from "./lib/scoped";
 import { requireUser } from "./lib/access";
 import { ensureLive } from "./datasets";
 import { authComponent } from "./auth";
-import type { Id } from "./_generated/dataModel";
+import type { Id, Doc } from "./_generated/dataModel";
 import { writeJournal, attribution, accountBalance } from "./lib/ledger";
 import {
   loans,
@@ -17,6 +17,7 @@ import {
   SAMPLE_VERSION,
   sampleNotes,
 } from "../lib/family-fixture";
+import { allocate } from "./lib/domain";
 import type { Target } from "./lib/access";
 const at = (date: string) => Date.parse(date + "T12:00:00Z");
 const currency = "USD";
@@ -751,7 +752,10 @@ async function appendMonth(
     throw new Error("Invalid sample month");
   const { ctx, registry: r, dataset } = await context(raw, userId, datasetId);
   const next = dataset.seed_next_month ?? 0;
-  if (monthIndex < next) return { nextMonth: next, ready: next === 9 };
+  if (monthIndex < next) {
+    if (next === 9) await enhanceCashAndSubjects(raw, userId, datasetId);
+    return { nextMonth: next, ready: next === 9 };
+  }
   if (monthIndex !== next) throw new Error("Build sample months in order");
   const month = `2026-${String(monthIndex + 1).padStart(2, "0")}`;
   const now = Date.now(),
@@ -1389,6 +1393,7 @@ async function appendMonth(
     seed_next_month: monthIndex + 1,
     seed_status: monthIndex === 8 ? "ready" : "building",
   });
+  if (monthIndex === 8) await enhanceCashAndSubjects(raw, userId, datasetId);
   return { nextMonth: monthIndex + 1, ready: monthIndex === 8 };
 }
 export const prepare = mutation({
@@ -1468,4 +1473,196 @@ export const prepareDocumentsForOwner = internalMutation({
       }
     return result;
   },
+});
+
+/** Idempotent, test-only repair. Monetary values, journals, observations and settlements stay intact. */
+async function enhanceCashAndSubjects(
+  raw: MutationCtx,
+  userId: string,
+  datasetId: Id<"dataset">,
+) {
+  const { ctx, registry: r, dataset } = await context(raw, userId, datasetId);
+  if (dataset.kind !== "test" || dataset.seed_status !== "ready")
+    throw new Error("Only a ready fictional test dataset can be enhanced");
+  const marker = "cash-subjects-v1";
+  if (r.has(marker))
+    return { updatedPostings: 0, routes: 0, alreadyApplied: true };
+  const [journals, postings, sets, parts, beneficiaries, tags, routes] =
+    await Promise.all([
+      ctx.db.query("journal_entry").collect(),
+      ctx.db.query("posting").collect(),
+      ctx.db.query("posting_attribution_set").collect(),
+      ctx.db.query("posting_attribution").collect(),
+      ctx.db.query("attribution_beneficiary").collect(),
+      ctx.db.query("tag_assignment").collect(),
+      ctx.db.query("cash_flow_route").collect(),
+    ]);
+  const latest = new Map<string, Doc<"posting_attribution_set">>();
+  for (const set of sets)
+    if ((latest.get(set.posting_id)?.revision ?? 0) < set.revision)
+      latest.set(set.posting_id, set);
+  let updatedPostings = 0,
+    routeCount = 0;
+  const e = (key: string) => id(r, key, "entity"),
+    a = (key: string) => id(r, key, "ledger_account");
+  for (const journal of journals.filter(
+    (j) => j.status === "posted" && !j.reverses_id,
+  )) {
+    const lines = postings.filter((p) => p.je_id === journal._id);
+    const templateLine = lines.find(
+      (p) => latest.get(p._id)?.reason === "Fictional sample classification",
+    );
+    if (!templateLine) continue;
+    const template = parts.find(
+      (p) => p.set_id === latest.get(templateLine._id)!._id,
+    );
+    if (!template) continue;
+    const sourceBeneficiaries = beneficiaries
+      .filter((b) => b.attribution_id === template._id)
+      .map((b) => ({
+        entity_id: b.entity_id,
+        unassigned: b.unassigned,
+        share_bps: b.share_bps,
+      }));
+    const sourceTags = tags.filter(
+      (t) => t.target.id === template._id && t.removed_at === undefined,
+    );
+    const split = lines.some((p) => p.account_id === a("fuel"))
+      ? [
+          { key: "civic", bps: 4000 },
+          { key: "outback", bps: 3000 },
+          { key: "asset-car", bps: 3000 },
+        ]
+      : lines.some((p) => p.account_id === a("insurance"))
+        ? [
+            { key: "civic", bps: 2500 },
+            { key: "outback", bps: 2500 },
+            { key: "asset-car", bps: 2500 },
+            { key: "family", bps: 2500 },
+          ]
+        : lines.some((p) => p.account_id === a("school"))
+          ? [
+              { key: "emma", bps: 5000 },
+              { key: "noah", bps: 5000 },
+            ]
+          : null;
+    for (const p of lines) {
+      const prev = latest.get(p._id);
+      if (
+        prev &&
+        prev.reason !== "Fictional sample classification" &&
+        (prev.revision > 1 || prev.reason)
+      )
+        continue;
+      if (p._id === templateLine._id && !split) continue;
+      const amount = p.minor_units;
+      if (amount === undefined) continue;
+      const allocations = split
+        ? allocate(amount, split)
+        : [{ key: "original", minor_units: amount }];
+      const newSet = await attribution(
+        ctx,
+        userId,
+        p,
+        allocations.map((portion) => ({
+          minor_units: portion.minor_units,
+          subject_entity_id:
+            portion.key === "original"
+              ? template.subject_entity_id
+              : e(portion.key),
+          arrangement_id: template.arrangement_id,
+          counterparty_entity_id: template.counterparty_entity_id,
+          unclassified: template.unclassified,
+          beneficiaries: sourceBeneficiaries,
+        })),
+        "Fictional sample v2: classify every ledger leg; vehicle fuel 40/30/30, insurance 25% per car and 25% family life cover, school 50/50 children",
+      );
+      for (const part of await ctx.db
+        .query("posting_attribution")
+        .withIndex("by_set", (q) => q.eq("set_id", newSet))
+        .collect())
+        for (const tag of sourceTags)
+          await ctx.db.insert("tag_assignment", {
+            user_id: userId,
+            tag_id: tag.tag_id,
+            target: { kind: "posting_attribution", id: part._id },
+            added_at: Date.now(),
+          });
+      updatedPostings++;
+    }
+  }
+  const saveRoute = async (
+    source:
+      | { kind: "commitment_schedule"; id: Id<"commitment_schedule"> }
+      | { kind: "monetary_obligation"; id: Id<"monetary_obligation"> },
+    from?: Id<"ledger_account">,
+    to?: Id<"ledger_account">,
+    amount?: number,
+    days?: number[],
+  ) => {
+    if (routes.some((r) => r.source.id === source.id)) return;
+    await ctx.db.insert("cash_flow_route", {
+      user_id: userId,
+      created_at: Date.now(),
+      source,
+      currency: "USD",
+      from_account_id: from,
+      to_account_id: to,
+      cash_minor_units: amount,
+      monthly_days: days,
+      revision: 1,
+    });
+    routeCount++;
+  };
+  for (const loan of loans) {
+    const v = await ctx.db.get(
+      id(r, `schedule-loan-${loan.key}`, "commitment_schedule_version"),
+    );
+    if (v)
+      await saveRoute(
+        { kind: "commitment_schedule", id: v.schedule_id },
+        a("checking1"),
+      );
+  }
+  for (const key of ["oak", "maple"]) {
+    const v = await ctx.db.get(
+      id(r, `schedule-rent-${key}`, "commitment_schedule_version"),
+    );
+    if (v)
+      await saveRoute(
+        { kind: "commitment_schedule", id: v.schedule_id },
+        undefined,
+        a("checking1"),
+      );
+  }
+  const salary = await ctx.db.get(
+    id(r, "salary-schedule", "commitment_schedule_version"),
+  );
+  if (salary)
+    await saveRoute(
+      { kind: "commitment_schedule", id: salary.schedule_id },
+      undefined,
+      a("checking1"),
+      910000,
+      [15, 28],
+    );
+  for (const o of await ctx.db.query("monetary_obligation").collect())
+    if (o.arrangement_id === id(r, "remodel-contract", "arrangement"))
+      await saveRoute(
+        { kind: "monetary_obligation", id: o._id },
+        a("checking1"),
+      );
+  await ctx.db.insert("sample_record", {
+    user_id: userId,
+    key: marker,
+    target: {
+      kind: "chart_of_accounts",
+      id: id(r, "chart-household", "chart_of_accounts"),
+    },
+  });
+  return { updatedPostings, routes: routeCount, alreadyApplied: false };
+}
+export const enhanceForOwner = internalMutation({
+  args: { userId: v.string(), datasetId: v.id("dataset") },
+  handler: (ctx, a) => enhanceCashAndSubjects(ctx, a.userId, a.datasetId),
 });

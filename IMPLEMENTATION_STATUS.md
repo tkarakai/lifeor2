@@ -15,11 +15,12 @@ Updated September 16, 2026. The [redesign specification](docs/design/redesign-sp
 - Financial account mappings, monetary obligations, adjustments, canonical payment capacity, partial settlements, and versioned commitment schedules.
 - Source statements/observations, reconciliation matching and accepted anchors as backend foundations.
 - Immutable plan versions, budget targets, scenario overrides, explicit assumptions, expected flows, and frozen forecast input manifests.
+- Family Observatory: 27 interactive views, sortable and filterable data, chart variations, per-dataset browser preferences, exact-data exports, and cash/savings/debt scenario calculators. See [scope and calculations](docs/decisions/visual-observatory.md).
 - Migrated entity, arrangement, event and finance UI plus type/template, tag, measurement, obligation and basic planning screens. Advanced provenance-heavy operations remain API-level workflows as documented in the UI report.
 
 ## Verified
 
-- 88 automated JavaScript/TypeScript tests across nine files pass, including the independent financial/planning audit regressions.
+- 97 automated JavaScript/TypeScript tests across eleven files pass, including the independent financial/planning audit regressions.
 - 14 Python lifecycle/export-verification tests pass.
 - Full application/backend TypeScript checks pass.
 - Production build passes (existing workspace-root and Browserslist-age warnings are nonblocking).
@@ -34,7 +35,7 @@ See [dataset, deletion and sample decisions](docs/decisions/datasets-trash-and-f
 
 ## Deliberate boundaries
 
-No forecast calculation engine, bank import, expanded analytics dashboard, notification delivery, or concurrent document merge UI is included. Plans/runs freeze selected inputs; they do not claim calculated results. Reconciliation and several advanced financial operations have backend APIs but no complete user workflow yet. This remains a local prototype with list-based queries, not a large-dataset or production deployment release.
+No persisted forecast calculation engine, bank import, notification delivery, or concurrent document merge UI is included. The Observatory provides explicitly labeled local what-if calculations; it does not evaluate or publish saved forecast runs. Plans/runs freeze selected inputs; they do not claim calculated results. Reconciliation and several advanced financial operations have backend APIs but no complete user workflow yet. This remains a local prototype with list-based queries, not a large-dataset or production deployment release.
 
 Authentication remains Better Auth magic links with locally logged mock mail. No external messages are sent; email/password and social OAuth are not enabled. Git details assume one writer and require the separate content repository to be backed up with the database.
 

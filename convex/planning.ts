@@ -1048,7 +1048,7 @@ type OccurrenceSource = {
   assumption_id?: Id<"forecast_assumption">;
   occurrence_key: string;
 };
-async function canonicalOccurrence(
+export async function canonicalOccurrence(
   ctx: QueryCtx,
   source: OccurrenceSource,
   user: string,
@@ -1125,7 +1125,7 @@ async function canonicalOccurrence(
   }
   return `assumption:${source.assumption_id}:${source.occurrence_key}`;
 }
-async function incurredObligation(
+export async function incurredObligation(
   ctx: QueryCtx,
   source: OccurrenceSource,
   user: string,
@@ -1160,7 +1160,7 @@ async function incurredObligation(
     );
   return matches[0] ?? null;
 }
-async function remaining(ctx: QueryCtx, flow: Doc<"expected_flow">) {
+export async function remaining(ctx: QueryCtx, flow: Doc<"expected_flow">) {
   if (flow.cancelled_at !== undefined) return 0;
   const obligation = await incurredObligation(ctx, flow, flow.user_id);
   if (obligation) {
