@@ -1,5 +1,4 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { defineSchema } from "convex/server";
 import { coreSchema } from "./schema/core";
 import { financeSchema } from "./schema/finance";
 

@@ -1,12 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import { owned, requireUser, assertUnreferenced } from "./lib/access";
 
 // Query: List all entities for the current user
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       return [];
     }
@@ -22,12 +23,9 @@ export const list = query({
 export const get = query({
   args: { id: v.id("entity") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
-    return await ctx.db.get(args.id);
+    return await owned(ctx, "entity", args.id, user._id);
   },
 });
 
@@ -38,7 +36,7 @@ export const create = mutation({
     display_name: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("User not found");
     }
@@ -61,11 +59,9 @@ export const update = mutation({
     display_name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "entity", args.id, user._id);
     const { id, ...updates } = args;
     await ctx.db.patch(id, updates);
     return id;
@@ -76,10 +72,10 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("entity") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
+
+    await owned(ctx, "entity", args.id, user._id);
+    await assertUnreferenced(ctx, "entity", args.id);
 
     await ctx.db.delete(args.id);
   },

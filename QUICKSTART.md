@@ -6,7 +6,7 @@
 - Python 3 (standard library only).
 - An existing saved Convex deployment, including `config.json`, `convex_local_backend.sqlite3`, and `convex_local_storage/`.
 - Its matching cached backend executable at `~/.cache/convex/binaries/<backendVersion>/convex-local-backend`.
-- Free ports **3000, 3210, and 3211**.
+- Free ports **3000, 3240, and 3241**.
 
 This guide restores the database already on this Mac. It does not provision a new database or download a backend. The recovery trial succeeded with backend `precompiled-2026-01-15-002379a` and Convex CLI `1.31.5`; no upgrade was necessary.
 
@@ -34,7 +34,7 @@ The setup command:
 2. Copies the database and file storage into `.convex/standalone/`.
 3. Preserves the source instance identity and admin credentials.
 4. Generates a persistent local auth secret.
-5. Backs up the previous `.env.local` to `.convex/standalone/previous.env.local`.
+5. Backs up the previous configuration and `.env.local` in `.convex/standalone/configuration-backup-*/`.
 6. Configures `.env.local` for the standalone backend, removing the old managed deployment selection.
 
 The original source files stay unchanged. Setup refuses to overwrite an existing `.convex/standalone/` directory. Once configured, skip this step on subsequent starts.
@@ -82,7 +82,7 @@ bunx convex logs
 
 ## Everyday startup and shutdown
 
-Run `bun run convex:dev` and `bun dev` in two terminals. Ctrl+C stops each process; stopping the backend script also stops its code watcher. Data remains in `.convex/standalone/`.
+Run `bun run convex:dev` and `bun dev` in two terminals. Ctrl+C stops each process; the backend supervisor completes cleanup even if Ctrl+C is pressed repeatedly. It terminates and reaps its backend and watcher process groups. A project lock prevents two supervisors from opening the same database. Data remains in `.convex/standalone/`.
 
 The old recovery trial at `http://localhost:3020` under `/private/tmp/lifeor2-auth-trial` is separate. It is not the project's permanent setup, and trial logins/data are not automatically copied here.
 
@@ -90,15 +90,15 @@ The old recovery trial at `http://localhost:3020` under `/private/tmp/lifeor2-au
 
 | Setting | Location | Value / purpose |
 | --- | --- | --- |
-| `CONVEX_SELF_HOSTED_URL` | `.env.local` | `http://127.0.0.1:3210` |
+| `CONVEX_SELF_HOSTED_URL` | `.env.local` | `http://127.0.0.1:3240` |
 | `CONVEX_SELF_HOSTED_ADMIN_KEY` | `.env.local` | Private credential recovered from saved state |
-| `NEXT_PUBLIC_CONVEX_URL` | `.env.local` | `http://127.0.0.1:3210` |
-| `NEXT_PUBLIC_CONVEX_SITE_URL` | `.env.local` | `http://127.0.0.1:3211` |
+| `NEXT_PUBLIC_CONVEX_URL` | `.env.local` | `http://127.0.0.1:3240` |
+| `NEXT_PUBLIC_CONVEX_SITE_URL` | `.env.local` | `http://127.0.0.1:3241` |
 | `NEXT_PUBLIC_SITE_URL` | `.env.local` | `http://localhost:3000` |
 | `SITE_URL` | Convex backend environment | `http://localhost:3000`, set by startup script |
 | `BETTER_AUTH_SECRET` | Convex backend environment | Persistent secret loaded by startup script |
 
-The standalone script fixes these local ports/origin. Changing only one frontend URL is insufficient; change the script's backend ports and auth origin together if customization is needed. Remove conflicting exported Convex variables from your shell if invoking the CLI manually.
+This project uses its own database directory and dedicated ports, without a Convex cloud account. Other projects may keep using 3210/3211. To change ports with this backend stopped, run `bun run local:configure --cloud-port 3240 --site-port 3241`; this backs up the configuration and updates both backend ports and frontend URLs. Restart Next.js afterward. The auth origin remains `http://localhost:3000`. Remove conflicting exported Convex variables from your shell if invoking the CLI manually.
 
 **Back up the entire `.convex/standalone/` directory with the backend stopped**, along with `.env.local`. The directory includes SQLite, file/module storage, configuration, and the auth secret. Copying only the SQLite file is not a complete backup. Treat backups as private.
 
@@ -110,11 +110,13 @@ These come from the managed-project configuration path. Complete `local:setup` a
 
 ### Connection refused / unavailable auth
 
-Keep the backend terminal running and wait for deployment to finish. Confirm database URL uses **3210**, HTTP/auth URL uses **3211**, and Next.js uses **localhost:3000**. Restart Next.js after changing `.env.local`.
+Keep the backend terminal running and wait for deployment to finish. Confirm database URL uses **3240**, HTTP/auth URL uses **3241**, and Next.js uses **localhost:3000**. Restart Next.js after changing `.env.local`.
 
 ### Port already in use
 
-Stop the other process using that port. Do not accept Next.js switching to 3001 without also configuring the auth origin. The backend script reports occupied database ports before opening its database.
+Both `bun dev` and `bun run convex:dev` show the listening PID, executable, and working directory when their ports are occupied. In an interactive terminal they offer to send SIGTERM; the default is **No**. Non-interactive runs exit without stopping anything. If a process does not release the port, startup stops without a forced kill. Confirm the displayed project before accepting.
+
+For a backend port conflict, choose two unused ports with `bun run local:configure --cloud-port 3230 --site-port 3231` while this backend is stopped. Other projects can keep running. Do not accept Next.js switching to 3001 without also configuring the auth origin. The backend script reports occupied database ports before opening its database.
 
 ### No email or expired code
 
@@ -137,3 +139,16 @@ The component definition belongs in `convex/convex.config.ts`. Wait for `bun run
 After login: create a `ChartOfAccounts` arrangement, create Cash and Revenue ledger accounts, record an event, and create a balanced journal entry (Cash +100, Revenue -100, same currency). Then inspect Finance → Reports.
 
 This is a suggested manual check, not a claim that every finance workflow is tested. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+
+
+### Stop a backend left running after an interrupted terminal
+
+```bash
+bun run convex:stop
+```
+
+This works without an interactive prompt: it stops only this project's recorded supervisor/child processes (checking process identity to avoid stale PIDs), or a legacy backend whose executable and exact database path match this project. It does not kill an unrelated app merely because it uses the same port. Running it again is safe. Stop the backend before changing ports. Then restart with `bun run convex:dev`.
+
+Owned child groups get a graceful shutdown interval before forced termination. Port-conflict prompts for unrelated listeners remain default-No and never force-kill. Bun's piped stdin falls back to the controlling terminal when available.
+
+Run `bun run test:local` for port-conflict and process-lifecycle regression tests.

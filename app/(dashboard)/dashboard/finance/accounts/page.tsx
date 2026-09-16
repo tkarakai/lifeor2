@@ -46,16 +46,20 @@ export default function AccountsPage() {
     const selectedType = accountTypes.find((t) => t.value === type);
     if (!selectedType) return;
 
-    await createAccount({
-      coaArrangementId: coaArrangementId as any,
-      name,
-      type,
-      normal_balance: selectedType.normalBalance as "Debit" | "Credit",
-      currency,
-    });
+    try {
+      await createAccount({
+        coaArrangementId: coaArrangementId as any,
+        name,
+        type,
+        normal_balance: selectedType.normalBalance as "Debit" | "Credit",
+        currency,
+      });
 
-    setName("");
-    setShowForm(false);
+      setName("");
+      setShowForm(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not save record");
+    }
   };
 
   // Group accounts by type

@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "python3 scripts/local_frontend.py",
     "convex:dev": "python3 scripts/local_convex.py dev",
     "build": "next build",
     "start": "next start",
     "local:setup": "python3 scripts/local_convex.py setup",
-    "typecheck": "tsc --noEmit --incremental false"
+    "typecheck": "tsc --noEmit --incremental false",
+    "test": "vitest run",
+    "local:configure": "python3 scripts/local_convex.py configure",
+    "convex:stop": "python3 scripts/local_convex.py stop",
+    "test:local": "python3 -m unittest discover -s tests/python"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.10.10",
@@ -26,11 +30,14 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
+    "convex-test": "0.0.41",
     "eslint": "^9.39.2",
-    "eslint-config-next": "^16.1.4"
+    "eslint-config-next": "^16.1.4",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.1"
   }
 }

@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/sidebar";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useConvexAuth } from "convex/react";
 import { useEffect } from "react";
 
 export default function DashboardLayout({
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -20,7 +22,7 @@ export default function DashboardLayout({
   }, [session, isPending, router]);
 
   // Show loading state while checking authentication
-  if (isPending) {
+  if (isPending || (session && convexLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -31,7 +33,7 @@ export default function DashboardLayout({
   }
 
   // If not authenticated, don't render the dashboard (redirect is happening)
-  if (!session) {
+  if (!session || !isAuthenticated) {
     return null;
   }
 

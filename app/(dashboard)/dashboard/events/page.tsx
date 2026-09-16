@@ -43,13 +43,17 @@ export default function EventsPage() {
       setOccurredAt(new Date().toISOString().slice(0, 16));
       setShowForm(false);
     } catch (error) {
-      alert("Invalid JSON payload");
+      alert(error instanceof Error ? error.message : "Could not save event");
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this event?")) {
-      await deleteEvent({ id: id as any });
+      try {
+        await deleteEvent({ id: id as any });
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "Could not delete record");
+      }
     }
   };
 

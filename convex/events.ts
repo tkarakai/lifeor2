@@ -1,12 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import { owned, requireUser, assertUnreferenced, validateJson, finite } from "./lib/access";
 
 // Query: List all events for the current user
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       return [];
     }
@@ -23,12 +24,9 @@ export const list = query({
 export const get = query({
   args: { id: v.id("event") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
-    return await ctx.db.get(args.id);
+    return await owned(ctx, "event", args.id, user._id);
   },
 });
 
@@ -36,11 +34,9 @@ export const get = query({
 export const getAffects = query({
   args: { eventId: v.id("event") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "event", args.eventId, user._id);
     return await ctx.db
       .query("event_affects")
       .withIndex("by_event", (q) => q.eq("event_id", args.eventId))
@@ -56,11 +52,13 @@ export const create = mutation({
     payload_json: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("User not found");
     }
 
+    finite(args.occurred_at, "Event date");
+    validateJson(args.payload_json);
     const eventId = await ctx.db.insert("event", {
       kind: args.kind,
       occurred_at: args.occurred_at,
@@ -81,11 +79,12 @@ export const addAffects = mutation({
     targetId: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "event", args.eventId, user._id);
+    const targetId = ctx.db.normalizeId(args.targetType, args.targetId);
+    if (!targetId) throw new Error("Invalid target ID");
+    await owned(ctx, args.targetType, targetId, user._id);
     const affectsId = await ctx.db.insert("event_affects", {
       event_id: args.eventId,
       target_type: args.targetType,
@@ -100,10 +99,10 @@ export const addAffects = mutation({
 export const remove = mutation({
   args: { id: v.id("event") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
+
+    await owned(ctx, "event", args.id, user._id);
+    await assertUnreferenced(ctx, "event", args.id);
 
     // Delete associated affects
     const affects = await ctx.db

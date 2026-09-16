@@ -31,19 +31,27 @@ export default function ArrangementsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createArrangement({
-      kind,
-      valid_from: new Date(validFrom).getTime(),
-      valid_to: validTo ? new Date(validTo).getTime() : undefined,
-    });
-    setValidFrom(new Date().toISOString().split("T")[0]);
-    setValidTo("");
-    setShowForm(false);
+    try {
+      await createArrangement({
+        kind,
+        valid_from: new Date(validFrom).getTime(),
+        valid_to: validTo ? new Date(validTo).getTime() : undefined,
+      });
+      setValidFrom(new Date().toISOString().split("T")[0]);
+      setValidTo("");
+      setShowForm(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not save record");
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this arrangement?")) {
-      await deleteArrangement({ id: id as any });
+      try {
+        await deleteArrangement({ id: id as any });
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "Could not delete record");
+      }
     }
   };
 

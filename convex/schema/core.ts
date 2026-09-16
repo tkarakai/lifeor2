@@ -8,7 +8,7 @@ export const coreSchema = {
   entity: defineTable({
     kind: v.string(), // e.g., "Person", "LLC", "House", "Car", "Bank"
     display_name: v.string(),
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   }).index("by_user", ["user_id"]),
 
   // Arrangement: A relationship or agreement with temporal validity
@@ -18,11 +18,12 @@ export const coreSchema = {
     valid_to: v.optional(v.number()), // Unix timestamp, open-ended if null
     parent_arrangement_id: v.optional(v.id("arrangement")), // For hierarchical arrangements
     supersedes_arrangement_id: v.optional(v.id("arrangement")), // For versioning
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   })
     .index("by_user", ["user_id"])
     .index("by_valid_time", ["valid_from", "valid_to"])
-    .index("by_parent", ["parent_arrangement_id"]),
+    .index("by_parent", ["parent_arrangement_id"])
+    .index("by_supersedes", ["supersedes_arrangement_id"]),
 
   // ArrangementRole: Links entities to arrangements with a named role
   arrangement_role: defineTable({
@@ -39,7 +40,7 @@ export const coreSchema = {
     occurred_at: v.number(), // Unix timestamp when event happened
     payload_json: v.string(), // Event-specific data
     recorded_at: v.number(), // Unix timestamp when event was recorded
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   })
     .index("by_user", ["user_id"])
     .index("by_occurred_at", ["occurred_at"]),
@@ -66,7 +67,7 @@ export const coreSchema = {
     valid_from: v.number(), // Unix timestamp
     valid_to: v.optional(v.number()), // Unix timestamp, open-ended if null
     recorded_at: v.number(), // Unix timestamp when property was recorded
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   })
     .index("by_owner", ["owner_type", "owner_id"])
     .index("by_owner_name", ["owner_type", "owner_id", "name"])
@@ -89,7 +90,7 @@ export const coreSchema = {
     value_json: v.string(), // Measurement value as JSON (could include unit, currency, etc.)
     as_of: v.number(), // Unix timestamp this measurement applies to
     recorded_at: v.number(), // Unix timestamp when measurement was recorded
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   })
     .index("by_owner", ["owner_type", "owner_id"])
     .index("by_owner_name", ["owner_type", "owner_id", "name"])

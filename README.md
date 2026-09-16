@@ -22,23 +22,23 @@ bun dev
 
 Open **http://localhost:3000/login**. Enter your email, then paste the login code printed in **Terminal 1**. Emails are mocked: nothing is delivered to an inbox, and there is no password to remember. Codes expire after 10 minutes.
 
-Stop each terminal with Ctrl+C. Local data persists between restarts.
+Stop each terminal with Ctrl+C. Use `bun run convex:stop` to stop this project’s backend from another terminal or recover a leftover process. Local data persists between restarts.
 
 ## Current status
 
 The code includes entity, arrangement, and event screens; a chart of accounts; journal entries with double-entry validation; and a trial balance report. Authentication uses Better Auth's magic-link plugin, with its tokens entered as login codes.
 
-This is an unfinished prototype. Reconciliation, forecasting, automated tests, and further UI/error-handling work remain. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verified behavior and limitations. The broader design is in [docs/design/spec_0.1.md](docs/design/spec_0.1.md).
+This is an unfinished prototype. Reconciliation, forecasting, and further UI/error-handling work remain. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verified behavior and limitations. The broader design is in [docs/design/spec_0.1.md](docs/design/spec_0.1.md).
 
 ## Local architecture
 
 | Process | Address | Purpose |
 | --- | --- | --- |
 | Next.js | `http://localhost:3000` | Frontend and `/api/auth/*` proxy |
-| Convex backend | `http://127.0.0.1:3210` | Queries, mutations, subscriptions |
-| Convex HTTP endpoint | `http://127.0.0.1:3211` | Better Auth HTTP handlers |
+| Convex backend | `http://127.0.0.1:3240` | Queries, mutations, subscriptions |
+| Convex HTTP endpoint | `http://127.0.0.1:3241` | Better Auth HTTP handlers |
 
-`bun run convex:dev` starts the cached backend directly, configures its auth environment, and runs the Convex CLI against the self-hosted URL. The backend's optional telemetry beacon is disabled. It does not select or create a managed Convex project.
+`bun run convex:dev` starts the cached backend directly, configures its auth environment, and runs the Convex CLI against the self-hosted URL. This project uses dedicated ports 3240/3241; other projects can keep using 3210/3211. Run `bun run local:configure --cloud-port 3240 --site-port 3241` with this backend stopped to change ports and update frontend URLs together. The backend's optional telemetry beacon is disabled. It does not select or create a managed Convex project.
 
 Data, file storage, and local backend configuration live in **`.convex/standalone/`**, which Git ignores. `.env.local` contains the frontend URLs and private self-hosted admin key. Keep both out of version control.
 
@@ -53,7 +53,7 @@ Data, file storage, and local backend configuration live in **`.convex/standalon
 
 ## Development checks
 
-After starting the backend to generate Convex types, run `bun run typecheck`. Use `bun run build` for a production build. Linting and automated test runners are not configured yet.
+After starting the backend to generate Convex types, run `bun run typecheck`. Use `bun run build` for a production build. Run `bun run test` for the Convex/Better Auth regression suite. Linting is not configured yet.
 
 ## References
 

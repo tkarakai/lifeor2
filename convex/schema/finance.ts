@@ -18,7 +18,7 @@ export const financeSchema = {
     normal_balance: v.union(v.literal("Debit"), v.literal("Credit")),
     currency: v.string(), // e.g., "USD", "EUR"
     parent_account_id: v.optional(v.id("ledger_account")), // For hierarchical accounts
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   })
     .index("by_coa", ["coa_arrangement_id"])
     .index("by_user", ["user_id"]),
@@ -31,7 +31,7 @@ export const financeSchema = {
     status: v.union(v.literal("draft"), v.literal("posted")),
     source_ref: v.optional(v.string()), // External reference (e.g., invoice number)
     posted_at: v.optional(v.number()), // When it was posted (different from event.occurred_at)
-    user_id: v.id("user"),
+    user_id: v.string() // Better Auth component ID; not an app-table ID,
   })
     .index("by_event", ["event_id"])
     .index("by_coa", ["coa_arrangement_id"])

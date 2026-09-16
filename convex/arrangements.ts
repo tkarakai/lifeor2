@@ -1,14 +1,15 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import { owned, requireUser, assertUnreferenced, validateJson, finite } from "./lib/access";
 
 // Query: List all arrangements for the current user
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      throw new Error("Not authenticated");
+      return [];
     }
 
     return await ctx.db
@@ -22,7 +23,7 @@ export const list = query({
 export const listValidAt = query({
   args: { timestamp: v.number() },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       return [];
     }
@@ -36,7 +37,7 @@ export const listValidAt = query({
     return allArrangements.filter(
       (arr) =>
         arr.valid_from <= args.timestamp &&
-        (!arr.valid_to || arr.valid_to >= args.timestamp)
+        (arr.valid_to === undefined || arr.valid_to >= args.timestamp)
     );
   },
 });
@@ -45,12 +46,9 @@ export const listValidAt = query({
 export const get = query({
   args: { id: v.id("arrangement") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
-    return await ctx.db.get(args.id);
+    return await owned(ctx, "arrangement", args.id, user._id);
   },
 });
 
@@ -58,11 +56,9 @@ export const get = query({
 export const getRoles = query({
   args: { arrangementId: v.id("arrangement") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "arrangement", args.arrangementId, user._id);
     return await ctx.db
       .query("arrangement_role")
       .withIndex("by_arrangement", (q) =>
@@ -82,11 +78,19 @@ export const create = mutation({
     supersedes_arrangement_id: v.optional(v.id("arrangement")),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("User not found");
     }
 
+    finite(args.valid_from, "Start date");
+    if (args.valid_to !== undefined) {
+      finite(args.valid_to, "End date");
+      if (args.valid_to < args.valid_from) throw new Error("End date precedes start date");
+    }
+    for (const id of [args.parent_arrangement_id, args.supersedes_arrangement_id]) {
+      if (id) await owned(ctx, "arrangement", id, user._id);
+    }
     const arrangementId = await ctx.db.insert("arrangement", {
       kind: args.kind,
       valid_from: args.valid_from,
@@ -109,11 +113,11 @@ export const addRole = mutation({
     shareJson: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "arrangement", args.arrangementId, user._id);
+    await owned(ctx, "entity", args.entityId, user._id);
+    if (args.shareJson !== undefined) validateJson(args.shareJson);
     const roleId = await ctx.db.insert("arrangement_role", {
       arrangement_id: args.arrangementId,
       role_name: args.roleName,
@@ -129,10 +133,10 @@ export const addRole = mutation({
 export const remove = mutation({
   args: { id: v.id("arrangement") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
+
+    await owned(ctx, "arrangement", args.id, user._id);
+    await assertUnreferenced(ctx, "arrangement", args.id);
 
     // Delete associated roles
     const roles = await ctx.db

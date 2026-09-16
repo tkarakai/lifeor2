@@ -1,18 +1,20 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+import { owned, requireUser, requireChart, finite } from "./lib/access";
 
 // ============ LEDGER ACCOUNTS ============
 
 export const listAccounts = query({
   args: { coaArrangementId: v.optional(v.id("arrangement")) },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       return [];
     }
 
     if (args.coaArrangementId) {
+      await requireChart(ctx, args.coaArrangementId, user._id);
       return await ctx.db
         .query("ledger_account")
         .withIndex("by_coa", (q) => q.eq("coa_arrangement_id", args.coaArrangementId!))
@@ -42,11 +44,19 @@ export const createAccount = mutation({
     parent_account_id: v.optional(v.id("ledger_account")),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("User not found");
     }
 
+    await requireChart(ctx, args.coaArrangementId, user._id);
+    if (!/^[A-Z]{3}$/.test(args.currency)) throw new Error("Use a three-letter uppercase currency code");
+    if (args.parent_account_id) {
+      const parent = await owned(ctx, "ledger_account", args.parent_account_id, user._id);
+      if (parent.coa_arrangement_id !== args.coaArrangementId || parent.currency !== args.currency) {
+        throw new Error("Parent account must belong to the same chart and currency");
+      }
+    }
     const accountId = await ctx.db.insert("ledger_account", {
       coa_arrangement_id: args.coaArrangementId,
       name: args.name,
@@ -66,12 +76,13 @@ export const createAccount = mutation({
 export const listJournalEntries = query({
   args: { coaArrangementId: v.optional(v.id("arrangement")) },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       return [];
     }
 
     if (args.coaArrangementId) {
+      await requireChart(ctx, args.coaArrangementId, user._id);
       return await ctx.db
         .query("journal_entry")
         .withIndex("by_coa", (q) => q.eq("coa_arrangement_id", args.coaArrangementId!))
@@ -90,15 +101,9 @@ export const listJournalEntries = query({
 export const getJournalEntry = query({
   args: { jeId: v.id("journal_entry") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
-    const je = await ctx.db.get(args.jeId);
-    if (!je) {
-      return null;
-    }
+    const je = await owned(ctx, "journal_entry", args.jeId, user._id);
 
     const postings = await ctx.db
       .query("posting")
@@ -112,11 +117,9 @@ export const getJournalEntry = query({
 export const getPostings = query({
   args: { jeId: v.id("journal_entry") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "journal_entry", args.jeId, user._id);
     return await ctx.db
       .query("posting")
       .withIndex("by_je", (q) => q.eq("je_id", args.jeId))
@@ -141,11 +144,21 @@ export const createJournalEntry = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("User not found");
     }
 
+    await requireChart(ctx, args.coaArrangementId, user._id);
+    await owned(ctx, "event", args.eventId, user._id);
+    for (const posting of args.postings) {
+      finite(posting.amount, "Posting amount");
+      if (posting.amount === 0) throw new Error("Posting amount must be nonzero");
+      const account = await owned(ctx, "ledger_account", posting.accountId, user._id);
+      if (account.coa_arrangement_id !== args.coaArrangementId || account.currency !== posting.currency) {
+        throw new Error("Posting account must belong to the selected chart and currency");
+      }
+    }
     // CRITICAL: Validate double-entry accounting
     // For each currency, the sum of amounts must equal 0
     const byCurrency = new Map<string, number>();
@@ -155,8 +168,8 @@ export const createJournalEntry = mutation({
     }
 
     for (const [currency, sum] of byCurrency) {
-      // Allow small floating point errors (0.001)
-      if (Math.abs(sum) > 0.001) {
+      // Tolerate floating-point rounding, not fractional-cent imbalances.
+      if (!Number.isFinite(sum) || Math.abs(sum) > 0.00000001) {
         throw new Error(
           `Double-entry violation: ${currency} sum = ${sum.toFixed(2)}. ` +
             `Debits must equal credits for each currency.`
@@ -199,11 +212,9 @@ export const createJournalEntry = mutation({
 export const getAccountBalance = query({
   args: { accountId: v.id("ledger_account") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await owned(ctx, "ledger_account", args.accountId, user._id);
     const postings = await ctx.db
       .query("posting")
       .withIndex("by_account", (q) => q.eq("account_id", args.accountId))
@@ -225,11 +236,9 @@ export const getAccountBalance = query({
 export const getTrialBalance = query({
   args: { coaArrangementId: v.id("arrangement") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await requireUser(ctx);
 
+    await requireChart(ctx, args.coaArrangementId, user._id);
     const accounts = await ctx.db
       .query("ledger_account")
       .withIndex("by_coa", (q) => q.eq("coa_arrangement_id", args.coaArrangementId))
