@@ -1,5 +1,7 @@
 # Implementation status
 
+Design update: the [data model redesign specification](docs/design/redesign-spec.md) is the current implementation target. It supersedes conflicting future-work suggestions below, including a generic Property UI. This is a specification change only; the redesign has not been implemented or migrated.
+
 Reviewed September 15, 2026. This supersedes the early generated completion estimates and OAuth setup claims.
 
 ## Present in the code

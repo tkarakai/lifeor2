@@ -28,7 +28,7 @@ Stop each terminal with Ctrl+C. Use `bun run convex:stop` to stop this project�
 
 The code includes entity, arrangement, and event screens; a chart of accounts; journal entries with double-entry validation; and a trial balance report. Authentication uses Better Auth's magic-link plugin, with its tokens entered as login codes.
 
-This is an unfinished prototype. Reconciliation, forecasting, and further UI/error-handling work remain. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verified behavior and limitations. The broader design is in [docs/design/spec_0.1.md](docs/design/spec_0.1.md).
+This is an unfinished prototype. Reconciliation, forecasting, and further UI/error-handling work remain. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verified behavior and limitations. The current implementation target is the [data model redesign specification](docs/design/redesign-spec.md); the [original specification](docs/design/spec_0.1.md) is retained as historical context.
 
 ## Local architecture
 
@@ -49,7 +49,8 @@ Data, file storage, and local backend configuration live in **`.convex/standalon
 - `convex/` — schema, functions, HTTP routes, and Better Auth component registration
 - `lib/` — auth clients, Convex provider, and temporal helpers
 - `scripts/local_convex.py` — saved-state setup and standalone backend lifecycle
-- `docs/design/spec_0.1.md` — original system specification
+- `docs/design/redesign-spec.md` — current data model, rationale, examples, migration, and implementor handoff
+- `docs/design/spec_0.1.md` — original system specification, superseded where the redesign differs
 
 ## Development checks
 

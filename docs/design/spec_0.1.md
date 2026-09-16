@@ -1,6 +1,8 @@
 # Arrangements Model — Comprehensive System Specification
 *A unified life + finance data model with strict accounting extensions*
 
+> Historical specification. The [2026-09-15 data model redesign](redesign-spec.md) supersedes conflicting guidance here, including projects, properties, arrangement types/roles, charts of accounts, and document ownership. Use the redesign for new implementation work; this document is retained for provenance.
+
 > Status: **Specification v1 (as of 2026-01-20)**  
 > Audience: **Users and developers** (onboarding + implementation)  
 > Goal: Provide a **single mental model** for “life data” plus **rigorous financial hygiene** (double-entry, reconciliation, forecasting).
@@ -573,4 +575,3 @@ Payment received:
 - Use **domain tables** where constraints and ergonomics matter (accounting).
 - Maintain both **valid time** and **recorded time** for trustable “as-of” queries.
 - Keep valuation and other subjective facts contextual via InformationArrangements.
-
