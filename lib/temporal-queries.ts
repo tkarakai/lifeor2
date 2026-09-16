@@ -1,120 +1,120 @@
-/**
- * Temporal Query Helpers
- *
- * Utilities for querying data with temporal validity (valid_from, valid_to)
- */
-
+/** Half-open effective intervals; knowledge-time revisions are immutable snapshots. */
 export interface TemporalRecord {
   valid_from: number;
   valid_to?: number;
 }
-
-/**
- * Filter records that are valid at a specific timestamp
- *
- * A record is valid at timestamp T if:
- * - valid_from <= T
- * - valid_to is null (open-ended) OR valid_to >= T
- */
 export function filterByValidTime<T extends TemporalRecord>(
   items: T[],
-  asOf: number
+  asOf: number,
 ): T[] {
   return items.filter(
-    (item) => item.valid_from <= asOf && (!item.valid_to || item.valid_to >= asOf)
+    (x) =>
+      x.valid_from <= asOf && (x.valid_to === undefined || asOf < x.valid_to),
   );
 }
-
-/**
- * Filter records that overlap with a time range [start, end]
- *
- * A record overlaps with [start, end] if:
- * - valid_from < end (starts before range ends)
- * - valid_to is null (open-ended) OR valid_to > start (ends after range starts)
- */
 export function filterByTimeRange<T extends TemporalRecord>(
   items: T[],
   start: number,
-  end: number
+  end: number,
 ): T[] {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start)
+    throw new Error("Invalid half-open range");
   return items.filter(
-    (item) => item.valid_from < end && (!item.valid_to || item.valid_to > start)
+    (x) =>
+      x.valid_from < end && (x.valid_to === undefined || x.valid_to > start),
   );
 }
-
-/**
- * Get the most recent version of a record at a given timestamp
- * Useful when records supersede each other
- */
 export function getMostRecent<T extends TemporalRecord>(
   items: T[],
-  asOf: number
+  asOf: number,
 ): T | null {
-  const validItems = filterByValidTime(items, asOf);
-  if (validItems.length === 0) return null;
-
-  // Return the one with the latest valid_from
-  return validItems.reduce((latest, current) =>
-    current.valid_from > latest.valid_from ? current : latest
+  return (
+    filterByValidTime(items, asOf).sort(
+      (a, b) => b.valid_from - a.valid_from,
+    )[0] ?? null
   );
 }
-
-/**
- * Check if a record is currently valid (valid_to is null or in the future)
- */
 export function isCurrentlyValid<T extends TemporalRecord>(item: T): boolean {
-  const now = Date.now();
-  return item.valid_from <= now && (!item.valid_to || item.valid_to >= now);
+  return filterByValidTime([item], Date.now()).length === 1;
 }
-
-/**
- * Check if a record is expired (valid_to is in the past)
- */
 export function isExpired<T extends TemporalRecord>(item: T): boolean {
-  if (!item.valid_to) return false; // Open-ended records never expire
-  return item.valid_to < Date.now();
+  return item.valid_to !== undefined && item.valid_to <= Date.now();
 }
-
-/**
- * Get all historical versions of records, sorted by valid_from (oldest first)
- */
 export function sortByValidFrom<T extends TemporalRecord>(items: T[]): T[] {
   return [...items].sort((a, b) => a.valid_from - b.valid_from);
 }
-
-/**
- * Get the timeline of a record (all versions over time)
- * Assumes records are linked via a supersedes relationship
- */
-export function buildTimeline<T extends TemporalRecord>(
-  items: T[],
-  startItem: T
-): T[] {
-  const timeline = [startItem];
-  let current = startItem;
-
-  // This is a simplified version - in practice you'd follow supersedes_arrangement_id
-  // For now, just sort all items by valid_from
-  return sortByValidFrom(items);
+export interface LineageRecord extends TemporalRecord {
+  _id?: string;
+  root_id?: string;
+  supersedes_arrangement_id?: string;
 }
-
-/**
- * Format a timestamp as ISO date string
- */
+/** Follow only connected predecessors/successors; never mix unrelated identities. */
+export function buildTimeline<T extends LineageRecord>(
+  items: T[],
+  startItem: T,
+): T[] {
+  if (startItem.root_id)
+    return sortByValidFrom(
+      items.filter((x) => x.root_id === startItem.root_id),
+    );
+  if (!startItem._id) return [startItem];
+  const ids = new Set([startItem._id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const x of items) {
+      if (!x._id) continue;
+      if (
+        ids.has(x._id) &&
+        x.supersedes_arrangement_id &&
+        !ids.has(x.supersedes_arrangement_id)
+      ) {
+        ids.add(x.supersedes_arrangement_id);
+        changed = true;
+      }
+      if (
+        x.supersedes_arrangement_id &&
+        ids.has(x.supersedes_arrangement_id) &&
+        !ids.has(x._id)
+      ) {
+        ids.add(x._id);
+        changed = true;
+      }
+    }
+  }
+  return sortByValidFrom(items.filter((x) => x._id && ids.has(x._id)));
+}
+export function selectAsKnown<T>(
+  revisions: {
+    root_id: string;
+    revision: number;
+    recorded_at: number;
+    segments: (TemporalRecord & { facts: T })[];
+  }[],
+  rootId: string,
+  effectiveAt: number,
+  knownAt: number,
+): T | null {
+  const revision = revisions
+    .filter((r) => r.root_id === rootId && r.recorded_at <= knownAt)
+    .sort(
+      (a, b) => b.recorded_at - a.recorded_at || b.revision - a.revision,
+    )[0];
+  return revision
+    ? (filterByValidTime(revision.segments, effectiveAt)[0]?.facts ?? null)
+    : null;
+}
 export function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toISOString().split("T")[0];
 }
-
-/**
- * Parse an ISO date string to Unix timestamp
- */
-export function parseDate(dateString: string): number {
-  return new Date(dateString).getTime();
+export function parseDate(value: string): number {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value))
+    throw new Error("Invalid calendar date");
+  const parsed = Date.parse(value + "T00:00:00Z");
+  if (!Number.isFinite(parsed) || formatTimestamp(parsed) !== value)
+    throw new Error("Invalid calendar date");
+  return parsed;
 }
-
-/**
- * Get the current Unix timestamp
- */
 export function now(): number {
   return Date.now();
 }

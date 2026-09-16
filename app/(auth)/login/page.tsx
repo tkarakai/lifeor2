@@ -2,7 +2,6 @@
 
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +43,9 @@ export default function LoginPage() {
         query: { token: code },
       });
       if (result.error) throw new Error(result.error.message);
-      router.push("/dashboard");
+      // Start a fresh Convex connection after changing the cookie session.
+      // The auth adapter can otherwise retain the previous user's cached JWT.
+      window.location.assign("/dashboard");
     } catch (err) {
       setError("Invalid or expired code. Please try again.");
       console.error(err);

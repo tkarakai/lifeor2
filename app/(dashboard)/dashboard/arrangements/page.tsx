@@ -1,193 +1,299 @@
 "use client";
-
-import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Plus, FileText, Calendar } from "lucide-react";
-import { formatTimestamp } from "@/lib/temporal-queries";
-
-const arrangementKinds = [
-  { value: "Employment", label: "Employment" },
-  { value: "Tenancy", label: "Tenancy" },
-  { value: "Ownership", label: "Ownership" },
-  { value: "ChartOfAccounts", label: "Chart of Accounts" },
-  { value: "BankAccount", label: "Bank Account" },
-];
-
-export default function ArrangementsPage() {
-  const arrangements = useQuery(api.arrangements.list) || [];
-  const createArrangement = useMutation(api.arrangements.create);
-  const deleteArrangement = useMutation(api.arrangements.remove);
-
-  const [showForm, setShowForm] = useState(false);
-  const [kind, setKind] = useState("Employment");
-  const [validFrom, setValidFrom] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [validTo, setValidTo] = useState("");
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createArrangement({
-        kind,
-        valid_from: new Date(validFrom).getTime(),
-        valid_to: validTo ? new Date(validTo).getTime() : undefined,
-      });
-      setValidFrom(new Date().toISOString().split("T")[0]);
-      setValidTo("");
-      setShowForm(false);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Could not save record");
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this arrangement?")) {
-      try {
-        await deleteArrangement({ id: id as any });
-      } catch (error) {
-        alert(error instanceof Error ? error.message : "Could not delete record");
-      }
-    }
-  };
-
+import { Id } from "@/convex/_generated/dataModel";
+import {
+  Page,
+  Panel,
+  Editor,
+  Form,
+  TextField,
+  SelectField,
+  Action,
+  Loading,
+  Empty,
+  textValue,
+  dateValue,
+  localDateTime,
+  dateLabel,
+  options,
+} from "@/components/record-ui";
+import { RecordDetails } from "@/components/record-details";
+function Roles({ arrangementId }: { arrangementId: Id<"arrangement"> }) {
+  const definitions = useQuery(api.arrangements.getRoleDefinitions, {
+    arrangementId,
+  });
+  const assignments = useQuery(api.arrangements.getRoles, { arrangementId });
+  const entities = useQuery(api.entities.list);
+  const create = useMutation(api.arrangements.createRole);
+  const update = useMutation(api.arrangements.updateRole);
+  const assign = useMutation(api.arrangements.assignRole);
+  const updateAssignment = useMutation(api.arrangements.updateAssignment);
+  if (!definitions || !assignments || !entities) return <Loading />;
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Arrangements</h1>
-          <p className="text-muted-foreground">
-            Manage relationships and agreements with temporal validity
-          </p>
-        </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Arrangement
-        </Button>
-      </div>
-
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Arrangement</CardTitle>
-            <CardDescription>
-              Define a relationship or agreement with validity period
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Kind</label>
-                <select
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                >
-                  {arrangementKinds.map((k) => (
-                    <option key={k.value} value={k.value}>
-                      {k.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Valid From
-                </label>
-                <Input
-                  type="date"
-                  value={validFrom}
-                  onChange={(e) => setValidFrom(e.target.value)}
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Participants take part in the relationship. Subjects are the people or
+        assets the relationship concerns.
+      </p>
+      {definitions
+        .filter((role) => !role.archived)
+        .map((role) => (
+          <div key={role._id} className="space-y-3 rounded-md border p-4">
+            <h3 className="font-semibold">
+              {role.name}{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                · {role.participation}
+              </span>
+            </h3>
+            {assignments
+              .filter((a) => a.role_definition_id === role._id)
+              .map((a) => (
+                <div key={a._id} className="space-y-2 border-l-2 pl-3">
+                  <p className="text-sm">
+                    {entities.find((e) => e._id === a.entity_id)
+                      ?.display_name ?? "Archived entity"}{" "}
+                    · {dateLabel(a.valid_from)} → {dateLabel(a.valid_to)}
+                  </p>
+                  <Editor title="Change assignment end">
+                    <Form
+                      onSave={(data) =>
+                        updateAssignment({
+                          id: a._id,
+                          valid_to: dateValue(data, "end"),
+                        })
+                      }
+                    >
+                      <TextField
+                        label="End (exclusive)"
+                        name="end"
+                        type="datetime-local"
+                        value={
+                          a.valid_to === undefined
+                            ? ""
+                            : localDateTime(a.valid_to)
+                        }
+                        required
+                      />
+                    </Form>
+                  </Editor>
+                </div>
+              ))}
+            <Editor title="Assign entity">
+              <Form
+                label="Assign"
+                onSave={(data) =>
+                  assign({
+                    roleId: role._id,
+                    entityId: textValue(data, "entity") as Id<"entity">,
+                    valid_from: dateValue(data, "start")!,
+                    valid_to: dateValue(data, "end"),
+                  })
+                }
+              >
+                <SelectField
+                  label="Entity"
+                  name="entity"
+                  options={entities.map((e) => ({
+                    value: e._id,
+                    label: `${e.display_name} · ${e.kind}`,
+                  }))}
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Valid To (Optional)
-                </label>
-                <Input
-                  type="date"
-                  value={validTo}
-                  onChange={(e) => setValidTo(e.target.value)}
-                  placeholder="Leave empty for open-ended"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField
+                    label="Start"
+                    name="start"
+                    type="datetime-local"
+                    value={localDateTime()}
+                    required
+                  />
+                  <TextField
+                    label="End (exclusive, optional)"
+                    name="end"
+                    type="datetime-local"
+                  />
+                </div>
+              </Form>
+            </Editor>
+            <Editor title="Edit role">
+              <Form
+                onSave={(data) =>
+                  update({ id: role._id, name: textValue(data, "name") })
+                }
+              >
+                <TextField
+                  label="Role name"
+                  name="name"
+                  value={role.name}
+                  required
                 />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">Create</Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {arrangements.map((arrangement) => {
-          const isActive = !arrangement.valid_to || arrangement.valid_to >= Date.now();
-          return (
-            <Card key={arrangement._id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <CardTitle className="text-lg">{arrangement.kind}</CardTitle>
-                  </div>
-                  {isActive && (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      Active
-                    </span>
-                  )}
-                </div>
-                <CardDescription className="flex items-center gap-1 mt-2">
-                  <Calendar className="h-3 w-3" />
-                  {formatTimestamp(arrangement.valid_from)}
-                  {arrangement.valid_to && (
-                    <> → {formatTimestamp(arrangement.valid_to)}</>
-                  )}
-                  {!arrangement.valid_to && <> → Ongoing</>}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(arrangement._id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {arrangements.length === 0 && !showForm && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No arrangements yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create your first arrangement to get started
-            </p>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Arrangement
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              </Form>
+              <Action
+                confirm="Archive this role while retaining assignment history?"
+                onClick={() => update({ id: role._id, archived: true })}
+              >
+                Archive role
+              </Action>
+            </Editor>
+          </div>
+        ))}
+      <Editor title="Add local role">
+        <Form
+          onSave={(data) =>
+            create({
+              arrangementId,
+              name: textValue(data, "name"),
+              participation: textValue(data, "participation") as
+                | "participant"
+                | "subject",
+            })
+          }
+        >
+          <TextField label="Role name" name="name" required />
+          <SelectField
+            label="Participation"
+            name="participation"
+            value="participant"
+            options={options(["participant", "subject"])}
+            required
+          />
+        </Form>
+      </Editor>
     </div>
+  );
+}
+export default function ArrangementsPage() {
+  const arrangements = useQuery(api.arrangements.list);
+  const types = useQuery(api.arrangements.listTypes);
+  const create = useMutation(api.arrangements.create);
+  const update = useMutation(api.arrangements.update);
+  const remove = useMutation(api.arrangements.remove);
+  return (
+    <Page
+      title="Arrangements"
+      description="Continuing relationships and agreements with their own roles and assignments."
+    >
+      <Link
+        className="inline-block text-sm underline underline-offset-4"
+        href="/dashboard/arrangements/types"
+      >
+        Manage types & role templates →
+      </Link>
+      {types === undefined ? (
+        <Loading />
+      ) : types.length === 0 ? (
+        <Empty>Create an arrangement type first using the link above.</Empty>
+      ) : (
+        <Editor title="New arrangement">
+          <Form
+            label="Create arrangement"
+            onSave={(data) =>
+              create({
+                typeId: textValue(data, "type") as Id<"arrangement_type">,
+                name: textValue(data, "name"),
+                valid_from: dateValue(data, "start")!,
+                valid_to: dateValue(data, "end"),
+              })
+            }
+          >
+            <TextField label="Name" name="name" required />
+            <SelectField
+              label="Type"
+              name="type"
+              required
+              options={types.map((t) => ({ value: t._id, label: t.name }))}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Start"
+                name="start"
+                type="datetime-local"
+                value={localDateTime()}
+                required
+              />
+              <TextField
+                label="End (exclusive, optional)"
+                name="end"
+                type="datetime-local"
+              />
+            </div>
+          </Form>
+        </Editor>
+      )}
+      {arrangements === undefined ? (
+        <Loading />
+      ) : arrangements.length === 0 ? (
+        <Empty>No arrangements yet.</Empty>
+      ) : (
+        arrangements.map((a) => (
+          <Panel
+            key={a._id}
+            title={a.name || a.kind}
+            description={`${a.kind} · ${dateLabel(a.valid_from)} → ${dateLabel(a.valid_to)}`}
+          >
+            <Editor title="Edit arrangement">
+              <Form
+                onSave={(data) =>
+                  update({
+                    id: a._id,
+                    name: textValue(data, "name"),
+                    lifecycle: textValue(data, "lifecycle") as
+                      | "draft"
+                      | "active"
+                      | "ended",
+                    effectiveAt: dateValue(data, "effective")!,
+                    expectedRevision: a.revision,
+                    valid_to: dateValue(data, "end"),
+                  })
+                }
+              >
+                <TextField
+                  label="Name"
+                  name="name"
+                  value={a.name || a.kind}
+                  required
+                />
+                <SelectField
+                  label="Lifecycle"
+                  name="lifecycle"
+                  value={a.lifecycle || "active"}
+                  options={options(["draft", "active", "ended"])}
+                  required
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField
+                    label="Change effective at"
+                    name="effective"
+                    type="datetime-local"
+                    value={localDateTime(Math.max(a.valid_from, Date.now()))}
+                    required
+                  />
+                  <TextField
+                    label="End (exclusive, optional)"
+                    name="end"
+                    type="datetime-local"
+                    value={
+                      a.valid_to === undefined ? "" : localDateTime(a.valid_to)
+                    }
+                  />
+                </div>
+              </Form>
+            </Editor>
+            <Editor title="Roles & assignments">
+              <Roles arrangementId={a._id} />
+            </Editor>
+            <RecordDetails target={{ kind: "arrangement", id: a._id }} />
+            <Action
+              confirm="Archive this arrangement? This retains its history and does not change its end date."
+              onClick={() => remove({ id: a._id })}
+            >
+              Archive
+            </Action>
+          </Panel>
+        ))
+      )}
+    </Page>
   );
 }

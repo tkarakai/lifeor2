@@ -1,71 +1,56 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
+import Link from "next/link";
+import { Page, Panel } from "@/components/record-ui";
+const sections = [
+  [
+    "Entities",
+    "People, organizations, animals, and identifiable assets.",
+    "entities",
+  ],
+  [
+    "Arrangements",
+    "Continuing relationships, custom types, and local roles.",
+    "arrangements",
+  ],
+  ["Events", "Actual occurrences and their affected records.", "events"],
+  [
+    "Measurements",
+    "Observed, contractual, expected, and derived quantities.",
+    "measurements",
+  ],
+  [
+    "Tags",
+    "Group related records, including projects, with simple tags.",
+    "tags",
+  ],
+  [
+    "Finance",
+    "Charts, accounts, balanced journals, and monetary obligations.",
+    "finance",
+  ],
+  [
+    "Planning",
+    "Plans and expected occurrences kept separate from actual events.",
+    "planning",
+  ],
+];
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to your LifeOR2 dashboard
-        </p>
+    <Page
+      title="Your records"
+      description="Keep identity, relationships, actual occurrences, and financial records connected."
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        {sections.map(([title, description, path]) => (
+          <Panel key={path} title={title} description={description}>
+            <Link
+              className="text-sm font-medium underline underline-offset-4"
+              href={`/dashboard/${path}`}
+            >
+              Open {title.toLowerCase()} →
+            </Link>
+          </Panel>
+        ))}
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Entities</CardTitle>
-            <CardDescription>People, organizations, and things</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">No entities yet</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Arrangements</CardTitle>
-            <CardDescription>Relationships and agreements</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">No arrangements yet</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Events</CardTitle>
-            <CardDescription>Recorded activities</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">No events yet</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest events and changes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">No recent activity</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Financial Summary</CardTitle>
-            <CardDescription>Account balances and cash flow</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">No financial data yet</p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </Page>
   );
 }

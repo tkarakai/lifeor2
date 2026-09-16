@@ -26,9 +26,9 @@ Stop each terminal with Ctrl+C. Use `bun run convex:stop` to stop this projectâ€
 
 ## Current status
 
-The code includes entity, arrangement, and event screens; a chart of accounts; journal entries with double-entry validation; and a trial balance report. Authentication uses Better Auth's magic-link plugin, with its tokens entered as login codes.
+The redesigned backbone includes concrete entities, custom arrangement types and local roles, tags, actual events, typed measurements, Git-owned Markdown details, dedicated charts, exact-money journals, obligations, and immutable planning inputs. The UI exposes these records and a per-currency trial balance. Authentication uses Better Auth magic-link tokens entered as login codes.
 
-This is an unfinished prototype. Reconciliation, forecasting, and further UI/error-handling work remain. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verified behavior and limitations. The current implementation target is the [data model redesign specification](docs/design/redesign-spec.md); the [original specification](docs/design/spec_0.1.md) is retained as historical context.
+The [redesign specification](docs/design/redesign-spec.md) is implemented and the existing local data migrated. See [implementation decisions and validation](docs/decisions/redesign-implementation.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). Forecast calculation, bank import, advanced reconciliation UI, and analytics remain outside this foundation release. The [original specification](docs/design/spec_0.1.md) is historical context.
 
 ## Local architecture
 
@@ -40,7 +40,7 @@ This is an unfinished prototype. Reconciliation, forecasting, and further UI/err
 
 `bun run convex:dev` starts the cached backend directly, configures its auth environment, and runs the Convex CLI against the self-hosted URL. This project uses dedicated ports 3240/3241; other projects can keep using 3210/3211. Run `bun run local:configure --cloud-port 3240 --site-port 3241` with this backend stopped to change ports and update frontend URLs together. The backend's optional telemetry beacon is disabled. It does not select or create a managed Convex project.
 
-Data, file storage, and local backend configuration live in **`.convex/standalone/`**, which Git ignores. `.env.local` contains the frontend URLs and private self-hosted admin key. Keep both out of version control.
+Data, file storage, and local backend configuration live in **`.convex/standalone/`**, which Git ignores. `.env.local` contains the frontend URLs and private self-hosted admin key. Keep both out of version control. Markdown lives in the separate `.convex/details-content.git` repository; back it up alongside the database (see QUICKSTART).
 
 ## Project layout
 

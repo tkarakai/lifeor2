@@ -42,8 +42,16 @@ export default function DashboardLayout({
       <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80">
         <Sidebar />
       </div>
+      <div className="border-b md:hidden">
+        <details>
+          <summary className="cursor-pointer p-4 font-semibold">
+            LifeOR2 · Menu
+          </summary>
+          <Sidebar />
+        </details>
+      </div>
       <main className="md:pl-72 h-full">
-        <div className="p-8 h-full">{children}</div>
+        <div className="p-4 sm:p-8 h-full">{children}</div>
       </main>
     </div>
   );

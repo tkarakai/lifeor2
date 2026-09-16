@@ -2,7 +2,6 @@
 
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,6 @@ export default function SignUpPage() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +43,8 @@ export default function SignUpPage() {
         query: { token: code },
       });
       if (result.error) throw new Error(result.error.message);
-      router.push("/dashboard");
+      // Discard any previous user's in-memory Convex authentication state.
+      window.location.assign("/dashboard");
     } catch (err) {
       setError("Invalid or expired code. Please try again.");
       console.error(err);
@@ -117,7 +116,7 @@ export default function SignUpPage() {
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
-                  Check your email for a 6-digit code (also check spam folder)
+                  Enter the full code from your email (also check spam folder)
                 </p>
               </div>
 

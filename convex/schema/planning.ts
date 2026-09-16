@@ -1,0 +1,215 @@
+import { defineTable } from "convex/server";
+import { v } from "convex/values";
+import {
+  root,
+  moneyValue,
+  provenance,
+  capturedInput,
+  gitPin,
+  target,
+} from "./shared";
+export const recurrence = v.object({
+  frequency: v.union(
+    v.literal("once"),
+    v.literal("daily"),
+    v.literal("weekly"),
+    v.literal("monthly"),
+    v.literal("yearly"),
+  ),
+  interval: v.number(),
+  day_of_month: v.optional(v.number()),
+});
+export const assumptionValue = v.union(
+  v.object({ kind: v.literal("amount"), amount: moneyValue }),
+  v.object({ kind: v.literal("timing"), date: v.string() }),
+);
+export const overrideValue = v.union(
+  assumptionValue,
+  v.object({ kind: v.literal("presence"), included: v.boolean() }),
+  v.object({
+    kind: v.literal("effective_interval"),
+    valid_from: v.number(),
+    valid_to: v.optional(v.number()),
+  }),
+);
+export const manifest = {
+  inputs: v.array(capturedInput),
+  git_revisions: v.array(gitPin),
+  resolved_tag_targets: v.array(target),
+  actual_boundary: v.number(),
+};
+export const planningSchema = {
+  commitment_schedule: defineTable({
+    ...root,
+    arrangement_id: v.id("arrangement"),
+    name: v.string(),
+    revision: v.number(),
+  }).index("by_user", ["user_id"]),
+  commitment_schedule_revision: defineTable({
+    user_id: v.string(),
+    schedule_id: v.id("commitment_schedule"),
+    revision: v.number(),
+    ...provenance,
+    segments: v.array(
+      v.object({
+        valid_from: v.number(),
+        valid_to: v.optional(v.number()),
+        facts: v.object({ version_id: v.id("commitment_schedule_version") }),
+      }),
+    ),
+  }).index("by_schedule", ["schedule_id"]),
+  commitment_schedule_version: defineTable({
+    user_id: v.string(),
+    schedule_id: v.id("commitment_schedule"),
+    revision: v.number(),
+    ...provenance,
+    creditor_id: v.id("entity"),
+    debtor_id: v.id("entity"),
+    amount: v.optional(moneyValue),
+    variable_rule: v.optional(
+      v.union(v.literal("manual_amount"), v.literal("metered_quantity")),
+    ),
+    currency: v.string(),
+    recurrence,
+    start_date: v.string(),
+    end_date: v.optional(v.string()),
+    timezone: v.string(),
+    valid_from: v.number(),
+    valid_to: v.optional(v.number()),
+  }).index("by_schedule", ["schedule_id"]),
+  monetary_obligation: defineTable({
+    ...root,
+    creditor_id: v.id("entity"),
+    debtor_id: v.id("entity"),
+    arrangement_id: v.optional(v.id("arrangement")),
+    event_id: v.optional(v.id("event")),
+    evidence_ids: v.optional(v.array(v.id("evidence_item"))),
+    due_date: v.string(),
+    original_minor_units: v.number(),
+    currency: v.string(),
+    schedule_version_id: v.optional(v.id("commitment_schedule_version")),
+    occurrence_key: v.optional(v.string()),
+    recognition_posting_id: v.optional(v.id("posting")),
+    voided_at: v.optional(v.number()),
+    void_reason: v.optional(v.string()),
+  })
+    .index("by_user", ["user_id"])
+    .index("by_occurrence", ["occurrence_key"]),
+  obligation_adjustment: defineTable({
+    ...root,
+    obligation_id: v.id("monetary_obligation"),
+    minor_units: v.number(),
+    currency: v.string(),
+    effective_date: v.string(),
+    reason: v.string(),
+    evidence_ids: v.optional(v.array(v.id("evidence_item"))),
+    posting_id: v.optional(v.id("posting")),
+    reverses_id: v.optional(v.id("obligation_adjustment")),
+  }).index("by_obligation", ["obligation_id"]),
+  obligation_settlement: defineTable({
+    ...root,
+    obligation_id: v.id("monetary_obligation"),
+    journal_entry_id: v.id("journal_entry"),
+    capacity_posting_id: v.id("posting"),
+    recognition_posting_id: v.optional(v.id("posting")),
+    minor_units: v.number(),
+    currency: v.string(),
+    settlement_date: v.string(),
+    evidence_ids: v.optional(v.array(v.id("evidence_item"))),
+    reverses_id: v.optional(v.id("obligation_settlement")),
+  })
+    .index("by_obligation", ["obligation_id"])
+    .index("by_capacity", ["capacity_posting_id"]),
+  plan: defineTable({
+    ...root,
+    name: v.string(),
+    current_version_id: v.optional(v.id("plan_version")),
+  }).index("by_user", ["user_id"]),
+  plan_version: defineTable({
+    ...root,
+    plan_id: v.id("plan"),
+    revision: v.number(),
+    status: v.union(v.literal("draft"), v.literal("published")),
+    period_start: v.string(),
+    period_end: v.string(),
+    ...manifest,
+    published_at: v.optional(v.number()),
+  }).index("by_plan", ["plan_id"]),
+  budget_target: defineTable({
+    ...root,
+    plan_version_id: v.id("plan_version"),
+    period_start: v.string(),
+    period_end: v.string(),
+    measure: v.union(v.literal("income"), v.literal("expense")),
+    chart_id: v.id("chart_of_accounts"),
+    account_id: v.optional(v.id("ledger_account")),
+    subject_id: v.optional(v.id("entity")),
+    tag_id: v.optional(v.id("tag")),
+    resolved_targets: v.array(target),
+    amount: moneyValue,
+  }).index("by_version", ["plan_version_id"]),
+  scenario: defineTable({
+    ...root,
+    name: v.string(),
+    current_version_id: v.optional(v.id("scenario_version")),
+  }).index("by_user", ["user_id"]),
+  scenario_version: defineTable({
+    ...root,
+    scenario_id: v.id("scenario"),
+    revision: v.number(),
+    base_plan_version_id: v.id("plan_version"),
+    overrides: v.array(v.object({ target, value: overrideValue })),
+    git_revision: v.optional(gitPin),
+  }).index("by_scenario", ["scenario_id"]),
+  forecast_assumption: defineTable({
+    ...root,
+    name: v.string(),
+    value: assumptionValue,
+    source: v.string(),
+    context: v.optional(target),
+    supersedes_id: v.optional(v.id("forecast_assumption")),
+  }).index("by_user", ["user_id"]),
+  expected_flow: defineTable({
+    ...root,
+    expected_date: v.string(),
+    minor_units: v.number(),
+    currency: v.string(),
+    account_id: v.optional(v.id("ledger_account")),
+    schedule_version_id: v.optional(v.id("commitment_schedule_version")),
+    obligation_id: v.optional(v.id("monetary_obligation")),
+    assumption_id: v.optional(v.id("forecast_assumption")),
+    occurrence_key: v.string(),
+    input_revision: v.number(),
+    supersedes_id: v.optional(v.id("expected_flow")),
+    cancelled_at: v.optional(v.number()),
+    cancel_reason: v.optional(v.string()),
+  }).index("by_user", ["user_id"]),
+  expected_flow_fulfillment: defineTable({
+    user_id: v.string(),
+    expected_flow_id: v.id("expected_flow"),
+    posting_id: v.id("posting"),
+    minor_units: v.number(),
+    recorded_at: v.number(),
+  })
+    .index("by_flow", ["expected_flow_id"])
+    .index("by_posting", ["posting_id"]),
+  forecast_run: defineTable({
+    ...root,
+    plan_version_id: v.id("plan_version"),
+    scenario_version_id: v.optional(v.id("scenario_version")),
+    engine_version: v.string(),
+    horizon_start: v.string(),
+    horizon_end: v.string(),
+    timezone: v.string(),
+    ...manifest,
+    anchors: v.array(
+      v.object({
+        reconciliation_id: v.id("reconciliation"),
+        cutoff: v.number(),
+        minor_units: v.number(),
+        currency: v.string(),
+      }),
+    ),
+    status: v.literal("inputs_frozen"),
+  }).index("by_user", ["user_id"]),
+};

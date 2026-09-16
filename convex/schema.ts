@@ -2,16 +2,21 @@ import { defineSchema } from "convex/server";
 import { coreSchema } from "./schema/core";
 import { financeSchema } from "./schema/finance";
 
-// Main schema combining auth tables, core primitives, and finance
+// Additive redesign schema. Authentication remains in the Better Auth component.
+
+import { foundationSchema } from "./schema/foundation";
+import { planningSchema } from "./schema/planning";
 
 const schema = defineSchema({
+  ...foundationSchema,
+  ...planningSchema,
   // Authentication is handled by @convex-dev/better-auth component
   // No need to define auth tables here
 
-  // Core primitives (6 tables)
+  // Stable roots plus retained legacy source records
   ...coreSchema,
 
-  // Finance tables (3 tables: ledger_account, journal_entry, posting)
+  // Exact ledger and financial meaning
   ...financeSchema,
 });
 

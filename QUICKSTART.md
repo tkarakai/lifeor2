@@ -88,6 +88,33 @@ The old recovery trial at `http://localhost:3020` under `/private/tmp/lifeor2-au
 
 ## Configuration and backups
 
+### Git-owned details
+
+The redesigned model stores Markdown details in a separate local Git repository.
+Initialize it once if it does not already exist:
+
+```bash
+git init --bare --initial-branch=main .convex/details-content.git
+```
+
+The default content branch is `main`; no remote is required. Optional settings
+are shown in `.env.local.example` (`DETAILS_REPOSITORY_PATH`,
+`DETAILS_REPOSITORY_KEY`, and `DETAILS_GIT_BRANCH`). Keep this content repository
+separate from the application's source repository. The app writes commits;
+database records contain document locators, not authoritative Markdown copies.
+
+Back up the entire content repository **in addition to** the backend state and
+private environment. Stop application writes while taking a consistent backup.
+Restoring only the database cannot restore document contents. Do not initialize
+over or replace an existing content repository during ordinary startup.
+
+Phase 1 assumes one document writer. If editing externally later, use a separate
+clone/worktree and an explicit commit/merge workflow; do not expect a bare
+repository to expose editable Markdown files directly. Concurrent merge UI is
+not included.
+
+### Backend state
+
 | Setting | Location | Value / purpose |
 | --- | --- | --- |
 | `CONVEX_SELF_HOSTED_URL` | `.env.local` | `http://127.0.0.1:3240` |

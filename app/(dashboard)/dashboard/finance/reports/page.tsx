@@ -1,140 +1,128 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3 } from "lucide-react";
-
+import { Id } from "@/convex/_generated/dataModel";
+import {
+  Page,
+  Panel,
+  Field,
+  Loading,
+  Empty,
+  controlClass,
+} from "@/components/record-ui";
+import { formatMoney } from "@/components/money";
 export default function ReportsPage() {
-  const arrangements = useQuery(api.arrangements.list) || [];
-  const [coaArrangementId, setCoaArrangementId] = useState("");
-
-  const coaArrangements = arrangements.filter((a) => a.kind === "ChartOfAccounts");
-
-  useEffect(() => {
-    if (coaArrangements.length > 0 && !coaArrangementId) {
-      setCoaArrangementId(coaArrangements[0]._id);
-    }
-  }, [coaArrangements, coaArrangementId]);
-
-  const trialBalance = useQuery(
+  const charts = useQuery(api.finance.listCharts);
+  const [selection, setSelection] = useState("");
+  const chartId = selection || charts?.[0]?._id;
+  const report = useQuery(
     api.finance.getTrialBalance,
-    coaArrangementId ? { coaArrangementId: coaArrangementId as any } : "skip"
+    chartId ? { chartId: chartId as Id<"chart_of_accounts"> } : "skip",
   );
-
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Financial Reports</h1>
-          <p className="text-muted-foreground">
-            Trial balance and financial statements
-          </p>
-        </div>
-      </div>
-
-      {coaArrangements.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Chart of Accounts</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create a ChartOfAccounts arrangement first
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {coaArrangements.length > 0 && (
+    <Page
+      title="Trial balance"
+      description="Posted ledger balances, grouped by currency. No exchange-rate conversion is applied."
+    >
+      {charts === undefined ? (
+        <Loading />
+      ) : charts.length === 0 ? (
+        <Empty>
+          Create a chart of accounts before viewing a trial balance.
+        </Empty>
+      ) : (
         <>
-          <div>
-            <label className="block text-sm font-medium mb-2">Chart of Accounts</label>
+          <Field label="Chart of accounts">
             <select
-              value={coaArrangementId}
-              onChange={(e) => setCoaArrangementId(e.target.value)}
-              className="w-64 rounded-md border border-input bg-background px-3 py-2"
+              className={controlClass}
+              value={chartId}
+              onChange={(e) => setSelection(e.target.value)}
             >
-              {coaArrangements.map((arr) => (
-                <option key={arr._id} value={arr._id}>
-                  {arr.kind} (ID: {arr._id.slice(-8)})
+              {charts.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
                 </option>
               ))}
             </select>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Trial Balance</CardTitle>
-              <CardDescription>
-                Verify that debits equal credits across all accounts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {trialBalance ? (
-                <div className="space-y-4">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Account</th>
-                          <th className="text-left p-2">Type</th>
-                          <th className="text-right p-2">Debit</th>
-                          <th className="text-right p-2">Credit</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {trialBalance.balances.map((balance) => (
-                          <tr key={balance.accountId} className="border-b">
-                            <td className="p-2">{balance.accountName}</td>
-                            <td className="p-2">{balance.accountType}</td>
-                            <td className="text-right p-2">
-                              {balance.debit > 0 ? balance.debit.toFixed(2) : "-"}
+          </Field>
+          {report === undefined ? (
+            <Loading />
+          ) : report.byCurrency.length === 0 ? (
+            <Empty>No account balances in this chart.</Empty>
+          ) : (
+            report.byCurrency.map((group) => (
+              <Panel
+                key={group.currency}
+                title={`${group.currency} trial balance`}
+                description={
+                  group.isBalanced
+                    ? "Debits and credits balance exactly."
+                    : "Debits and credits do not balance."
+                }
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <caption className="sr-only">
+                      Trial balance in {group.currency}
+                    </caption>
+                    <thead>
+                      <tr className="border-b">
+                        <th scope="col" className="p-2 text-left">
+                          Account
+                        </th>
+                        <th scope="col" className="p-2 text-left">
+                          Type
+                        </th>
+                        <th scope="col" className="p-2 text-right">
+                          Debit
+                        </th>
+                        <th scope="col" className="p-2 text-right">
+                          Credit
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.balances
+                        .filter((b) => b.currency === group.currency)
+                        .map((b) => (
+                          <tr key={b.accountId} className="border-b">
+                            <th
+                              scope="row"
+                              className="p-2 text-left font-normal"
+                            >
+                              {b.accountName}
+                            </th>
+                            <td className="p-2">{b.accountType}</td>
+                            <td className="p-2 text-right tabular-nums">
+                              {formatMoney(b.debit, b.currency)}
                             </td>
-                            <td className="text-right p-2">
-                              {balance.credit > 0 ? balance.credit.toFixed(2) : "-"}
+                            <td className="p-2 text-right tabular-nums">
+                              {formatMoney(b.credit, b.currency)}
                             </td>
                           </tr>
                         ))}
-                        <tr className="font-bold border-t-2">
-                          <td className="p-2" colSpan={2}>
-                            Total
-                          </td>
-                          <td className="text-right p-2">
-                            {trialBalance.totalDebit.toFixed(2)}
-                          </td>
-                          <td className="text-right p-2">
-                            {trialBalance.totalCredit.toFixed(2)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div
-                    className={`p-4 rounded-lg ${
-                      trialBalance.isBalanced
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                    }`}
-                  >
-                    {trialBalance.isBalanced ? (
-                      <span className="font-medium">✓ Trial Balance is Balanced</span>
-                    ) : (
-                      <span className="font-medium">
-                        ✗ Trial Balance is NOT Balanced (Difference:{" "}
-                        {Math.abs(trialBalance.totalDebit - trialBalance.totalCredit).toFixed(2)})
-                      </span>
-                    )}
-                  </div>
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 font-semibold">
+                        <th scope="row" colSpan={2} className="p-2 text-left">
+                          Total
+                        </th>
+                        <td className="p-2 text-right tabular-nums">
+                          {formatMoney(group.totalDebit, group.currency)}
+                        </td>
+                        <td className="p-2 text-right tabular-nums">
+                          {formatMoney(group.totalCredit, group.currency)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              )}
-            </CardContent>
-          </Card>
+              </Panel>
+            ))
+          )}
         </>
       )}
-    </div>
+    </Page>
   );
 }
