@@ -3,9 +3,11 @@ import { query } from "./lib/scoped";
 import { workspace, referenceRows, money } from "./lib/lifeQueries/common";
 import { planningData } from "./lib/lifeQueries/planning";
 import { owned } from "./lib/access";
+import { date } from "./lib/domain";
+import { outstandingAsOf } from "./lib/obligationState";
 export const project = query({
   agent: { operation: "reports.projectInputs", scope: "data:read" },
-  args: { tagId: v.id("tag") },
+  args: { tagId: v.id("tag"), asOf: v.optional(v.string()) },
   handler: async (ctx, a) => {
     const w = await workspace(ctx),
       tag = await owned(ctx, "tag", a.tagId, w.user._id),
@@ -24,6 +26,7 @@ export const project = query({
         .map((l) => String(l.target.id)),
     );
     targets.add(a.tagId);
+    if (a.asOf) date(a.asOf);
     const claims = graph.claims.filter(
       (c) =>
         !c.archived &&
@@ -37,6 +40,26 @@ export const project = query({
         ((f.claim && claims.some((c) => c._id === f.claim!._id)) ||
           (f.assumption?.context && targets.has(f.assumption.context.id))),
     );
+    let historicalObligations: Record<string, unknown>[] | undefined;
+    if (a.asOf) {
+      const arrangements = graph.arrangements.filter(r => targets.has(r._id));
+      const claimPages = await Promise.all(arrangements.map(r => ctx.db.query("monetary_obligation")
+        .withIndex("by_arrangement", q => q.eq("arrangement_id", r._id)).take(2001)));
+      if (claimPages.some(rows => rows.length > 2000)) throw new Error("QUERY_LIMIT: project arrangement exceeds 2000 claims; no historical total was supplied");
+      const directlyTagged = await Promise.all(links.filter(l => l.removed_at === undefined && l.target.kind === "monetary_obligation")
+        .map(l => ctx.db.get(l.target.id as import("./_generated/dataModel").Id<"monetary_obligation">)));
+      const historicalClaims = [...new Map([...claimPages.flat(), ...directlyTagged.filter((c): c is NonNullable<typeof c> => c !== null)].map(c => [c._id, c])).values()];
+      historicalObligations = [];
+      for (const claim of historicalClaims) {
+        const state = await outstandingAsOf(ctx, claim, a.asOf, w.timezone);
+        if (state.outstanding_minor_units === 0) continue;
+        historicalObligations.push({ id: claim._id, dueDate: claim.due_date,
+          amount: state.outstanding_minor_units === null ? null : money(state.outstanding_minor_units, claim.currency),
+          currency: claim.currency, creditor: graph.name(claim.creditor_id), debtor: graph.name(claim.debtor_id),
+          historicalState: state.historicalState, recognitionDate: state.recognitionDate,
+          limitation: state.historicalState === "unknown" ? state.limitation : undefined });
+      }
+    }
     return {
       project: { id: tag._id, name: tag.name, kind: "tag" },
       today: w.today,
@@ -51,7 +74,8 @@ export const project = query({
             ? new Date(r.valid_to).toISOString().slice(0, 10)
             : null,
         })),
-      obligations: claims
+      obligationsAsOf: a.asOf ?? null,
+      obligations: historicalObligations ?? claims
         .filter((c) => c.outstanding_minor_units > 0)
         .map((c) => ({
           id: c._id,

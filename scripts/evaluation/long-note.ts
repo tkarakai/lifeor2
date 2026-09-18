@@ -22,7 +22,7 @@ const target = { kind: "arrangement", id: c.fixture.arrangementId };
 async function call(name: string, args: Record<string, unknown> = {}) {
   const r = await client.callTool({
     name,
-    arguments: { datasetId: c.datasetId, target, ...args },
+    arguments: { datasetId: c.datasetId, ...(name.startsWith("details.") ? { target } : {}), ...args },
   });
   assert(!r.isError, `${name} failed`);
   return r.structuredContent as any;
@@ -77,6 +77,13 @@ try {
         expected +
         "\n",
     );
+    const person = await call("life.search", { query: "Riley Ellis", kind: "entity" });
+    assert.equal(person.identityStatus, "unique");
+    assert.equal(person.items[0].name, "Riley Ellis");
+    const note = await call("details.read", { target: { kind: "entity", id: person.items[0].id } });
+    assert(note.source.includes("Riley prefers email for appointment reminders."));
+    const links = await call("life.relationships", { entityId: person.items[0].id, limit: 50 });
+    assert.equal(links.items.length, 0, "No relationship was requested for the new person");
     console.log(
       JSON.stringify({
         passed: true,
@@ -84,6 +91,7 @@ try {
         finalCharacters: after.length,
         unchangedPrefix: true,
         exactlyOneAppend: true,
+        newPersonAndSourceVerified: true,
       }),
     );
   }

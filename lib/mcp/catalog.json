@@ -2,6 +2,7 @@
   {
     "name": "agentQueries.incomeSummary",
     "title": "Monthly income",
+    "replacedBy": "reports.finances",
     "description": "Calculate a person's monthly income, salary/earnings totals and average over fromMonth..toMonth (YYYY-MM). Resolve entityId first. Deterministic gross recognized Income-account totals, NOT net take-home pay. Includes signed reversals, explicit attribution, separate currencies, missing-month warnings and source journal IDs. Prefer this to listing all journals for income questions.",
     "functionName": "agentQueries:incomeSummary",
     "kind": "query",
@@ -47,6 +48,7 @@
   {
     "name": "agentQueries.searchEntities",
     "title": "Find people and organizations",
+    "replacedBy": "life.search",
     "description": "Find people, family members, companies and households by name; query can be empty. Omit limit for the default 50-row scan within the dataset (maximum 50). Paginated: follow nextCursor before concluding uniqueness or absence. Returns compact IDs and names.",
     "functionName": "agentQueries:searchEntities",
     "kind": "query",
@@ -645,6 +647,7 @@
   {
     "name": "arrangements.list",
     "title": "arrangements: list",
+    "replacedBy": "life.search",
     "description": "arrangements: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:list",
     "kind": "query",
@@ -1216,6 +1219,7 @@
   {
     "name": "entities.list",
     "title": "entities: list",
+    "replacedBy": "life.search",
     "description": "entities: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "entities:list",
     "kind": "query",
@@ -2252,6 +2256,7 @@
   {
     "name": "events.list",
     "title": "events: list",
+    "replacedBy": "life.events",
     "description": "events: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:list",
     "kind": "query",
@@ -3760,6 +3765,7 @@
   {
     "name": "finance.listJournalEntries",
     "title": "finance: list journal entries",
+    "replacedBy": "agentQueries.searchJournals",
     "description": "List journal HEADERS only, without amounts. Prefer agentQueries.searchJournals for bounded date/person searches and agentQueries.incomeSummary for monthly earnings.",
     "functionName": "finance:listJournalEntries",
     "kind": "query",
@@ -6141,6 +6147,7 @@
   {
     "name": "measurements.list",
     "title": "measurements: list",
+    "replacedBy": "life.measurements",
     "description": "measurements: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "measurements:list",
     "kind": "query",
@@ -11646,6 +11653,23 @@
           "type": "string",
           "minLength": 1,
           "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        },
+        "comparison": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "through": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "from",
+            "through"
+          ],
+          "description": "Only for a requested period comparison: baseline inclusive dates. Main from/through are the current period. Computes current minus baseline and percentage change with identical scope and filters."
         }
       },
       "required": [

@@ -7,8 +7,39 @@ import {
   type FinancePage,
 } from "../life-reports/finance";
 import { scale } from "../../convex/lib/domain";
-import { saveReport } from "./report-store";
+import { saveReport, readReport } from "./report-store";
+import { compareFinance } from "../life-reports/comparison";
 export async function financialReport(
+  client: ConvexHttpClient,
+  token: string,
+  scope: { userId: string; connectionId: string; datasetId: string },
+  args: Record<string, unknown>,
+  snapshotClient?: ConvexHttpClient,
+) {
+  if (args.comparison !== undefined) {
+    const comparison = args.comparison as { from: string; through: string };
+    if (!comparison || typeof comparison.from !== "string" || typeof comparison.through !== "string")
+      throw new Error("Specify both baseline comparison dates: from and through");
+    const { comparison: _comparison, ...currentArgs } = args;
+    const snapshot = snapshotClient ?? new ConvexHttpClient(client.url);
+    const current = await baseFinancialReport(client, token, scope, currentArgs, snapshot);
+    const baseline = await baseFinancialReport(client, token, scope, { ...currentArgs, from: comparison.from, through: comparison.through }, snapshot);
+    const currentFull = (await readReport(scope, current.reportId)).report;
+    const baselineFull = (await readReport(scope, baseline.reportId)).report;
+    const result = {
+      reportType: "financial_comparison", metric: args.metric,
+      current: { from: args.from, through: args.through },
+      baseline: comparison, scope: currentFull.scope,
+      ...compareFinance(currentFull, baselineFull),
+      sourceReportIds: [current.reportId, baseline.reportId],
+      queryComplete: true, sampleActualsThrough: currentFull.sampleActualsThrough,
+      basis: "Both periods use the same scope, metric and filters. Difference is current minus baseline. Percentage is 100 × difference / absolute baseline; it is unavailable for a zero baseline. These are recorded totals, not extrapolated or inflation-adjusted amounts. No matching postings contribute zero to recorded differences, not proof of zero real-life activity.",
+    };
+    return { ...result, ...(await saveReport(scope, result)), rows: result.rows.slice(0, 8), rowCount: result.rows.length, rowsComplete: result.rows.length <= 8, nextOffset: result.rows.length > 8 ? 8 : null };
+  }
+  return baseFinancialReport(client, token, scope, args, snapshotClient);
+}
+export async function baseFinancialReport(
   client: ConvexHttpClient,
   token: string,
   scope: { userId: string; connectionId: string; datasetId: string },
@@ -67,7 +98,7 @@ export async function financialReport(
       args.metric === "cash_balances"
         ? "Recorded bank/cash-account balances through cutoff, including opening entries. Only designated checking, savings and cash accounts are included; this is not a forecast or a consolidation of legal ownership."
         : args.metric === "payroll"
-          ? "Recorded payroll events: gross income and actual bank deposits are separate. cashDeposited and averageMonthlyCash are full calendar-month totals, not per-paycheck amounts. Missing months are not verified zero; partial boundary months are not extrapolated. Future pay is a schedule projection, not this report."
+          ? "Recorded payroll events: gross income and actual bank deposits are separate. cashDeposited and averageMonthlyCash aggregate the requested calendar-month windows; they are not per-paycheck amounts. Missing months are not verified zero; partial boundary months are not extrapolated. Future pay is a schedule projection, not this report."
           : args.metric === "profit_loss"
             ? "Recorded recognized income less posted expenses in the selected scope. Capital purchases, principal and equity/transfer movements are excluded. This is not a consolidated tax profit or a cash-flow measure."
             : args.metric === "cashflow"

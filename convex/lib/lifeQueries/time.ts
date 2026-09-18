@@ -1,4 +1,11 @@
 import { date } from "../domain";
+export function civilDate(at: number, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(at);
+  const part = (type: string) => parts.find(p => p.type === type)!.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
 /** Resolve a local minute without guessing across a DST fold or gap. */
 export function localInstant(
   day: string,

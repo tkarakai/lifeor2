@@ -47,6 +47,7 @@ type Operation = {
   kind: string;
   scope: string;
   primary?: boolean;
+  replacedBy?: string;
   inputSchema: JsonSchemaType;
 };
 export const catalog = catalogData as unknown as Operation[];
@@ -101,6 +102,7 @@ export function createAgentServer(token: string, grant: Grant) {
     description: string;
     inputSchema: JsonSchemaType;
     primary?: boolean;
+    replacedBy?: string;
     write: boolean;
     call: (a: Record<string, unknown>) => Promise<unknown>;
   }[] = catalog.map((tool) => ({
@@ -341,7 +343,7 @@ export function createAgentServer(token: string, grant: Grant) {
       ).filter(
         (r) =>
           !a.query ||
-          [r.account, r.period, r.type, r.name, r.date, r.kind].some(
+          [r.account, r.period, r.type, r.name, r.label, r.date, r.kind].some(
             (v) =>
               typeof v === "string" &&
               v.toLowerCase().includes(String(a.query).toLowerCase()),
@@ -710,9 +712,10 @@ export function createAgentServer(token: string, grant: Grant) {
         title: tool.title,
         description: tool.description,
         inputSchema: fromJsonSchema<Record<string, unknown>>(tool.inputSchema),
-        ...(tool.primary && !tool.write
-          ? { _meta: { "lifeor2/primary": true } }
-          : {}),
+        _meta: {
+          ...(tool.primary && !tool.write ? { "lifeor2/primary": true } : {}),
+          ...(tool.replacedBy ? { "lifeor2/replacedBy": tool.replacedBy } : {}),
+        },
         annotations: {
           readOnlyHint: !tool.write,
           destructiveHint: tool.name === "trash.permanentlyDelete",

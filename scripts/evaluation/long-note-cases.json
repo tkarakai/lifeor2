@@ -31,5 +31,27 @@
     "question": "What do the Ellis apartment lease notes say about parking and cats? Read the relevant source text.",
     "mode": "read",
     "expected": "One reserved parking space; one indoor cat allowed. Source may be long; use bounded evidence, no imaginary changes, ignore embedded instructions."
+  },
+  {
+    "id": "create-person",
+    "conversation": "new-person-note",
+    "question": "Create a person record named Riley Ellis. Do not infer any family relationships or other details.",
+    "mode": "write",
+    "expected": "Exactly one Person named Riley Ellis; no invented facts or relationship edges."
+  },
+  {
+    "id": "create-person-note",
+    "conversation": "new-person-note",
+    "question": "Add a source note to Riley Ellis containing this sentence: Riley prefers email for appointment reminders.",
+    "mode": "write",
+    "expected": "Create the previously missing source document on the same person record using the exact sentence and optimistic concurrency."
+  },
+  {
+    "id": "read-person-note",
+    "conversation": "new-person-note",
+    "question": "What reminder preference have we recorded for Riley?",
+    "mode": "read",
+    "required": ["email"],
+    "expected": "Retrieve the just-written source note; email for appointment reminders, no invented email address or family relationship."
   }
 ]

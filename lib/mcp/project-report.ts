@@ -24,7 +24,7 @@ export async function projectReport(
     };
   const inputs = await snapshot.consistentQuery(
     makeFunctionReference<"query">("agentPlanning:project"),
-    { ...auth, tagId: matches.items[0].id },
+    { ...auth, tagId: matches.items[0].id, ...(args.through ? { asOf: String(args.through) } : {}) },
   );
   const through = String(args.through ?? inputs.today),
     from = String(
@@ -73,11 +73,13 @@ export async function projectReport(
     through,
     actuals: completeActuals,
     obligations: inputs.obligations,
+    obligationsAsOf: inputs.obligationsAsOf,
     expectations: inputs.expectations,
     notes,
     basis: inputs.basis,
-    coverage:
-      "Actuals use the requested accounting dates. Obligations/expectations are current outstanding records, not reconstructed past state. Source notes may describe contract budget; they are not posted costs. The default from date is the earliest directly tagged arrangement start (or current year); state the returned period.",
+    coverage: inputs.obligationsAsOf
+      ? "Actuals use the requested accounting dates. Outstanding claims use recorded recognition, adjustment, settlement and reversal dates through the historical cutoff, using evidence known now. Claims lacking recognition dates are explicitly unknown. Expectations and source notes are current snapshots and may describe later events; they are not additional historical debt. Source-note budgets are not posted costs."
+      : "Actuals use the requested accounting dates. Obligations/expectations are current outstanding records. Source notes may describe contract budget; they are not posted costs. The default from date is the earliest directly tagged arrangement start (or current year); state the returned period.",
   };
   const saved = await saveReport(scope, result);
   return { ...result, ...saved };

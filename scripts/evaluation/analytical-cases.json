@@ -1,0 +1,26 @@
+[
+  {
+    "id": "compare-groceries",
+    "question": "Did our household grocery and household-supplies spending increase from July to August 2026? Show both totals, the dollar change and percentage change.",
+    "mode": "read", "required": ["1046", "1057", "11.00", "1.05"],
+    "expected": "Same household grocery scope in both periods: July $1046 baseline, August $1057 current, increase $11 and 1.05%, computed by the server."
+  },
+  {
+    "id": "compare-payroll-partial",
+    "question": "Compare Alex Morgan's recorded take-home cash for September 1–16, 2026 with all of August 2026. Show the difference and percentage, but do not extrapolate the incomplete September period.",
+    "mode": "read", "required": ["4550", "9100", "50.00"],
+    "expected": "Explicit unequal periods: $4550 current vs $9100 baseline, difference -$4550 (-50%). Not a pay cut or full-month estimate. Gross stays separate."
+  },
+  {
+    "id": "compare-empty-periods",
+    "question": "What was the percentage change in Morgan Software LLC's recorded revenue from July to August 2026?",
+    "mode": "read",
+    "expected": "Neither period contains recorded revenue. Percentage unavailable, not invented 0% or owner-funded capital treated as income."
+  },
+  {
+    "id": "historical-remodel-debt",
+    "question": "For the Cedar Lane remodel, how much had we incurred, paid, and still owed as of September 11, 2026? Be careful not to include a later payment.",
+    "mode": "read", "required": ["55000", "25000", "30000"],
+    "expected": "September 11 historical cutoff: incurred/capitalized $55000, paid $25000, debt $30000. September 12's $15000 payment must not reduce the historical debt."
+  }
+]

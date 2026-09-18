@@ -115,6 +115,27 @@ test("project ledger totals include capital costs and cash payments separately, 
   );
   expect(expense.rows).toEqual([]);
 }, 120000);
+test("historical project debt excludes later payments and explicitly marks undated claims unknown", async () => {
+  const tagId = (await query("agentLife:search", { query: "Cedar Lane remodel", kind: "tag" })).items[0].id;
+  const beforeInvoice = await query("agentPlanning:project", { tagId, asOf: "2026-09-09" });
+  expect(beforeInvoice.obligations).toEqual([]);
+  const beforePayment = await query("agentPlanning:project", { tagId, asOf: "2026-09-11" });
+  expect(beforePayment.obligations).toHaveLength(1);
+  expect(beforePayment.obligations[0]).toMatchObject({ amount: "30000.00", recognitionDate: "2026-09-10", historicalState: "known" });
+  const afterPayment = await query("agentPlanning:project", { tagId, asOf: "2026-09-12" });
+  expect(afterPayment.obligations[0].amount).toBe("15000.00");
+  const unknownId = await t.run(async ctx => {
+    const claim = await ctx.db.get(beforePayment.obligations[0].id as import("../convex/_generated/dataModel").Id<"monetary_obligation">);
+    if (!claim) throw new Error("Missing fixture claim");
+    return ctx.db.insert("monetary_obligation", { user_id: claim.user_id, dataset_id: claim.dataset_id,
+      created_at: Date.now(), creditor_id: claim.creditor_id, debtor_id: claim.debtor_id,
+      arrangement_id: claim.arrangement_id, original_minor_units: 1000, currency: "USD", due_date: "2026-09-30" });
+  });
+  try {
+    const incomplete = await query("agentPlanning:project", { tagId, asOf: "2026-09-11" });
+    expect(incomplete.obligations.find((o: any) => o.id === unknownId)).toMatchObject({ amount: null, historicalState: "unknown" });
+  } finally { await t.run(ctx => ctx.db.delete(unknownId)); }
+});
 test("financial reducers reject changing data and non-progress rather than publish incomplete totals", async () => {
   const p = {
     revision: 1,

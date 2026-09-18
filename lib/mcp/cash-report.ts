@@ -2,7 +2,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { makeFunctionReference } from "convex/server";
 import { bankProjection } from "../insights/cash-projection";
 import type { InsightData, Posting } from "../insights/types";
-import { financialReport } from "./financial-report";
+import { baseFinancialReport as financialReport } from "./financial-report";
 import { parseMoney, scale, add } from "../../convex/lib/domain";
 import { decimal } from "../life-reports/finance";
 import { dateRange } from "../../convex/lib/lifeQueries/common";

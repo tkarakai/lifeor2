@@ -183,7 +183,7 @@ export function presentReport(
         rows.map((r) => [r.account, r.type, amount(r.amount, r.currency)]),
       ) + "\n\n";
     text +=
-      "Current outstanding obligations:\n\n" +
+      (report.obligationsAsOf ? `Outstanding obligations as of ${escape(report.obligationsAsOf)}:\n\n` : "Current outstanding obligations:\n\n") +
       (report.obligations.length
         ? table(
             ["Debtor", "Creditor", "Due", "Outstanding"],
@@ -191,7 +191,7 @@ export function presentReport(
               o.debtor,
               o.creditor,
               o.dueDate,
-              amount(o.amount, o.currency),
+              o.amount === null ? `Unknown: ${o.limitation}` : amount(o.amount, o.currency),
             ]),
           )
         : "No matching outstanding obligation is recorded.") +
@@ -287,6 +287,18 @@ export function presentReport(
           "\n\n";
     }
     text += report.basis;
+  } else if (report.reportType === "financial_comparison") {
+    text = `Recorded ${escape(report.metric.replace(/_/g, " "))} comparison\n\nCurrent: **${escape(report.current.from)} through ${escape(report.current.through)}**. Baseline: **${escape(report.baseline.from)} through ${escape(report.baseline.through)}**.\n\n`;
+    if (report.scope?.length) text += report.scope.map(escape).join("; ") + ".\n\n";
+    const rows = view === "by_account" || view === "full" ? report.rows : report.totals;
+    text += rows.length ? table(["Measure", "Baseline", "Current", "Change", "Change %"], rows.slice(offset, offset + limit).map((r: any) => [
+      r.label, amount(r.baseline, r.currency) + (r.baselineHasMatches ? "" : " (no posted matches)"),
+      amount(r.current, r.currency) + (r.currentHasMatches ? "" : " (no posted matches)"),
+      amount(r.difference, r.currency), r.percentChange === null ? "Unavailable: zero baseline" : r.percentChange + "%",
+    ])) : "No matching posted records in either period; no change or percentage can be established.";
+    text += "\n\n" + pagination(rows.length) + escape(report.basis);
+    if (report.sampleActualsThrough) text += `\n\nSample actual records were populated through ${escape(report.sampleActualsThrough)}; later dates may be incomplete.`;
+    text += `\n\nSource reports: ${report.sourceReportIds.map((id: string) => "`" + escape(id) + "`").join(", ")}.`;
   } else if (report.reportType === "financial") {
     const rows = report.rows as any[];
     text = ["balances", "cash_balances"].includes(report.metric)

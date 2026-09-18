@@ -5,6 +5,8 @@ import { date } from "../domain";
 import { requireUser } from "../access";
 import { decimalAmount } from "../../agentQueries";
 import { scale } from "../domain";
+import { civilDate } from "./time";
+export { civilDate } from "./time";
 
 export type LifeContext = QueryCtx & { scope: Scope };
 export const MAX_REFERENCE_ROWS = 2000;
@@ -42,16 +44,6 @@ export function dateRange(from: string, through: string, maxDays = 3660) {
   const span = (Date.parse(through) - Date.parse(from)) / 86400000;
   if (span < 0 || span > maxDays)
     throw new Error(`Use an inclusive range of 0–${maxDays} days.`);
-}
-export function civilDate(at: number, timezone: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(at);
-  const part = (type: string) => parts.find((p) => p.type === type)!.value;
-  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 export function money(amount: number, currency: string) {
   return decimalAmount(amount, scale(currency));

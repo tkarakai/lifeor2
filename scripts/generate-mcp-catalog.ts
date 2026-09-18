@@ -128,6 +128,15 @@ const descriptions: Record<string, string> = {
   "planning.publishPlanVersion":
     "Publish an immutable version of a plan after reviewing its inputs.",
 };
+const replacements: Record<string, string> = {
+  "agentQueries.incomeSummary": "reports.finances",
+  "agentQueries.searchEntities": "life.search",
+  "entities.list": "life.search",
+  "arrangements.list": "life.search",
+  "events.list": "life.events",
+  "measurements.list": "life.measurements",
+  "finance.listJournalEntries": "agentQueries.searchJournals",
+};
 const catalog = [];
 for (const name of modules) {
   const text = await readFile(
@@ -155,6 +164,12 @@ for (const name of modules) {
       "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset.";
     if (policy.operation === "reports.finances") {
       input.required.push("scope");
+      input.properties.comparison = {
+        type: "object", additionalProperties: false,
+        properties: { from: { type: "string" }, through: { type: "string" } },
+        required: ["from", "through"],
+        description: "Only for a requested period comparison: baseline inclusive dates. Main from/through are the current period. Computes current minus baseline and percentage change with identical scope and filters.",
+      };
       input.properties.beneficiaryId.description =
         "Who benefited from an expense: use this for benefited/helped/beneficiary questions. Distinct from the accounting subject (entityId); never infer a share.";
       input.properties.entityId.description =
@@ -216,6 +231,7 @@ for (const name of modules) {
     catalog.push({
       name: policy.operation,
       title,
+      ...(replacements[policy.operation] ? { replacedBy: replacements[policy.operation] } : {}),
       ...([
         "life.context",
         "life.search",
