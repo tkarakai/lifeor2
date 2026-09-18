@@ -137,7 +137,13 @@ export async function planningData(ctx: LifeContext, knownAt = Date.now()) {
           ...f,
           remaining: claim?.archived ? 0 : await remaining(ctx, f),
           occurrence: await canonicalOccurrence(ctx, f, f.user_id),
-          claim,
+          claim: claim
+            ? {
+                ...claim,
+                ...(claims.find((c) => c._id === claim._id) ??
+                  (await outstanding(ctx, claim))),
+              }
+            : null,
           version,
           assumption: assumptions.find((a) => a._id === f.assumption_id),
           name: claim

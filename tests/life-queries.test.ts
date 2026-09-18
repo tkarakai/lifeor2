@@ -82,7 +82,7 @@ test("upcoming month excludes settled claims, deduplicates remodel, and retains 
 test("due filters retain claims with linked cash expectations and expected filters include scheduled receipts", async () => {
   const bills = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "due", direction: "outflow", includeEvents: false });
   expect(bills.items).toHaveLength(1);
-  expect(bills.items[0]).toMatchObject({ amount: "15000.00", status: "due", dueDate: "2026-09-30", kind: "expected_obligation_payment" });
+  expect(bills.items[0]).toMatchObject({ amount: "15000.00", status: "due", dueDate: "2026-09-30", kind: "obligation" });
   const receipts = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "expected", direction: "inflow", includeEvents: false });
   expect(receipts.items.map((r: any) => r.amount).sort()).toEqual(["4550.00", "700.00"]);
   expect(receipts.items.find((r: any) => r.amount === "700.00").status).toBe("overdue");
@@ -92,6 +92,19 @@ test("due filters retain claims with linked cash expectations and expected filte
   const tenantDue = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", entityId: tenant, direction: "outflow", includeEvents: false });
   expect(tenantDue.items).toHaveLength(1);
   expect(tenantDue.items[0].amount).toBe("700.00");
+});
+test("a partial cash expectation must not shrink the reported unpaid debt", async () => {
+  const all = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", direction: "outflow", includeEvents: false });
+  const flowId = all.items.find((i: any) => i.amount === "15000.00").id as import("../convex/_generated/dataModel").Id<"expected_flow">;
+  const before = await t.run(ctx => ctx.db.get(flowId));
+  await t.run(ctx => ctx.db.patch(flowId, { minor_units: -500000 }));
+  try {
+    const due = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "due", direction: "outflow", includeEvents: false });
+    expect(due.items).toHaveLength(1);
+    expect(due.items[0].amount).toBe("15000.00");
+    const expected = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "expected", direction: "outflow", includeEvents: false });
+    expect(expected.items[0]).toMatchObject({ amount: "5000.00", outstandingAmount: "15000.00" });
+  } finally { await t.run(ctx => ctx.db.patch(flowId, { minor_units: before!.minor_units })); }
 });
 test("project ledger totals include capital costs and cash payments separately, not expenses", async () => {
   const search = await query("agentLife:search", {

@@ -20,6 +20,7 @@ type Item = {
   title: string;
   kind: string;
   amount?: string;
+  outstandingAmount?: string;
   currency?: string;
   direction?: string;
   status?: string;
@@ -78,7 +79,7 @@ export const timeline = query({
           ? "outflow"
           : "unspecified";
     const expectedClaims = new Set<string>();
-    if (a.includeProjections !== false)
+    if (a.includeProjections !== false && !["due", "overdue"].includes(a.status ?? ""))
       for (const f of graph.expected) {
         if (
           !f.remaining ||
@@ -107,6 +108,7 @@ export const timeline = query({
               ? "scheduled_expectation"
               : "assumption",
           amount: money(Math.abs(f.remaining), f.currency),
+          ...(f.claim ? { outstandingAmount: money(f.claim.outstanding_minor_units, f.currency) } : {}),
           currency: f.currency,
           direction: a.entityId && (f.claim || f.version)
             ? claimDirection((f.claim ?? f.version)!.creditor_id, (f.claim ?? f.version)!.debtor_id)
@@ -292,8 +294,8 @@ export const timeline = query({
           : "partial_500_event_limit",
         obligations: "complete",
         projections:
-          a.includeProjections === false
-            ? "excluded"
+          a.includeProjections === false || ["due", "overdue"].includes(a.status ?? "")
+            ? "excluded_by_request_or_debt_filter"
             : "current_recorded_schedules_and_expectations",
         sampleActualsThrough: w.dataset?.seed_as_of ?? null,
       },
@@ -305,7 +307,7 @@ export const timeline = query({
       coverageStatement:
         "Only recorded commitments and configured projections are covered. Dataset completeness is unknown; do not say nothing else is scheduled or that this is every real-life commitment.",
       basis:
-        "Dates are inclusive. Overdue claims are included by default. A linked expectation replaces its claim display, retaining dueDate. Recorded claims suppress duplicate schedule projections. Schedule projections start no earlier than today; past scheduled dates are not evidence of unpaid amounts. Projections are not confirmed future events.",
+        "Dates are inclusive. Overdue claims are included by default. Cash views show linked expectations once while retaining due dates and unpaid balances. Due/overdue views report the full unpaid claim, not a partial expected payment. Recorded claims suppress duplicate schedule projections. Schedule projections start no earlier than today; past scheduled dates are not evidence of unpaid amounts. Projections are not confirmed future events.",
     };
   },
 });

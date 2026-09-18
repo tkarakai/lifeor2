@@ -64,6 +64,7 @@ export function presentReport(
                 i.direction,
                 i.parties?.length ? i.parties.join(" → ") : "",
                 i.dueDate ? "due " + i.dueDate : "",
+                i.outstandingAmount && i.outstandingAmount !== i.amount ? `unpaid obligation ${i.outstandingAmount} ${i.currency}; shown amount is expected cash only` : "",
                 i.amountBasis === "explicit_cash_amount"
                   ? "projected cash per payment, not gross income"
                   : "",
@@ -425,7 +426,7 @@ export function presentReport(
         }
       >();
       for (const r of rows) {
-        const net = !!order && report.metric === "profit_loss";
+        const net = view === "by_period" && report.metric === "profit_loss";
         const period = view === "by_account" ? "All selected dates" : r.period,
           account = net ? "Net recorded income" : view === "by_period" ? r.type : r.account,
           type = net ? "Income less expenses" : r.type,
@@ -441,6 +442,16 @@ export function presentReport(
         grouped.set(key, old);
       }
       const entries = [...grouped.values()];
+      if (view === "by_period" && ["income", "expenses", "profit_loss"].includes(report.metric)) {
+        for (const currency of new Set(entries.map(r => r.currency))) {
+          const periods = entries.filter(r => r.currency === currency && /^\d{4}(?:-\d{2})?$/.test(r.period));
+          if (periods.length < 2) continue;
+          const highest = periods.reduce((a, b) => a.minor >= b.minor ? a : b);
+          const tied = periods.filter(r => r.minor === highest.minor).map(r => r.period).sort();
+          const measure = report.metric === "profit_loss" ? "net income" : report.metric;
+          text += `Highest recorded ${measure} among periods with matching entries: **${tied.slice(0, 5).map(escape).join(", ")}${tied.length > 5 ? ` (and ${tied.length - 5} tied periods)` : ""} — ${amount(decimal(highest.minor, scale(currency)), currency)}**${tied.length > 1 ? ` (${tied.length} periods tie)` : ""}.\n\n`;
+        }
+      }
       if (order) {
         if (new Set(entries.map(r => r.currency)).size > 1 || new Set(entries.map(r => r.type)).size > 1)
           throw new QueryError("invalid_report_view", "Amount ranking requires one currency and comparable account types. Select a currency and a focused metric first; no currencies were converted.");

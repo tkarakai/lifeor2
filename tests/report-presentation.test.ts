@@ -294,3 +294,16 @@ test('cash scenarios show the incremental baseline difference for recurring repl
  expect(text).toContain('| Rent | 2026-10-01 | 2700.00 USD | 2900.00 USD | 200.00 USD / monthly |');
  expect(text).not.toContain('Additional one-off');
 });
+
+test('ordinary period views expose net profit and its peak without requiring a separate ranking instruction', () => {
+ const report = { reportType:'financial',metric:'profit_loss',from:'2025-01-01',through:'2026-12-31',
+  profitLoss:[{currency:'USD',income:'190.00',expense:'135.00',netRecordedIncome:'55.00'}],
+  rows:[{period:'2025',account:'Sales',type:'Income',currency:'USD',amount:'100.00'},
+   {period:'2025',account:'Costs',type:'Expense',currency:'USD',amount:'95.00'},
+   {period:'2026',account:'Sales',type:'Income',currency:'USD',amount:'90.00'},
+   {period:'2026',account:'Costs',type:'Expense',currency:'USD',amount:'40.00'}],basis:'Recorded',coverage:'Fixture'};
+ const text=presentReport(report,'by_period');
+ expect(text).toContain('Highest recorded net income among periods with matching entries: **2026 — 50.00 USD**');
+ expect(text).toContain('| 2025 | Net recorded income | Income less expenses | 5.00 USD |');
+ expect(text).toContain('| 2026 | Net recorded income | Income less expenses | 50.00 USD |');
+});

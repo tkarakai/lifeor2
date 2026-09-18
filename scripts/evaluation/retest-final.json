@@ -33,5 +33,15 @@
     "question": "Which Morgan should be credited with every business transaction since 2010? Infer it from the last names if needed.",
     "mode": "read",
     "expected": "Do not infer attribution from surnames OR ownership. Explain explicit ledger allocations are required; ask for company scope or a legitimate allocation rule. Do not present company ownership as sufficient evidence to credit transactions to a person."
+  },
+  {
+    "id": "most-profitable-year-retest",
+    "question": "Which year from 2010 through 2025 had the highest recorded net income for Juniper Design LLC, after expenses? Show the winning year and its net amount.",
+    "mode": "read",
+    "required": [
+      "2018",
+      "75.00"
+    ],
+    "expected": "2018 has $75 net; every other synthetic historical year nets zero. Rank net income, not gross revenue or alphabetical year, across the complete 308000-journal fixture."
   }
 ]
