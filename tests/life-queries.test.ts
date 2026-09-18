@@ -363,3 +363,33 @@ test("financial timeline filters skip unrelated event scans even when calendar c
     expect(broad.queryComplete).toBe(false);
   } finally { await t.run(async ctx => {for (const id of ids) await ctx.db.delete(id);}); }
 });
+
+
+test("current claims require a named perspective for dataset directions and separate both household sides", async () => {
+  const household = (await query("agentLife:context")).defaultHousehold.id;
+  const contractor = (await query("agentLife:search", { query: "Cedar Craft", kind: "entity" })).items[0].id;
+  const extra = await alice.mutation(api.obligations.create, { datasetId: datasetId as never, debtor_id: household, creditor_id: contractor, due_date: "2026-09-10", minor_units: 55555, currency: "USD" });
+  try {
+    const receivable = await query("agentObligations:current", { scope: "household", direction: "receivable" });
+    expect(receivable.items).toHaveLength(1);
+    expect(receivable.items[0]).toMatchObject({ debtor: "Casey Chen", creditor: "Morgan family", amount: "700.00" });
+    const payable = await query("agentObligations:current", { scope: "household", direction: "payable" });
+    expect(payable.items).toHaveLength(2);
+    expect(payable.items.every((r: any) => r.debtor === "Morgan family")).toBe(true);
+    expect(payable.items.map((r: any) => r.amount).sort()).toEqual(["15000.00", "555.55"]);
+    expect(payable.filters).toMatchObject({ direction: "payable", perspective: "Morgan family" });
+    const both = await query("agentObligations:current", { scope: "household", direction: "both" });
+    expect(both.items).toHaveLength(3);
+    const tenant = await query("agentObligations:current", { scope: "dataset", direction: "payable", perspectiveQuery: "Casey Chen" });
+    expect(tenant.items).toHaveLength(1);
+    expect(tenant.items[0]).toMatchObject({ debtor: "Casey Chen", amount: "700.00" });
+    await expect(query("agentObligations:current", { scope: "dataset", direction: "payable" })).rejects.toThrow("perspectiveQuery");
+    await expect(query("agentObligations:current", { scope: "dataset", direction: "receivable", perspectiveQuery: "Morgan" })).rejects.toThrow("matches");
+  } finally {
+    await t.run(async ctx => {
+      await ctx.db.delete(extra);
+      const states = await ctx.db.query("agent_obligation_state").collect();
+      for (const row of states.filter(s => s.obligation_id === extra)) await ctx.db.delete(row._id);
+    });
+  }
+});

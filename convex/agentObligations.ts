@@ -10,6 +10,8 @@ export const current = query({
   agent: { operation: "life.obligations", scope: "data:read" },
   args: {
     scope: v.union(v.literal("household"), v.literal("dataset")),
+    direction: v.optional(v.union(v.literal("receivable"), v.literal("payable"), v.literal("both"))),
+    perspectiveQuery: v.optional(v.string()),
     debtorQuery: v.optional(v.string()),
     creditorQuery: v.optional(v.string()),
     partyQuery: v.optional(v.string()),
@@ -30,8 +32,12 @@ export const current = query({
       return found[0]._id;
     };
     const debtor = resolve(a.debtorQuery), creditor = resolve(a.creditorQuery), party = resolve(a.partyQuery);
+    const direction = a.direction ?? "both";
+    const perspective = resolve(a.perspectiveQuery) ?? (a.scope === "household" ? w.household : undefined);
+    if (direction !== "both" && !perspective) throw new Error("Receivable/payable requires household scope or a uniquely named perspectiveQuery. For all dataset parties choose direction=both and optional debtor/creditor filters.");
     const claims = graph.claims.filter(o => !o.archived && o.voided_at === undefined && o.outstanding_minor_units > 0
       && (a.scope === "dataset" || o.debtor_id === w.household || o.creditor_id === w.household)
+      && (!perspective || (direction === "receivable" ? o.creditor_id === perspective : direction === "payable" ? o.debtor_id === perspective : o.debtor_id === perspective || o.creditor_id === perspective))
       && (!debtor || o.debtor_id === debtor) && (!creditor || o.creditor_id === creditor)
       && (!party || o.debtor_id === party || o.creditor_id === party)
       && (!a.overdueOnly || o.due_date < w.today) && (!a.dueThrough || o.due_date <= a.dueThrough)
@@ -60,7 +66,7 @@ export const current = query({
     return {
       reportType: "obligations", today: w.today, timezone: w.timezone, queryComplete: true,
       scope: a.scope === "household" ? graph.name(w.household) : "All authorized dataset parties",
-      filters: { debtor: debtor ? graph.name(debtor) : null, creditor: creditor ? graph.name(creditor) : null, party: party ? graph.name(party) : null, query: a.query ?? null, overdueOnly: a.overdueOnly ?? false, dueThrough: a.dueThrough ?? null },
+      filters: { direction, perspective: perspective ? graph.name(perspective) : null, debtor: debtor ? graph.name(debtor) : null, creditor: creditor ? graph.name(creditor) : null, party: party ? graph.name(party) : null, query: a.query ?? null, overdueOnly: a.overdueOnly ?? false, dueThrough: a.dueThrough ?? null },
       items: claims.map(o => ({ id: o._id, debtor: graph.name(o.debtor_id), creditor: graph.name(o.creditor_id), title: graph.name(o.arrangement_id), commitment: graph.scheduleName(o.schedule_version_id), dueDate: o.due_date, amount: money(o.outstanding_minor_units, o.currency), currency: o.currency, status: o.due_date < w.today ? "overdue" : "unpaid", sourceIds: [o._id] })),
       totals: [...totals.values()].map(({minor, ...row}) => ({...row, amount: money(minor, row.currency)})),
       matchedCount: claims.length,

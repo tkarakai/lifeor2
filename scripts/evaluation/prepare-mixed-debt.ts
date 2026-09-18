@@ -48,9 +48,9 @@ try {
     creditor_id: vendor, debtor_id: household, due_date: "2026-09-10", minor_units: 55555,
     currency: "USD", arrangement_id: arrangementId, event_id: eventId, recognition_posting_id: recognition._id,
   }, "claim");
-  const incoming = await call("life.obligations", { scope: "household", creditorQuery: "Morgan family", overdueOnly: true });
-  const outgoing = await call("life.obligations", { scope: "household", debtorQuery: "Morgan family", overdueOnly: true });
-  const all = await call("life.obligations", { scope: "household" });
+  const incoming = await call("life.obligations", { scope: "household", direction: "receivable", creditorQuery: "Morgan family", overdueOnly: true });
+  const outgoing = await call("life.obligations", { scope: "household", direction: "payable", debtorQuery: "Morgan family", overdueOnly: true });
+  const all = await call("life.obligations", { scope: "household", direction: "both" });
   assert.equal(incoming.items.length, 1); assert.equal(incoming.items[0].amount, "700.00");
   assert.equal(incoming.items[0].debtor, "Casey Chen");
   assert.equal(outgoing.items.length, 1); assert.equal(outgoing.items[0].amount, "555.55");

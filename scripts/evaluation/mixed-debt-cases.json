@@ -16,5 +16,11 @@
     "question": "Show all current unpaid invoices, separating what people owe our family from what our family owes other people. Include amounts that are not due yet.",
     "mode": "read",
     "expected": "Casey owes Morgan700; Morgan owes GardenServices555.55 and CedarCraft15000. Preserve creditor/debtor meaning and due dates. Future30000remodelwork stays separate from debt. No netting or duplicate claims."
+  },
+  {
+    "id": "mixed-company-perspective",
+    "question": "From Garden Services\u2019 perspective, what unpaid invoices are receivables from our household?",
+    "mode": "read",
+    "expected": "Garden Services is creditor, Morgan family debtor, one555.55invoice dueSep10. Use named Garden perspective and receivable direction, not householdreceivables700 or allpayables15555.55."
   }
 ]

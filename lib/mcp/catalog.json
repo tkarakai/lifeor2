@@ -4266,7 +4266,7 @@
     "name": "life.obligations",
     "title": "agentObligations: current",
     "primary": true,
-    "description": "Who owes whom now? Complete current unpaid recorded invoices/claims, with explicit debtor, creditor, amount and due date. Use for still owe, outstanding invoices and overdue rent instead of reconstructing debt from timelines or recurring terms. Required scope=household limits to claims involving the configured household; dataset includes all authorized parties. Optional debtorQuery (who owes), creditorQuery (who is owed), partyQuery (either side) accept uniquely matching names; query filters agreement/schedule words. With no dueThrough, includes ALL outstanding claims, even future due dates; overdueOnly selects late claims. No date arithmetic, projections or cash-perspective conversion is needed. Not a loan-principal/balance-sheet report. Returns an exact saved report for present_report.",
+    "description": "Who owes whom now? Current unpaid recorded invoices/claims, with explicit debtor, creditor, amount and due date. Choose direction=receivable for money owed TO us (anyone late paying us), payable for money WE owe (are we late paying anyone), both only for both sides. scope=household uses the configured household perspective. For another person/company use scope=dataset and perspectiveQuery; for all dataset parties use both. Optional debtorQuery (who owes), creditorQuery (who is owed), partyQuery (either side) accept unique names; query filters agreement/schedule words. With no dueThrough, includes all outstanding claims, even future due dates; overdueOnly selects late claims. Excludes projections, duplicate expected payments and loan principal. Present the exact saved report.",
     "functionName": "agentObligations:current",
     "kind": "query",
     "scope": "data:read",
@@ -4284,6 +4284,27 @@
               "type": "string"
             }
           ]
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "const": "receivable",
+              "type": "string"
+            },
+            {
+              "const": "payable",
+              "type": "string"
+            },
+            {
+              "const": "both",
+              "type": "string"
+            }
+          ],
+          "description": "Required intent: receivable = owed TO the perspective; payable = owed BY the perspective; both = both sides. Household scope supplies our household perspective."
+        },
+        "perspectiveQuery": {
+          "type": "string",
+          "description": "Unique person/company name for the receivable/payable perspective. Omit for our household. This differs from partyQuery, which only filters a counterparty."
         },
         "debtorQuery": {
           "type": "string"
@@ -4311,7 +4332,8 @@
       },
       "required": [
         "scope",
-        "datasetId"
+        "datasetId",
+        "direction"
       ],
       "additionalProperties": false
     }

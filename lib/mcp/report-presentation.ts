@@ -69,6 +69,7 @@ export function presentReport(
   } else if (report.reportType === "obligations") {
     text = `Current unpaid recorded claims — as of ${escape(report.today)} (${escape(report.timezone)})\n\nScope: ${escape(report.scope)}.\n\n`;
     const f = report.filters ?? {};
+    if (f.direction) text += `${f.direction === "receivable" ? `Receivables — owed to ${escape(f.perspective)}` : f.direction === "payable" ? `Payables — owed by ${escape(f.perspective)}` : `Both receivables and payables${f.perspective ? ` involving ${escape(f.perspective)}` : ""}`}.\n\n`;
     const labels = [f.debtor ? `Debtor: ${f.debtor}` : null, f.creditor ? `Creditor: ${f.creditor}` : null, f.party ? `Involving: ${f.party}` : null, f.query ? `Matching agreements: ${f.query}` : null, f.overdueOnly ? "Overdue only" : null, f.dueThrough ? `Due on or before ${f.dueThrough}` : "All due dates"].filter(Boolean);
     text += labels.map(escape).join("; ") + ".\n\n";
     if (report.items.length) {

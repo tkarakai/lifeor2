@@ -387,3 +387,10 @@ test("insufficient-evidence presentation states a limited conclusion without rep
   const invented = await (await handleMcp(request("tools/call", { name: "reports.present", arguments: { datasetId: "dataset", reportIds, conclusion: "Born in Chicago" } }))).json();
   expect(!!invented.error || invented.result?.isError === true).toBe(true);
 });
+
+
+test("current-debt MCP schema requires an explicit direction instead of silently mixing sides", async () => {
+  const body = await (await handleMcp(request("tools/call", { name: "life.obligations", arguments: { datasetId: "dataset", scope: "household", overdueOnly: true } }))).json();
+  expect(!!body.error || body.result?.isError === true).toBe(true);
+  expect(mocks.query.mock.calls.some(([ref]) => getFunctionName(ref) === "agentObligations:current")).toBe(false);
+});

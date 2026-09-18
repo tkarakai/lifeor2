@@ -560,7 +560,7 @@ export function createAgentServer(token: string, grant: Grant) {
         },
         ["datasetId"],
       ),
-      "Read source using exactly one of documentId (the returned details_document_id) or target (owning record kind and ID). Use query for specific facts within a known document; empty matches mean those words were not found in this document, not a global absence. Otherwise follow nextOffset with the returned commit to keep pages consistent. Use detail=metadata before appending to obtain commit and canonical target without text.",
+      "Read a profile fact (birthday, birthdate, DOB, birthplace, where someone was born, background or preferences), or another record’s source note, using exactly one of documentId (the returned details_document_id) or target (owning record kind and ID). Use query for specific facts within a known document; empty matches mean those words were not found in this document, not a global absence. Otherwise follow nextOffset with the returned commit to keep pages consistent. Use detail=metadata before appending to obtain commit and canonical target without text.",
     ],
     [
       "save",
