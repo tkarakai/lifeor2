@@ -104,3 +104,10 @@ Different tags use distinct idempotency namespaces and preserve the earlier fixt
 Memo receipt lookup additionally uses Convex's `journal_entry.search_memo` index. Deployment waits for its automatic backfill; do not serve the new search against an old schema. The varied inference suite includes an old receipt with no supplied date, whose date, amount and card are computed independently from the generator.
 
 After `verify-future-appointment.ts` has checked the unchanged January appointment, run `fold-resolution-cases.json` on the same write fixture and then `bun scripts/evaluation/verify-fold-resolution.ts`. This explicitly selects the second 1:30 AM at the November clock change. The oracle requires UTC 07:30, a correction of the original event, and its preserved person link. Do not run this correction before the unchanged-appointment oracle.
+
+
+### Large local SQLite index backfills
+
+The installed evaluation backend (`002379a`, January 2026) materializes the remaining SQLite index range even when its caller requests a small page. Its search backfill defaults to 128 documents per page. On a large existing table this can repeatedly scan the remaining range. See the version-matched [SQLite scan implementation](https://github.com/get-convex/convex-backend/blob/002379a/crates/sqlite/src/lib.rs) and [worker page-size setting](https://github.com/get-convex/convex-backend/blob/002379a/crates/common/src/knobs.rs). This is specific to that local backend version, not a general statement about hosted Convex.
+
+For the isolated migration we temporarily started its recognized backend process with `VECTOR_INDEX_WORKER_PAGE_SIZE=16384`, waited for index readiness, then restarted with the default setting before inference. The variable is read at backend startup; setting it on an already-running backend does nothing. Do not change or restart the ordinary deployment to run this experiment. `setup.py` recognizes an already-starting isolated process and waits up to five minutes for persisted indexes to load, instead of launching a second process against the same database.

@@ -15,20 +15,33 @@ details=root.parent/'details.git'
 if not details.exists():subprocess.run(['git','init','--bare',str(details)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 config=json.loads((source/'.convex/standalone/config.json').read_text())
 port,site=3340,3341
+def recognized_backend():
+ if not (state/'pid').exists(): return None
+ pid=int((state/'pid').read_text())
+ check=subprocess.run(['ps','-p',str(pid),'-o','command='],capture_output=True,text=True)
+ if check.returncode: return None
+ if str(state/'backend.sqlite3') not in check.stdout: raise RuntimeError('Evaluation PID belongs to an unrecognized process')
+ return pid
 try:
  urllib.request.urlopen(f'http://127.0.0.1:{port}/instance_name',timeout=1)
- if not (state/'pid').exists(): raise RuntimeError('Port 3340 is occupied by an unrecognized process')
- pid=int((state/'pid').read_text())
- command=subprocess.check_output(['ps','-p',str(pid),'-o','command='],text=True)
- if str(state/'backend.sqlite3') not in command: raise RuntimeError('Port 3340 owner is not the isolated backend')
- print('Evaluation backend already listening')
+ if recognized_backend() is None: raise RuntimeError('Port 3340 is occupied by an unrecognized process')
+ print('Evaluation backend already listening',flush=True)
 except (urllib.error.URLError,TimeoutError):
- log=open(state/'backend.log','a')
- p=subprocess.Popen([config['binary'],'--interface','127.0.0.1','--port',str(port),'--site-proxy-port',str(site),'--instance-name',config['instanceName'],'--instance-secret',config['instanceSecret'],'--disable-beacon','--local-storage',str(state/'storage'),str(state/'backend.sqlite3')],cwd=root,stdout=log,stderr=log,start_new_session=True)
- (state/'pid').write_text(str(p.pid))
- for i in range(100):
-  try:urllib.request.urlopen(f'http://127.0.0.1:{port}/instance_name',timeout=1);break
-  except Exception:time.sleep(.1)
+ pid=recognized_backend()
+ if pid is None:
+  log=open(state/'backend.log','a')
+  p=subprocess.Popen([config['binary'],'--interface','127.0.0.1','--port',str(port),'--site-proxy-port',str(site),'--instance-name',config['instanceName'],'--instance-secret',config['instanceSecret'],'--disable-beacon','--local-storage',str(state/'storage'),str(state/'backend.sqlite3')],cwd=root,stdout=log,stderr=log,start_new_session=True)
+  pid=p.pid
+  (state/'pid').write_text(str(pid))
+ print('Waiting for isolated backend startup (large persisted indexes can take several minutes)',flush=True)
+ for i in range(600):
+  try:
+   urllib.request.urlopen(f'http://127.0.0.1:{port}/instance_name',timeout=1)
+   break
+  except (urllib.error.URLError,TimeoutError):
+   if recognized_backend() is None: raise RuntimeError('Isolated backend exited; inspect backend/backend.log')
+   time.sleep(.5)
+ else: raise RuntimeError('Isolated backend did not become ready within five minutes; inspect backend/backend.log')
 env=dict(os.environ)
 for k in ['CONVEX_DEPLOYMENT','CONVEX_DEPLOY_KEY','CONVEX_SELF_HOSTED_URL','CONVEX_SELF_HOSTED_ADMIN_KEY']:env.pop(k,None)
 env.update(CONVEX_SELF_HOSTED_URL=f'http://127.0.0.1:{port}',CONVEX_SELF_HOSTED_ADMIN_KEY=config['adminKey'])
