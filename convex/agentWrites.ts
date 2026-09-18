@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "./lib/scoped";
 import { workspace } from "./lib/lifeQueries/common";
-import { AmbiguousLocalTimeError, localInstant } from "./lib/lifeQueries/time";
+import { AmbiguousLocalTimeError, clockFacts, localInstant } from "./lib/lifeQueries/time";
 import { owned, ownedTarget, expected, requireUser } from "./lib/access";
 
 import { nonempty, parseMoney, overlayTimeline } from "./lib/domain";
@@ -96,6 +96,7 @@ export const recordEvent = mutation({
       time: a.time,
       timezone,
       occurredAt: new Date(occurred_at).toISOString(),
+      ...clockFacts(occurred_at, timezone),
       correctsId: a.correctsId ?? null,
       status: "recorded",
     };
@@ -404,6 +405,7 @@ export const rescheduleEvent = mutation({
       timezone,
       status: "rescheduled",
       occurredAt: new Date(occurred_at).toISOString(),
+      ...clockFacts(occurred_at, timezone),
       basis:
         "New event supersedes the prior occurrence; duration, subject links and history are preserved.",
     };
