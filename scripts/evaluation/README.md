@@ -99,3 +99,8 @@ bun scripts/evaluation/verify-writes.ts --credentials=write-final-credentials.js
 ```
 
 Different tags use distinct idempotency namespaces and preserve the earlier fixture and failed-attempt evidence. `verify-cash-scenarios.ts` directly checks the production scenario calculation against the independently reconciled main fixture; it does not substitute for the actual-model scenario cases.
+
+
+Memo receipt lookup additionally uses Convex's `journal_entry.search_memo` index. Deployment waits for its automatic backfill; do not serve the new search against an old schema. The varied inference suite includes an old receipt with no supplied date, whose date, amount and card are computed independently from the generator.
+
+After `verify-future-appointment.ts` has checked the unchanged January appointment, run `fold-resolution-cases.json` on the same write fixture and then `bun scripts/evaluation/verify-fold-resolution.ts`. This explicitly selects the second 1:30 AM at the November clock change. The oracle requires UTC 07:30, a correction of the original event, and its preserved person link. Do not run this correction before the unchanged-appointment oracle.

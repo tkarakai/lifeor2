@@ -216,6 +216,25 @@ test("journal pagination retains complete postings and returns all matching reco
     await f.bob.query(search, { from: "2026-06-01", to: "2026-08-31" }),
   ).toMatchObject({ records: [], complete: true });
 });
+test("indexed memo search finds an old receipt without guessed dates and preserves owner/date filters", async () => {
+  const f = await ledgerFixture();
+  await f.t.run(ctx => ctx.db.patch(f.ids[0], { memo: "Pine Street Market receipt", accounting_date: "2012-02-20" }));
+  const result = await f.alice.query(search, { text: "Pine receipt", limit: 1 });
+  expect(result.records).toHaveLength(1);
+  expect(result.records[0]).toMatchObject({ id: f.ids[0], date: "2012-02-20" });
+  expect(result.records[0].postings.map((p: any) => p.amount).sort()).toEqual(["-12000.00", "12000.00"]);
+  expect(result.ordering).toBe("memo_relevance");
+  if (result.nextCursor) {
+    await expect(f.alice.query(search, { text: "Pine receipt", from: "2026-01-01", cursor: result.nextCursor })).rejects.toThrow("does not match");
+    const end = await f.alice.query(search, { text: "Pine receipt", limit: 1, cursor: result.nextCursor });
+    expect(end).toMatchObject({ records: [], complete: true });
+  } else expect(result.complete).toBe(true);
+  expect((await f.alice.query(search, { text: "Pine receipt", from: "2026-01-01" })).records).toEqual([]);
+  expect(await f.bob.query(search, { text: "Pine receipt" })).toMatchObject({ records: [], complete: true });
+  await f.t.run(ctx => ctx.db.patch(f.ids[1], { memo: "Undated market receipt", accounting_date: undefined }));
+  expect((await f.alice.query(search, { text: "Undated receipt" })).records).toHaveLength(1);
+  expect((await f.alice.query(search, { text: "Undated receipt", to: "2026-12-31" })).records).toEqual([]);
+});
 test("multiple currencies stay separate and mixed subject journals are excluded instead of guessed", async () => {
   const f = await ledgerFixture();
   await f.t.run(async (ctx) => {

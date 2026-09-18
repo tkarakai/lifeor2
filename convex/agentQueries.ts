@@ -100,8 +100,8 @@ export async function journalData(ctx: QueryCtx, j: Doc<"journal_entry">) {
   );
 }
 const rangeArgs = {
-  from: v.string(),
-  to: v.string(),
+  from: v.optional(v.string()),
+  to: v.optional(v.string()),
   chartId: v.optional(v.id("chart_of_accounts")),
 };
 function range(from: string, to: string) {
@@ -118,7 +118,9 @@ export const searchJournals = query({
     ...pageArgs,
   },
   handler: async (ctx, a) => {
-    range(a.from, a.to);
+    range(a.from ?? "0001-01-01", a.to ?? "9999-12-31");
+    const text = a.text?.trim();
+    if (text && text.length > 500) throw new Error("Use at most 500 characters of memo words");
     const user = await requireUser(ctx);
     if (a.chartId) await owned(ctx, "chart_of_accounts", a.chartId, user._id);
     if (a.entityId) await owned(ctx, "entity", a.entityId, user._id);
@@ -129,7 +131,7 @@ export const searchJournals = query({
             q
               .eq("user_id", user._id)
               .gte("accounting_date", a.from)
-              .lte("accounting_date", a.to),
+              .lte("accounting_date", a.to ?? "9999-12-31"),
           )
       : ctx.db
           .query("journal_entry")
@@ -137,19 +139,48 @@ export const searchJournals = query({
             q
               .eq("dataset_id", ctx.scope.datasetId)
               .gte("accounting_date", a.from)
-              .lte("accounting_date", a.to),
+              .lte("accounting_date", a.to ?? "9999-12-31"),
           );
-    const page = await journals
-      .order("desc")
-      .paginate({ cursor: a.cursor ?? null, numItems: limit(a.limit) });
+    const pagination = { cursor: a.cursor ?? null, numItems: limit(a.limit) };
+    const memoCandidates = (term: string) => ctx.db.query("journal_entry").withSearchIndex("search_memo", (q) => {
+          const scoped = ctx.scope.legacy
+            ? q.search("memo", term).eq("user_id", user._id)
+            : q.search("memo", term).eq("dataset_id", ctx.scope.datasetId);
+          return a.chartId ? scoped.eq("chart_id", a.chartId) : scoped;
+        });
+    // Match the search engine’s literal word vocabulary, rather than the
+    // broader synonym vocabulary used by life search.
+    const memoWords = (value: string) => [...new Set(value.toLowerCase().normalize("NFC").split(/[^\p{L}\p{N}]+/u).filter(Boolean))];
+    const terms = text ? memoWords(text) : [];
+    let selectedTerm: string | undefined;
+    const cursorKey = JSON.stringify([user._id, ctx.scope.datasetId, a.chartId, a.entityId, a.from, a.to, text]);
+    if (text) {
+      if (!terms.length || terms.length > 16 || terms.some(term => [...term].length > 32)) throw new Error("Use 1–16 distinctive memo words, at most 32 characters per word");
+      if (a.cursor) {
+        try {
+          const saved = JSON.parse(a.cursor);
+          if (saved.version !== "memo1" || saved.key !== cursorKey || !terms.includes(saved.term) || typeof saved.cursor !== "string") throw new Error();
+          selectedTerm = saved.term;
+          pagination.cursor = saved.cursor;
+        } catch { throw new Error("Memo search cursor does not match these filters; restart the search without a cursor"); }
+      } else {
+        // Convex full-text search matches ANY term. Probe a bounded number of
+        // hits per word, then scan the most selective stream and require all
+        // words below. Common words cannot bury a unique old receipt.
+        const probes = await Promise.all(terms.map(async term => ({ term, count: (await memoCandidates(term).take(33)).length })));
+        selectedTerm = probes.sort((a, b) => a.count - b.count || a.term.localeCompare(b.term))[0].term;
+      }
+    }
+    const page = text
+      ? await memoCandidates(selectedTerm!).paginate(pagination)
+      : await journals.order("desc").paginate(pagination);
     const records = [];
     for (const j of page.page) {
       if (
-        !j.accounting_date ||
-        j.accounting_date < a.from ||
-        j.accounting_date > a.to ||
+        (a.from && (!j.accounting_date || j.accounting_date < a.from)) ||
+        (a.to && (!j.accounting_date || j.accounting_date > a.to)) ||
         (a.chartId && j.chart_id !== a.chartId) ||
-        (a.text && !j.memo.toLowerCase().includes(a.text.toLowerCase()))
+        (text && !terms.every(term => memoWords(j.memo).includes(term)))
       )
         continue;
       const lines = await journalData(ctx, j);
@@ -171,6 +202,7 @@ export const searchJournals = query({
           accountId: p.account_id,
           account: account?.name,
           type: account?.type,
+          amount: decimalAmount(postingAmount(p), scale(p.currency)),
           minorUnits: postingAmount(p),
           currency: p.currency,
           subjects: parts.map((x) => ({
@@ -182,8 +214,10 @@ export const searchJournals = query({
     }
     return {
       records,
-      nextCursor: page.isDone ? null : page.continueCursor,
+      nextCursor: page.isDone ? null : text ? JSON.stringify({ version: "memo1", key: cursorKey, term: selectedTerm, cursor: page.continueCursor }) : page.continueCursor,
       complete: page.isDone,
+      ordering: text ? "memo_relevance" : "newest_accounting_date_first",
+      amountBasis: "Posting amount strings are signed major currency units: positive debit, negative credit. minorUnits remain available for exact ledger inspection. Account type determines balance meaning.",
     };
   },
 });

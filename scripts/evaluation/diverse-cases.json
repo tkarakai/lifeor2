@@ -1,5 +1,16 @@
 [
   {
+    "id": "diverse-old-receipt",
+    "question": "Find the old transaction with memo \"Diverse synthetic Utilities and internet 180003\". I do not remember its date. When was it recorded for, how much was the purchase, and which payment account was used?",
+    "mode": "read",
+    "required": [
+      "43.82",
+      "2012",
+      "8844"
+    ],
+    "expected": "Unique historical transaction from2012-02-20:43.82USD utilities expense charged toHarborMastercard8844. Search memo across history without guessing dates or paging unrelated journals. Not4382USD or bank cash."
+  },
+  {
     "id": "diverse-income",
     "question": "How much recorded household income did we have from 2010 through 2025?",
     "expected": "Complete historical Income total 11276830.80 USD, no raw journal paging.",

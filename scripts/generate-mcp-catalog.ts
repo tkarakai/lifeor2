@@ -106,7 +106,7 @@ const descriptions: Record<string, string> = {
   "agentQueries.searchEntities":
     "Find people, family members, companies and households by name; query can be empty. Omit limit for the default 50-row scan within the dataset (maximum 50). Paginated: follow nextCursor before concluding uniqueness or absence. Returns compact IDs and names.",
   "agentQueries.searchJournals":
-    "Search financial journal records by inclusive from/to dates (YYYY-MM-DD), memo text, chart and explicitly attributed person/entity. Returns bounded pages WITH posting amounts in minor units, currencies and account types. Follow nextCursor even for empty pages.",
+    "Find individual financial transactions and receipts by 1–16 literal indexed memo words (text, each at most 32 characters), optionally narrowed by inclusive from/to dates, chart and attributed person. Omit dates when unknown: memo search covers recorded history without scanning unrelated journals. Results are relevance ranked with text, newest accounting date otherwise. Posting amount strings are signed major currency units, positive debit/negative credit; minorUnits are integer ledger units. Follow nextCursor even on empty date/subject-filtered pages. Use reports.finances for aggregate totals, not transaction paging.",
   "agentQueries.incomeSummary":
     "Calculate a person's monthly income, salary/earnings totals and average over fromMonth..toMonth (YYYY-MM). Resolve entityId first. Deterministic gross recognized Income-account totals, NOT net take-home pay. Includes signed reversals, explicit attribution, separate currencies, missing-month warnings and source journal IDs. Prefer this to listing all journals for income questions.",
   "finance.getJournalEntry":

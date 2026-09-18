@@ -68,6 +68,9 @@ test("civil time resolves daylight saving and refuses ambiguous/nonexistent appo
       localInstant("2026-11-01", "01:30", "America/Chicago", -360),
     ).toISOString(),
   ).toBe("2026-11-01T07:30:00.000Z");
+  expect(new Date(localInstant("2026-11-01", "01:30", "America/Chicago", -300)).toISOString()).toBe("2026-11-01T06:30:00.000Z");
+  expect(() => localInstant("2026-11-01", "01:30", "America/Chicago", 0)).toThrow("does not exist");
+  expect(() => localInstant("2026-03-08", "02:30", "America/Chicago", -360)).toThrow("does not exist");
 });
 test("rescheduling preserves subject links, hides superseded occurrences and rejects branching edits", async () => {
   const f = await setup(),

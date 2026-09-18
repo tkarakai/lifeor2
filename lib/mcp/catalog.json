@@ -86,7 +86,7 @@
   {
     "name": "agentQueries.searchJournals",
     "title": "Search financial records",
-    "description": "Search financial journal records by inclusive from/to dates (YYYY-MM-DD), memo text, chart and explicitly attributed person/entity. Returns bounded pages WITH posting amounts in minor units, currencies and account types. Follow nextCursor even for empty pages.",
+    "description": "Find individual financial transactions and receipts by 1–16 literal indexed memo words (text, each at most 32 characters), optionally narrowed by inclusive from/to dates, chart and attributed person. Omit dates when unknown: memo search covers recorded history without scanning unrelated journals. Results are relevance ranked with text, newest accounting date otherwise. Posting amount strings are signed major currency units, positive debit/negative credit; minorUnits are integer ledger units. Follow nextCursor even on empty date/subject-filtered pages. Use reports.finances for aggregate totals, not transaction paging.",
     "functionName": "agentQueries:searchJournals",
     "kind": "query",
     "scope": "data:read",
@@ -127,8 +127,6 @@
         }
       },
       "required": [
-        "from",
-        "to",
         "datasetId"
       ],
       "additionalProperties": false
