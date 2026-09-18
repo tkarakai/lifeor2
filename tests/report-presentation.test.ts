@@ -326,3 +326,11 @@ test("current debts retain debtor/creditor meaning without a cash-flow perspecti
   expect(answer).toContain("2026-09-01");
   expect(answer).not.toContain("inflow");
 });
+
+test("current debts show linked future work separately without adding it to unpaid totals", () => {
+  const answer = presentReport({reportType:"obligations",today:"2026-09-18",timezone:"America/Chicago",scope:"Morgan family",filters:{},items:[{id:"claim",debtor:"Morgan family",creditor:"Contractor",amount:"15000.00",currency:"USD",dueDate:"2026-09-30",title:"Remodel",status:"unpaid"}],totals:[{debtor:"Morgan family",creditor:"Contractor",amount:"15000.00",currency:"USD",claimCount:1}],relatedPlanned:[{id:"flow",assumptionId:"assumption",project:"Remodel",name:"Future work",date:"2026-11-15",signedCash:"-30000.00",currency:"USD"}],relatedPlanningComplete:true,basis:"Current unpaid claims.",relatedPlanningBasis:"Related project plans only."});
+  expect(answer).toContain("Morgan family | Contractor | 15000.00 USD");
+  expect(answer).toContain("not incurred debt");
+  expect(answer).toContain("Future work | 2026-11-15 | -30000.00 USD");
+  expect(answer).not.toContain("45000.00");
+});

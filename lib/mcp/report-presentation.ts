@@ -77,6 +77,13 @@ export function presentReport(
       text += pagination(report.items.length, "Totals include all matching current claims.");
       text += `\n\nSources: ${report.items.slice(offset, offset + limit).map((r: any) => `\`${escape(r.id)}\``).join(", ")}.`;
     } else text += "No matching unpaid recorded claims were found.";
+    if (report.relatedPlanned?.length) {
+      text += "\n\nRelated project plans — not incurred debt:\n\n";
+      text += table(["Project", "Assumption", "Expected date", "Signed cash flow"], report.relatedPlanned.slice(0, 20).map((r: any) => [r.project, r.name, r.date, amount(r.signedCash, r.currency)]));
+      text += `\n\n${escape(report.relatedPlanningBasis)} Negative cash flow is an outflow. Sources: ${report.relatedPlanned.slice(0, 20).flatMap((r: any) => [r.id, r.assumptionId]).map((id: string) => `\`${escape(id)}\``).join(", ")}.`;
+      if (report.relatedPlanned.length > 20) text += ` Only the first 20 of ${report.relatedPlanned.length} related assumptions are displayed; inspect the saved report for the remainder.`;
+    }
+    if (report.relatedPlanningComplete === false) text += "\n\nRelated-project lookup exceeded its bounded context budget. Debt totals are complete; the related planning context is partial. Narrow the party/agreement or request a project report for future-work questions.";
     text += `\n\n${escape(report.basis)}`;
   } else if (report.reportType === "timeline") {
     text = `Recorded commitments and events — ${escape(report.from)} through ${escape(report.through)} (${escape(report.timezone)})\n\n`;

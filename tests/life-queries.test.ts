@@ -315,6 +315,11 @@ test("current-debt lookup resolves creditor and debtor directly, without timelin
   expect(contractor.items).toHaveLength(1);
   expect(contractor.items[0]).toMatchObject({debtor:"Morgan family",amount:"15000.00",dueDate:"2026-09-30"});
   expect(contractor.items.every((r: any) => r.amount !== "30000.00")).toBe(true);
+  expect(contractor.relatedPlanned).toHaveLength(1);
+  expect(contractor.relatedPlanned[0]).toMatchObject({project:"Cedar Lane remodel",signedCash:"-30000.00",date:"2026-11-15"});
+  expect(contractor.relatedPlanningComplete).toBe(true);
+  expect(contractor.totals[0].amount).toBe("15000.00");
+  expect(due.relatedPlanned).toEqual([]);
   await expect(query("agentObligations:current", {scope:"dataset",partyQuery:"Morgan"})).rejects.toThrow("matches");
   const cutoff = await query("agentObligations:current", {scope:"household",creditorQuery:"Cedar Craft",dueThrough:"2026-09-01"});
   expect(cutoff.items).toEqual([]);

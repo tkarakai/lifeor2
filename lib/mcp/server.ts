@@ -128,7 +128,7 @@ export function createAgentServer(token: string, grant: Grant) {
       if (tool.name === "life.obligations") {
         const report = await client.query(makeFunctionReference<"query">(tool.functionName), args) as Record<string, any>;
         const saved = await saveReport({ userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, report);
-        return { ...report, ...saved, items: report.items.slice(0, 12), itemsComplete: report.items.length <= 12, hint: "Present this report: debtor owes creditor. Totals cover every matching current claim; linked expected cash and future work are not additional debt." };
+        return { ...report, ...saved, items: report.items.slice(0, 12), itemsComplete: report.items.length <= 12, relatedPlanned: report.relatedPlanned.slice(0, 8), relatedPlannedCount: report.relatedPlanned.length, hint: "Present this report: debtor owes creditor. Totals cover every matching current claim. Related project cash assumptions are shown separately as future plans, never additional debt. For a full budget/cost/payment reconciliation use reports.project." };
       }
       if (tool.name === "life.events")
         return eventReport(client, token, { userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, a);
