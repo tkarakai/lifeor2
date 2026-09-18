@@ -375,3 +375,15 @@ test("details.read retains target lookup and does not report a missing document 
   expect(body.result.structuredContent).toMatchObject({ target, availability: "missing", queryComplete: false, items: [] });
   expect(mocks.detailsTarget).toHaveBeenLastCalledWith(target);
 });
+
+test("insufficient-evidence presentation states a limited conclusion without replacing source facts", async () => {
+  mocks.detailsRead.mockResolvedValue({ documentId: "doc1", target: { kind: "entity", id: "person1" }, availability: "available", source: "Date of birth: February 12, 1990.", commit: "b".repeat(40) });
+  const read = await (await handleMcp(request("tools/call", { name: "details.read", arguments: { datasetId: "dataset", documentId: "doc1", query: "birth" } }))).json();
+  const reportIds = [read.result.structuredContent.reportId];
+  const presented = await (await handleMcp(request("tools/call", { name: "reports.present", arguments: { datasetId: "dataset", reportIds, conclusion: "insufficient_evidence" } }))).json();
+  expect(presented.result.structuredContent.answer).toContain("couldn’t establish the requested answer from the retrieved records");
+  expect(presented.result.structuredContent.answer).toContain("Date of birth: February 12, 1990.");
+  expect(presented.result.structuredContent.answer).not.toContain("No birthplace exists");
+  const invented = await (await handleMcp(request("tools/call", { name: "reports.present", arguments: { datasetId: "dataset", reportIds, conclusion: "Born in Chicago" } }))).json();
+  expect(!!invented.error || invented.result?.isError === true).toBe(true);
+});

@@ -291,11 +291,12 @@ export function createAgentServer(token: string, grant: Grant) {
     scope: "data:read",
     title: "Render verified report",
     description:
-      "Render saved report facts as the final answer without rewriting amounts. Select a view; use for financial, payroll, current-debt, project, cash, calendar and source-excerpt reports. The client presents this text directly.",
+      "Render saved report facts as the final answer without rewriting amounts. If the retrieved evidence does not establish the requested fact, set conclusion=insufficient_evidence rather than substituting a related fact or endlessly searching. The client presents the limitation and unchanged evidence directly.",
     inputSchema: schema(
       {
         datasetId: dataset,
         reportIds: { type: "array", items: text, minItems: 1, maxItems: 4 },
+        conclusion: { type: "string", enum: ["insufficient_evidence"], description: "Use when these retrieved records do not establish the requested answer. States the limitation without claiming global absence and still quotes the verified evidence." },
         offset: { type: "integer", minimum: 0 },
         limit: { type: "integer", minimum: 1, maximum: 200 },
         order: { type: "string", enum: ["amount_desc", "amount_asc"], description: "For largest/smallest amounts in a single-currency financial report. by_account ranks categories; by_period ranks periods (profit_loss ranks net income). Apply limit after ranking." },
@@ -332,7 +333,10 @@ export function createAgentServer(token: string, grant: Grant) {
           ) + `\n\nReport \`${id}\` · snapshot ${saved.snapshotAt}`,
         );
       }
-      return { answer: sections.join("\n\n---\n\n"), reportIds: a.reportIds };
+      const limitation = a.conclusion === "insufficient_evidence"
+        ? "I couldn’t establish the requested answer from the retrieved records. The related evidence below does not establish that fact; additional records may be needed.\n\n"
+        : "";
+      return { answer: limitation + sections.join("\n\n---\n\n"), reportIds: a.reportIds };
     },
   });
   definitions.push({

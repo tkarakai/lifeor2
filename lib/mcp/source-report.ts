@@ -30,5 +30,5 @@ export async function sourceReport(scope: { userId: string; connectionId: string
   if (!data.items.length) return data;
   const full = { ...data, reportType: "source_excerpts", items: data.items as Record<string, any>[] };
   const saved = await saveReport(scope, full);
-  return { ...full, ...saved, items: full.items.slice(0, 4), previewOnly: full.items.length > 4, hint: "Present this saved report for source-note facts. It quotes selected source lines with exact commits and explicitly marks excerpt coverage; do not infer anything about text that is not shown. Further details.read calls are only needed for requested facts absent from these excerpts." };
+  return { ...full, ...saved, items: full.items.slice(0, 4), previewOnly: full.items.length > 4, hint: "Present this saved report when its source lines answer the requested fact. A word match alone may be related but insufficient evidence. If needed, try one focused synonymous query. If the fact is still not established, present with conclusion=insufficient_evidence; do not substitute a related fact, guess possible values as search terms, or exhaustively page unrelated text. Exact commits and excerpt coverage are included; do not infer unshown text." };
 }
