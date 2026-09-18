@@ -8,6 +8,7 @@ const modules = [
   "agentWrites",
   "agentPlanning",
   "agentTimeline",
+  "agentObligations",
   "agentFinance",
   "agentQueries",
   "arrangements",
@@ -89,8 +90,10 @@ const descriptions: Record<string, string> = {
     "Get dataset timezone, current local date, default household, charts and coverage. Use for unspecified dates or family scope.",
   "life.search":
     "Find identities by name: people, household, organizations, arrangements/projects, ledger accounts, tags and schedules. Compact results with unique/ambiguous status. Empty query lists available identities; entityType optionally filters entity kinds such as Car or Person without matching company names. Do not guess IDs.",
+  "life.obligations":
+    "Who owes whom now? Complete current unpaid recorded invoices/claims, with explicit debtor, creditor, amount and due date. Use for still owe, outstanding invoices and overdue rent instead of reconstructing debt from timelines or recurring terms. Required scope=household limits to claims involving the configured household; dataset includes all authorized parties. Optional debtorQuery (who owes), creditorQuery (who is owed), partyQuery (either side) accept uniquely matching names; query filters agreement/schedule words. With no dueThrough, includes ALL outstanding claims, even future due dates; overdueOnly selects late claims. No date arithmetic, projections or cash-perspective conversion is needed. Not a loan-principal/balance-sheet report. Returns an exact saved report for present_report.",
   "life.timeline":
-    "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to the default household. entityId ONLY filters the involved party and never changes direction; set perspectiveId explicitly only when asking from another person’s/company’s perspective. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. The complete saved report is available to present; returned items are a preview. Set includeEvents=false for commitments only.",
+    "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to the default household. entityId ONLY filters the involved party and never changes direction; set perspectiveId explicitly only when asking from another person’s/company’s perspective. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. Complete nonempty results return a saved report; empty results have no handle and incomplete queries fail explicitly. Status/direction filters exclude unrelated calendar events. Use life.obligations for current unpaid claims without choosing a date window. Set includeEvents=false for commitments only.",
   "reports.finances":
     "Choose scope=household for personal/household books; scope=dataset for all books or an explicit chart/person filter. Use accountQuery for a requested expense/revenue category (e.g. groceries). Compute complete recorded financial totals over inclusive from/through dates (YYYY-MM-DD). metric: cash_balances (recorded bank cash as of through, all selected checking/savings/cash accounts in one call), payroll (gross income, actual take-home deposits and monthly averages separately; PayrollDeposit events), profit_loss (income, expense and net surplus), income (gross recognized), expenses (excludes capital purchases), balances (all history through cutoff), cashflow (signed bank-account changes; use eventKind=PayrollDeposit for recorded take-home pay), activity (signed debits/credits by account, including project capital costs). groupBy: month (default), year or total. Optional currency code and verified chart/person/beneficiary/project/tag/account IDs. Server consumes all database pages; never scan journals to calculate totals. Decimal amounts are major currency units. Currencies remain separate. reportId supports drill-down via reports.read.",
   "life.read":
@@ -233,6 +236,7 @@ for (const name of modules) {
         "life.context",
         "life.search",
         "life.timeline",
+        "life.obligations",
         "life.relationships",
         "life.events",
         "reports.finances",

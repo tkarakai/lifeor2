@@ -1,6 +1,7 @@
 import { ConvexHttpClient } from "convex/browser";
 import { makeFunctionReference } from "convex/server";
 import { saveReport } from "./report-store";
+import { QueryError } from "./query-error";
 type TimelinePage = {
   items: Record<string, unknown>[];
   nextOffset: number | null;
@@ -27,6 +28,11 @@ export async function timelineReport(
       makeFunctionReference<"query">("agentTimeline:timeline"),
       { ...args, agentToken: token, limit: 50, offset },
     )) as TimelinePage;
+    if (!result.queryComplete)
+      throw new QueryError(
+        "incomplete_timeline",
+        "Timeline coverage is incomplete. Narrow the dates or use includeEvents=false for a commitments-only question. No report was saved; do not infer absence or totals from this attempt.",
+      );
     first ??= result;
     items.push(...result.items);
     if (result.nextOffset === null) break;
@@ -41,6 +47,9 @@ export async function timelineReport(
     itemsComplete: true,
     nextOffset: null,
   };
+  // Like empty calendar searches, a complete empty timeline is absence evidence,
+  // not a monetary report to keep selecting after a subsequent query repairs scope.
+  if (!items.length) return { ...full, hint: "No matching recorded items in this scope. No report handle was created. If these filters were only a lookup attempt, correct them before answering the user's question." };
   const saved = await saveReport(scope, full);
   return {
     ...full,

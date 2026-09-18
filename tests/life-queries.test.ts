@@ -305,3 +305,52 @@ test("as-of measurements search all history without guessed start dates and name
   expect(empty.queryComplete).toBe(true);
   expect(empty.filter.from).toBe("all recorded history");
 });
+
+test("current-debt lookup resolves creditor and debtor directly, without timeline bounds or forecast double counting", async () => {
+  const due = await query("agentObligations:current", {scope:"household",debtorQuery:"Casey Chen",query:"Maple rent"});
+  expect(due.items).toHaveLength(1);
+  expect(due.items[0]).toMatchObject({debtor:"Casey Chen",creditor:"Morgan family",amount:"700.00",dueDate:"2026-09-01"});
+  expect(due.totals[0]).toMatchObject({amount:"700.00",claimCount:1});
+  const contractor = await query("agentObligations:current", {scope:"household",creditorQuery:"Cedar Craft"});
+  expect(contractor.items).toHaveLength(1);
+  expect(contractor.items[0]).toMatchObject({debtor:"Morgan family",amount:"15000.00",dueDate:"2026-09-30"});
+  expect(contractor.items.every((r: any) => r.amount !== "30000.00")).toBe(true);
+  await expect(query("agentObligations:current", {scope:"dataset",partyQuery:"Morgan"})).rejects.toThrow("matches");
+  const cutoff = await query("agentObligations:current", {scope:"household",creditorQuery:"Cedar Craft",dueThrough:"2026-09-01"});
+  expect(cutoff.items).toEqual([]);
+  const tenant = (await query("agentLife:search", {query:"Casey Chen",kind:"entity"})).items[0].id;
+  const household = (await query("agentLife:context")).defaultHousehold.id;
+  const future = await alice.mutation(api.obligations.create, {datasetId:datasetId as never,debtor_id:tenant,creditor_id:household,due_date:"2028-01-15",minor_units:12345,currency:"USD"});
+  try {
+    const allDates = await query("agentObligations:current", {scope:"household",debtorQuery:"Casey Chen"});
+    expect(allDates.items.some((r: any) => r.id === future && r.amount === "123.45")).toBe(true);
+    expect(allDates.totals[0].amount).toBe("823.45");
+    const beforeFuture = await query("agentObligations:current", {scope:"household",debtorQuery:"Casey Chen",dueThrough:"2026-12-31"});
+    expect(beforeFuture.totals[0].amount).toBe("700.00");
+  } finally {
+    await t.run(async ctx => {
+      await ctx.db.delete(future);
+      const states = await ctx.db.query("agent_obligation_state").collect();
+      for (const row of states.filter(s => s.obligation_id === future)) await ctx.db.delete(row._id);
+    });
+  }
+});
+
+test("financial timeline filters skip unrelated event scans even when calendar coverage would exceed its budget", async () => {
+  const ids = await t.run(async ctx => {
+    const original = await ctx.db.query("event").first();
+    if (!original) throw new Error("Missing sample event");
+    const {_id, _creationTime, ...fields} = original;
+    const ids = [];
+    for (let i=0;i<501;i++) ids.push(await ctx.db.insert("event", {...fields, dataset_id:datasetId as never,kind:"UnrelatedHistory",occurred_at:Date.parse("2026-09-20T12:00:00Z")}));
+    return ids;
+  });
+  try {
+    const due = await query("agentTimeline:timeline", {from:"2026-09-18",through:"2026-09-30",status:"due"});
+    expect(due.queryComplete).toBe(true);
+    expect(due.coverage.events).toBe("excluded_by_request_or_financial_filter");
+    expect(due.items.map((r:any)=>r.amount).sort()).toEqual(["15000.00","700.00"]);
+    const broad = await query("agentTimeline:timeline", {from:"2026-09-18",through:"2026-09-30"});
+    expect(broad.queryComplete).toBe(false);
+  } finally { await t.run(async ctx => {for (const id of ids) await ctx.db.delete(id);}); }
+});

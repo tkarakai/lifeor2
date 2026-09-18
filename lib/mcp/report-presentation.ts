@@ -23,6 +23,8 @@ export function presentReport(
   limit = 50,
   order?: "amount_desc" | "amount_asc",
 ) {
+  if (report.reportType === "timeline" && report.queryComplete === false)
+    throw new QueryError("incomplete_timeline", "This saved timeline has incomplete coverage. Run a complete, narrower query before presenting an answer; do not infer absence or totals from it.");
   if (order && (report.reportType !== "financial" || report.metric === "payroll"))
     throw new QueryError("invalid_report_view", "Amount ranking requires a financial income, expense, cash, balance or profit/loss report; use the appropriate metric first.");
   if (order && report.metric === "profit_loss" && view !== "by_period")
@@ -64,6 +66,18 @@ export function presentReport(
       i.time ? i.occurredAt : "Date only",
     ]));
     text += pagination(report.items.length, "The saved report contains all matching recorded events.") + `\n\n${escape(report.coverage)}. These are recorded events, not a claim that every real-life appointment is recorded.\n\nSources: ${report.items.slice(offset, offset + limit).map((i: any) => `\`${escape(i.id)}\``).join(", ")}`;
+  } else if (report.reportType === "obligations") {
+    text = `Current unpaid recorded claims — as of ${escape(report.today)} (${escape(report.timezone)})\n\nScope: ${escape(report.scope)}.\n\n`;
+    const f = report.filters ?? {};
+    const labels = [f.debtor ? `Debtor: ${f.debtor}` : null, f.creditor ? `Creditor: ${f.creditor}` : null, f.party ? `Involving: ${f.party}` : null, f.query ? `Matching agreements: ${f.query}` : null, f.overdueOnly ? "Overdue only" : null, f.dueThrough ? `Due on or before ${f.dueThrough}` : "All due dates"].filter(Boolean);
+    text += labels.map(escape).join("; ") + ".\n\n";
+    if (report.items.length) {
+      text += table(["Debtor (owes)", "Creditor (is owed)", "Total unpaid", "Claims"], report.totals.map((r: any) => [r.debtor, r.creditor, amount(r.amount, r.currency), r.claimCount]));
+      text += "\n\n" + table(["Due", "Agreement", "Debtor", "Creditor", "Unpaid", "Status"], report.items.slice(offset, offset + limit).map((r: any) => [r.dueDate, r.title, r.debtor, r.creditor, amount(r.amount, r.currency), r.status]));
+      text += pagination(report.items.length, "Totals include all matching current claims.");
+      text += `\n\nSources: ${report.items.slice(offset, offset + limit).map((r: any) => `\`${escape(r.id)}\``).join(", ")}.`;
+    } else text += "No matching unpaid recorded claims were found.";
+    text += `\n\n${escape(report.basis)}`;
   } else if (report.reportType === "timeline") {
     text = `Recorded commitments and events — ${escape(report.from)} through ${escape(report.through)} (${escape(report.timezone)})\n\n`;
     const filters = report.filters;

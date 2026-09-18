@@ -318,3 +318,11 @@ test("one-off scenario assumptions identify the affected account explicitly", ()
   expect(text).toContain("| Date | Account | Label | Signed amount |");
   expect(text).toContain("| 2026-10-10 | Bills checking | Extra spending | -200.00 USD |");
 });
+
+test("current debts retain debtor/creditor meaning without a cash-flow perspective", () => {
+  const answer = presentReport({reportType:"obligations",today:"2026-09-18",timezone:"America/Chicago",scope:"Morgan family",filters:{},items:[{id:"claim",debtor:"Casey Chen",creditor:"Morgan family",amount:"700.00",currency:"USD",dueDate:"2026-09-01",title:"Maple rent",status:"overdue"}],totals:[{debtor:"Casey Chen",creditor:"Morgan family",amount:"700.00",currency:"USD",claimCount:1}],basis:"Current unpaid claims; not projected payments."});
+  expect(answer).toContain("Debtor (owes)");
+  expect(answer).toContain("Casey Chen | Morgan family | 700.00 USD");
+  expect(answer).toContain("2026-09-01");
+  expect(answer).not.toContain("inflow");
+});

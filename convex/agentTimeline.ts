@@ -211,7 +211,10 @@ export const timeline = query({
         }
       }
     let eventsComplete = true;
-    if (a.includeEvents !== false) {
+    // Calendar events cannot satisfy a debt-status or cash-direction filter.
+    // Scanning them can exhaust coverage on years of unrelated ledger events.
+    const includeCalendarEvents = a.includeEvents !== false && !a.status && !a.direction;
+    if (includeCalendarEvents) {
       // Wide UTC bounds followed by civil-date filtering retain boundary events in every timezone.
       const lo = Date.parse(from) - 86400000,
         hi = Date.parse(through) + 2 * 86400000;
@@ -297,7 +300,7 @@ export const timeline = query({
       today: w.today,
       timezone: w.timezone,
       coverage: {
-        events: eventsComplete
+        events: !includeCalendarEvents ? "excluded_by_request_or_financial_filter" : eventsComplete
           ? "complete_in_range"
           : "partial_500_event_limit",
         obligations: "complete",

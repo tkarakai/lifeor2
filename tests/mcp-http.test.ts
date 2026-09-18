@@ -159,6 +159,7 @@ test("current MCP discovery and tool listing work without initialization and use
   ).toEqual([
     "life.context",
     "life.events",
+    "life.obligations",
     "life.relationships",
     "life.search",
     "life.timeline",

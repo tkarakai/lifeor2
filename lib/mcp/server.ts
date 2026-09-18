@@ -30,7 +30,7 @@ import { presentReport } from "./report-presentation";
 import { cashReport } from "./cash-report";
 import { projectReport } from "./project-report";
 import { financialReport } from "./financial-report";
-import { readReport } from "./report-store";
+import { readReport, saveReport } from "./report-store";
 import { agentDetails } from "./details";
 import { parseTarget } from "@/lib/details/server";
 import { DetailsError, MAX_DOCUMENT_BYTES } from "@/lib/details/types";
@@ -125,6 +125,11 @@ export function createAgentServer(token: string, grant: Grant) {
           a,
         );
       const args = { ...a, agentToken: token };
+      if (tool.name === "life.obligations") {
+        const report = await client.query(makeFunctionReference<"query">(tool.functionName), args) as Record<string, any>;
+        const saved = await saveReport({ userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, report);
+        return { ...report, ...saved, items: report.items.slice(0, 12), itemsComplete: report.items.length <= 12, hint: "Present this report: debtor owes creditor. Totals cover every matching current claim; linked expected cash and future work are not additional debt." };
+      }
       if (tool.name === "life.events")
         return eventReport(client, token, { userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, a);
       if (tool.name === "life.timeline")
@@ -286,7 +291,7 @@ export function createAgentServer(token: string, grant: Grant) {
     scope: "data:read",
     title: "Render verified report",
     description:
-      "Render saved report facts as the final answer without rewriting amounts. Select a view; use for financial, payroll, project, cash, calendar and source-excerpt reports. The client presents this text directly.",
+      "Render saved report facts as the final answer without rewriting amounts. Select a view; use for financial, payroll, current-debt, project, cash, calendar and source-excerpt reports. The client presents this text directly.",
     inputSchema: schema(
       {
         datasetId: dataset,
