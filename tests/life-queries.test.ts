@@ -288,6 +288,10 @@ test("focused relationship results include verified counterpart roles and honor 
   expect(result.itemsComplete).toBe(true);
   expect(result.items).toHaveLength(1);
   expect(result.items[0].role).toBe("Owner");
+  expect(result.filters).toMatchObject({entity:"Alex Morgan",roleWords:"Owner",arrangementWords:"Morgan Software"});
+  expect(result.coverage).toContain("filtered result is not a complete ownership");
+  const owners = await query("agentLife:relationships", {role:"Owner",asOf:"2026-09-18"});
+  expect(owners.items.some((r: any) => r.kind === "role" && r.entity.name === "Jamie Morgan")).toBe(true);
   expect(result.items[0].participantsComplete).toBe(true);
   expect(result.items[0].participants.some((p: any) => p.entity.name === "Morgan Software LLC")).toBe(true);
   const cars = await query("agentLife:search", { query: "", kind: "entity", entityType: "Car" });

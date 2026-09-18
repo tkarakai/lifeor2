@@ -363,8 +363,17 @@ export const relationships = query({
       asOf: new Date(at).toISOString(),
       timezone: w.timezone,
       dateBasis: a.asOf ? "End of the requested local civil day" : "Current instant",
+      filters: {
+        entity: a.entityId ? name(a.entityId) : null,
+        arrangement: a.arrangementId ? name(a.arrangementId) : null,
+        roleWords: a.role ?? null,
+        arrangementWords: a.arrangementQuery ?? null,
+      },
+      coverage: a.entityId || a.arrangementId || a.role || a.arrangementQuery
+        ? "Query completeness applies only to the explicit filters above. Records outside those filters were excluded; a filtered result is not a complete ownership or family inventory. Do not describe its only match as the only relationship in the dataset. Follow pagination for remaining matches."
+        : "All active recorded roles and ownership at the stated instant were queried. Follow pagination before claiming the complete matching list. This does not establish unrecorded real-life relationships.",
       basis:
-        "Recorded direct roles and ownership. No inferred beneficial ownership or financial consolidation.",
+        "Recorded direct roles and ownership. No inferred beneficial ownership or financial consolidation. Ownership and surnames do not assign company transactions to a person; use explicit ledger subject/beneficiary allocations, or ask for the intended reporting scope instead of inferring an allocation.",
     };
   },
 });
