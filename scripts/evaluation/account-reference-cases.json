@@ -1,0 +1,34 @@
+[
+  {
+    "id": "explicit-account-reference",
+    "question": "What if we spent an extra $10,000 from Household bills checking \u00b7 1042 on October 10, 2026? Show the projected effect through November 30 without changing records.",
+    "required": [],
+    "expected": "Resolve the user-named bills checking1042 to its stable account ID, even if an initial suffix-as-ID lookup fails. Return baseline68678.11 and scenario58678.11, difference-10000, minimum54128.11. Do not ask for the already named account. No writes.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "account-suffix-reference",
+    "question": "Suppose an extra $10,000 leaves our checking account ending in 1042 on October 10, 2026. What happens to our household checking forecast through November 30? Do not record a payment.",
+    "mode": "read",
+    "expected": "Unique suffix1042 resolves to Household bills checking. Same baseline68678.11/scenario58678.11/delta-10000/min54128.11. Account lookup failure must be repaired, not treated as an absent choice. No writes."
+  },
+  {
+    "id": "additional-spending-clarification",
+    "conversation": "additional-spending-clarification",
+    "question": "If we spent an extra $10000 from Morgan household checking on October 10, 2026, how would that affect our household cash through November 30? Include the existing planned commitments. Do not record a payment.",
+    "mode": "read",
+    "expected": "Ask which of the two household checking accounts to use, or compute clearly labeled aggregate-only hypothetical effects without inventing an account. No write."
+  },
+  {
+    "id": "additional-spending-after-clarification",
+    "conversation": "additional-spending-clarification",
+    "question": "Use Household bills checking \u00b7 1042 for that hypothetical expense.",
+    "mode": "read",
+    "required": [
+      "58678.11",
+      "10000"
+    ],
+    "expected": "Complete the earlier scenario: baseline68678.11, proposed58678.11, effect-10000, minimum54128.11. Existing commitments included, no write."
+  }
+]

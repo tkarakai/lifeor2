@@ -4,6 +4,8 @@ import { getFunctionName } from "convex/server";
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   mutation: vi.fn(),
+  detailsRead: vi.fn(),
+  detailsTarget: vi.fn(),
   grant: {
     connectionId: "connection",
     userId: "user",
@@ -22,6 +24,7 @@ vi.mock("../lib/mcp/http", async (original) => ({
   ...(await original<object>()),
   backend: () => ({ query: mocks.query, mutation: mocks.mutation }),
 }));
+vi.mock("../lib/mcp/details", () => ({ agentDetails: () => ({ read: mocks.detailsRead, forTarget: mocks.detailsTarget }) }));
 import { handleMcp } from "../lib/mcp/server";
 import { GET as metadata } from "../app/.well-known/oauth-authorization-server/route";
 import { OPTIONS as preflight, POST as corsMcp } from "../app/mcp/route";
@@ -337,4 +340,38 @@ test("an exhausted connection receives Retry-After rather than executing a tool"
   const response = await handleMcp(request("tools/list"));
   expect(response.status).toBe(429);
   expect(response.headers.get("retry-after")).toBe("60");
+});
+
+
+test("details.read accepts returned document IDs, pins commits and returns the owning target", async () => {
+  const target = { kind: "entity", id: "entity1" };
+  const doc = { documentId: "doc1", target, availability: "available", source: "# Person\nBirthday: February 12.\n", commit: "a".repeat(40) };
+  mocks.detailsRead.mockResolvedValue(doc);
+  const body = await (await handleMcp(request("tools/call", { name: "details.read", arguments: { datasetId: "dataset", documentId: "doc1", commit: doc.commit, detail: "metadata" } }))).json();
+  expect(body.result.structuredContent).toMatchObject({ documentId: "doc1", target, commit: doc.commit, availability: "available" });
+  expect(mocks.detailsRead).toHaveBeenLastCalledWith("doc1", doc.commit);
+  const query = await (await handleMcp(request("tools/call", { name: "details.read", arguments: { datasetId: "dataset", documentId: "doc1", query: "birthday" } }))).json();
+  expect(query.result.structuredContent).toMatchObject({ queryComplete: true, matchingLineCount: 1, items: [{ target, commit: doc.commit, excerpts: [{ text: "Birthday: February 12." }] }] });
+  const missing = await (await handleMcp(request("tools/call", { name: "details.read", arguments: { datasetId: "dataset", documentId: "doc1", query: "employment" } }))).json();
+  expect(missing.result.structuredContent).toMatchObject({ queryComplete: true, items: [], matchingLineCount: 0 });
+  expect(missing.result.structuredContent.reportId).toBeUndefined();
+});
+
+test("details.read rejects ambiguous references, non-record target kinds and mixed paging/query modes", async () => {
+  for (const args of [
+    {}, { documentId: "doc1", target: { kind: "entity", id: "entity1" } },
+    { target: { kind: "details_document", id: "doc1" } },
+    { documentId: "doc1", query: "birthday", offset: 0 },
+  ]) {
+    const body = await (await handleMcp(request("tools/call", { name: "details.read", arguments: { datasetId: "dataset", ...args } }))).json();
+    expect(!!body.error || body.result?.isError === true).toBe(true);
+  }
+});
+
+test("details.read retains target lookup and does not report a missing document as a complete search", async () => {
+  const target = { kind: "entity", id: "entity1" };
+  mocks.detailsTarget.mockResolvedValue({ documentId: null, target, availability: "missing", source: null, commit: null });
+  const body = await (await handleMcp(request("tools/call", { name: "details.read", arguments: { datasetId: "dataset", target, query: "birthday" } }))).json();
+  expect(body.result.structuredContent).toMatchObject({ target, availability: "missing", queryComplete: false, items: [] });
+  expect(mocks.detailsTarget).toHaveBeenLastCalledWith(target);
 });

@@ -142,7 +142,7 @@ describe("authenticated details service", () => {
     expect(saved).toMatchObject({ source: "durable source", cache: "pending" });
     expect(saved.warning).toContain("Saved in Git");
     const read = await service.read("doc1");
-    expect(read).toMatchObject({ commit: saved.commit, cache: "current", source: "durable source" });
+    expect(read).toMatchObject({ commit: saved.commit, cache: "current", source: "durable source", target: { kind: "entity", id: "entity1" } });
     expect(backend.observe).toHaveBeenLastCalledWith("doc1", saved.commit, "available");
     expect(await repository.history("doc1")).toHaveLength(1);
     await service.read("doc1", saved.commit!);

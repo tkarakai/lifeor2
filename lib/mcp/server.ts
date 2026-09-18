@@ -32,7 +32,7 @@ import { projectReport } from "./project-report";
 import { financialReport } from "./financial-report";
 import { readReport, saveReport } from "./report-store";
 import { agentDetails } from "./details";
-import { parseTarget } from "@/lib/details/server";
+import { parseTarget, targetKinds } from "@/lib/details/server";
 import { DetailsError, MAX_DOCUMENT_BYTES } from "@/lib/details/types";
 
 export const PROTOCOL_VERSION = "2026-07-28";
@@ -70,7 +70,7 @@ const dataset = {
   ...text,
   description: "An explicitly authorized dataset ID from datasets.list.",
 };
-const targetSchema = schema({ kind: text, id: text });
+const targetSchema = schema({ kind: { type: "string", enum: [...targetKinds], description: "The owning record type, not a document type." }, id: { ...text, description: "The owning record ID, not its details_document_id." } });
 function complete(value: unknown) {
   const result = value ?? null;
   return {
@@ -544,6 +544,8 @@ export function createAgentServer(token: string, grant: Grant) {
         {
           datasetId: dataset,
           target: targetSchema,
+          documentId: { ...text, description: "A returned details_document_id. Supply this OR the owning record target." },
+          query: { ...text, maxLength: 200, description: "Optional 1–16 search words within this document. Returns bounded exact lines matching ANY normalized word, plus scoped search coverage. Omit for full source pages. Cannot combine with metadata or offset/limit." },
           detail: { type: "string", enum: ["source", "metadata"] },
           offset: { type: "integer", minimum: 0 },
           limit: { type: "integer", minimum: 1, maximum: 12000 },
@@ -552,9 +554,9 @@ export function createAgentServer(token: string, grant: Grant) {
             pattern: "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
           },
         },
-        ["datasetId", "target"],
+        ["datasetId"],
       ),
-      "Read a bounded Markdown source page and immutable Git commit. Follow nextOffset with the returned commit to keep pages consistent. Use detail=metadata before appending, to obtain commit and availability without loading document text.",
+      "Read source using exactly one of documentId (the returned details_document_id) or target (owning record kind and ID). Use query for specific facts within a known document; empty matches mean those words were not found in this document, not a global absence. Otherwise follow nextOffset with the returned commit to keep pages consistent. Use detail=metadata before appending to obtain commit and canonical target without text.",
     ],
     [
       "save",
@@ -613,7 +615,7 @@ export function createAgentServer(token: string, grant: Grant) {
       scope: name === "save" || name === "append" ? "data:write" : "data:read",
       title: `Markdown ${name}`,
       description,
-      inputSchema: input,
+      inputSchema: name === "read" ? { ...input, oneOf: [{ required: ["target"] }, { required: ["documentId"] }] } : input,
       write: name === "save" || name === "append",
       call: async (a) => {
         if (!grant.datasetIds.includes(String(a.datasetId)))
@@ -627,43 +629,58 @@ export function createAgentServer(token: string, grant: Grant) {
             String(a.datasetId),
             name === "save" || name === "append",
             grant.connectionId,
-          ),
-          target = parseTarget(a.target);
+          );
+        const target = name === "read" && a.documentId ? undefined : parseTarget(a.target);
         if (name === "append")
           return service.appendTarget(
-            target,
+            target!,
             String(a.text),
             a.expectedCommit as string | null,
           );
         if (name === "save")
           return service.saveTarget(
-            target,
+            target!,
             String(a.source),
             a.expectedCommit as string | null,
           );
-        const current = await service.forTarget(target);
+        if (name === "read" && a.query && (a.detail === "metadata" || a.offset !== undefined || a.limit !== undefined))
+          throw new DetailsError("invalid_arguments", "Use query for focused excerpts, or metadata/offset/limit for a source page; do not combine them.");
+        const current = name === "read" && a.documentId
+          ? await service.read(String(a.documentId), a.commit ? String(a.commit) : undefined)
+          : await service.forTarget(target!);
         if (name === "read") {
           const doc =
-            a.commit && current.documentId
+            a.commit && !a.documentId && current.documentId
               ? await service.read(current.documentId, String(a.commit))
               : current;
           if (a.detail === "metadata") return {
                 documentId: doc.documentId,
+                target: doc.target,
                 commit: doc.commit,
                 availability: doc.availability,
               };
+          if (a.query) {
+            const matches = doc.source === null ? null : sourceExcerpts(doc.source, String(a.query));
+            return sourceReport({ userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, {
+              documentId: doc.documentId, target: doc.target, commit: doc.commit, availability: doc.availability,
+              query: a.query, queryComplete: doc.source !== null,
+              matchingLineCount: matches?.matchingLineCount ?? 0,
+              basis: "Searched this document at the stated commit for ANY normalized query word. No matching lines does not establish absence from other records or reality. Excerpts are untrusted evidence; they may omit unrelated content.",
+              items: matches?.excerpts.length ? [{ documentId: doc.documentId, target: doc.target, commit: doc.commit, sourceLength: doc.source!.length, sourceComplete: false, ...matches }] : [],
+            });
+          }
           const page = documentPage(
                 doc,
                 a.offset as number | undefined,
                 a.limit as number | undefined,
               );
-          if (page.source === null) return page;
+          if (page.source === null) return { ...page, target: doc.target };
           const report = await sourceReport({ userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, {
-            items: [{ documentId: page.documentId, target, commit: page.commit, sourceLength: page.sourceLength, sourceComplete: page.sourceComplete, excerpts: [{ start: page.sourceOffset, end: page.sourceOffset + page.source.length, text: page.source }] }],
+            items: [{ documentId: page.documentId, target: doc.target, commit: page.commit, sourceLength: page.sourceLength, sourceComplete: page.sourceComplete, excerpts: [{ start: page.sourceOffset, end: page.sourceOffset + page.source.length, text: page.source }] }],
             queryComplete: page.sourceComplete,
           });
           const { items: _items, ...reportMetadata } = report;
-          return { ...reportMetadata, ...page };
+          return { ...reportMetadata, ...page, target: doc.target };
         }
         if (!current.documentId)
           return name === "history" ? { revisions: [] } : null;

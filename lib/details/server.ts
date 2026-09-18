@@ -5,7 +5,7 @@ import { GitDetailsRepository } from "./git";
 import { DetailsService, type DetailsBackend } from "./service";
 import { DetailsError, documentPath, MAX_DOCUMENT_BYTES, validateCommit, type DetailsLocator, type DetailsTarget } from "./types";
 
-const targetKinds = new Set([
+export const targetKinds = new Set([
   "entity", "arrangement", "arrangement_type", "arrangement_role_definition", "arrangement_role_assignment",
   "event", "measurement", "tag", "chart_of_accounts", "ledger_account", "journal_entry", "posting", "financial_account",
   "posting_attribution", "evidence_item", "statement", "statement_line", "balance_observation", "reconciliation",

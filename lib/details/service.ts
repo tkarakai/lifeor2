@@ -39,14 +39,14 @@ export class DetailsService {
       throw error;
     }
     const cache = commit ? "pinned" as const : await this.observation(locator._id, document);
-    return { documentId: locator._id, repositoryKey: this.repositoryKey, path: locator.path, ...document, parsed: document.source === null ? null : parseDetails(document.source), cache };
+    return { documentId: locator._id, target: locator.target, repositoryKey: this.repositoryKey, path: locator.path, ...document, parsed: document.source === null ? null : parseDetails(document.source), cache };
   }
   async read(id: string, commit?: string) { return this.readLocator(await this.locator(id), commit); }
   async forTarget(target: DetailsTarget) {
     const user = await this.user();
     // Backend forTarget validates the target even when it has no document.
     const locator = await this.backend.forTarget(target);
-    if (!locator) return { documentId: null, availability: "missing" as const, source: null, commit: null, parsed: null, cache: "current" as const };
+    if (!locator) return { documentId: null, target, availability: "missing" as const, source: null, commit: null, parsed: null, cache: "current" as const };
     return this.readLocator(this.validate(locator, user._id));
   }
   async saveTarget(target: DetailsTarget, source: string, expectedCommit: string | null) {
