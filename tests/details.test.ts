@@ -148,6 +148,17 @@ describe("authenticated details service", () => {
     await service.read("doc1", saved.commit!);
     expect(backend.observe).toHaveBeenCalledTimes(2); // Pinned reads never overwrite current cache.
   });
+  it("appends against a pinned base, preserves long source and is safe to retry", async () => {
+    const service = new DetailsService(fixtureBackend(), repository, "local");
+    const target = {kind: "entity" as const, id: "entity1"};
+    const source = "# Existing\n\n" + "Preserve this imported text. ".repeat(2000);
+    const first = await service.saveTarget(target, source, null);
+    const added = await service.appendTarget(target, "One indoor cat is allowed.", first.commit);
+    expect((await service.forTarget(target)).source).toBe(source+"\n\nOne indoor cat is allowed.\n");
+    expect((await service.appendTarget(target, "One indoor cat is allowed.", first.commit)).changed).toBe(false);
+    await expect(service.appendTarget(target, "Different competing edit", first.commit)).rejects.toMatchObject({code:"stale_revision"});
+    expect((await service.forTarget(target)).commit).toBe(added.commit);
+  });
   it("allocates only when saving and never reports an unsuccessful commit as saved", async () => {
     const backend = fixtureBackend();
     vi.mocked(backend.forTarget).mockResolvedValue(null);

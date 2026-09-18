@@ -171,3 +171,25 @@ test("large timeline presentation pages detail without changing complete totals"
     expect(text).toContain("| outflow | 150.00 USD |");
   expect(next).toContain("offset 100");
 });
+
+test("large source documents retain exact pinned text across bounded pages", async () => {
+  const { documentPage } = await import("../lib/mcp/document-page");
+  const source = "Original text ".repeat(2000),
+    doc = {
+      documentId: "note",
+      availability: "available",
+      source,
+      commit: "abc",
+    };
+  let offset = 0,
+    joined = "";
+  do {
+    const page = documentPage(doc, offset, 8000);
+    expect(page.commit).toBe("abc");
+    expect(page.source!.length).toBeLessThanOrEqual(8000);
+    joined += page.source;
+    offset = page.nextOffset ?? -1;
+  } while (offset >= 0);
+  expect(joined).toBe(source);
+  expect(documentPage(doc).sourceComplete).toBe(false);
+});

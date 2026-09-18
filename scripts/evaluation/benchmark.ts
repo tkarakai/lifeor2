@@ -119,6 +119,46 @@ try {
     "Project capital cost mismatch",
   );
   assert(project.obligations[0].amount === "15000.00", "Project debt mismatch");
+  for (const [scope, expected] of [
+    ["household", "95719.77"],
+    ["dataset", "165060.32"],
+  ] as const) {
+    const cash = await call("reports.finances", {
+      scope,
+      metric: "cash_balances",
+      from: "2026-09-16",
+      through: "2026-09-16",
+      groupBy: "total",
+    });
+    assert(
+      cash.cashSummary[0].cash === expected,
+      `Wrong ${scope} cash balance`,
+    );
+    cases.at(-1)!.expected = expected;
+    cases.at(-1)!.actual = cash.cashSummary[0].cash;
+  }
+  const baseline = await call("reports.cashProjection", {
+    scope: "household",
+    through: "2026-11-30",
+    includeAssumptions: true,
+  });
+  const commitments = await call("reports.cashProjection", {
+    scope: "household",
+    through: "2026-11-30",
+    includeAssumptions: false,
+  });
+  assert(
+    baseline.reports[0].accounts.length === 2,
+    "Household forecast included company cash",
+  );
+  assert(
+    Math.round(
+      (Number(commitments.reports[0].projectedClosing) -
+        Number(baseline.reports[0].projectedClosing)) *
+        100,
+    ) === 3000000,
+    "Assumption exclusion lost/duplicated current debt",
+  );
   const result = {
     at: new Date().toISOString(),
     targetJournals: count,

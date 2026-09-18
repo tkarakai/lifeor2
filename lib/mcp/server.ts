@@ -1,3 +1,4 @@
+import { documentPage } from "./document-page";
 import { timelineReport } from "./timeline-report";
 import {
   createMcpHandler,
@@ -469,8 +470,21 @@ export function createAgentServer(token: string, grant: Grant) {
   for (const [name, input, description] of [
     [
       "read",
-      schema({ datasetId: dataset, target: targetSchema }),
-      "Read the current Markdown source and its immutable Git commit for a record.",
+      schema(
+        {
+          datasetId: dataset,
+          target: targetSchema,
+          detail: { type: "string", enum: ["source", "metadata"] },
+          offset: { type: "integer", minimum: 0 },
+          limit: { type: "integer", minimum: 1, maximum: 12000 },
+          commit: {
+            type: "string",
+            pattern: "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+          },
+        },
+        ["datasetId", "target"],
+      ),
+      "Read a bounded Markdown source page and immutable Git commit. Follow nextOffset with the returned commit to keep pages consistent. Use detail=metadata before appending, to obtain commit and availability without loading document text.",
     ],
     [
       "save",
@@ -486,6 +500,21 @@ export function createAgentServer(token: string, grant: Grant) {
         },
       }),
       "Save Markdown with optimistic concurrency. Supply the exact expectedCommit from details.read, or null for a missing document. Retrying identical source is safe.",
+    ],
+    [
+      "append",
+      schema({
+        datasetId: dataset,
+        target: targetSchema,
+        text: { type: "string", minLength: 1, maxLength: 100000 },
+        expectedCommit: {
+          anyOf: [
+            { type: "string", pattern: "^(?:[a-f0-9]{40}|[a-f0-9]{64})$" },
+            { type: "null" },
+          ],
+        },
+      }),
+      "Append the supplied exact text to a source note, preserving all existing content on the server. Read details.read with detail=metadata for expectedCommit first (null only when missing). Identical retries with the same base commit are safe. Prefer this to rewriting the whole document for an addition.",
     ],
     [
       "history",
@@ -510,11 +539,11 @@ export function createAgentServer(token: string, grant: Grant) {
   ] as const) {
     definitions.push({
       name: `details.${name}`,
-      scope: name === "save" ? "data:write" : "data:read",
+      scope: name === "save" || name === "append" ? "data:write" : "data:read",
       title: `Markdown ${name}`,
       description,
       inputSchema: input,
-      write: name === "save",
+      write: name === "save" || name === "append",
       call: async (a) => {
         if (!grant.datasetIds.includes(String(a.datasetId)))
           throw new DetailsError(
@@ -525,10 +554,16 @@ export function createAgentServer(token: string, grant: Grant) {
         const service = agentDetails(
             token,
             String(a.datasetId),
-            name === "save",
+            name === "save" || name === "append",
             grant.connectionId,
           ),
           target = parseTarget(a.target);
+        if (name === "append")
+          return service.appendTarget(
+            target,
+            String(a.text),
+            a.expectedCommit as string | null,
+          );
         if (name === "save")
           return service.saveTarget(
             target,
@@ -536,7 +571,23 @@ export function createAgentServer(token: string, grant: Grant) {
             a.expectedCommit as string | null,
           );
         const current = await service.forTarget(target);
-        if (name === "read") return current;
+        if (name === "read") {
+          const doc =
+            a.commit && current.documentId
+              ? await service.read(current.documentId, String(a.commit))
+              : current;
+          return a.detail === "metadata"
+            ? {
+                documentId: doc.documentId,
+                commit: doc.commit,
+                availability: doc.availability,
+              }
+            : documentPage(
+                doc,
+                a.offset as number | undefined,
+                a.limit as number | undefined,
+              );
+        }
         if (!current.documentId)
           return name === "history" ? { revisions: [] } : null;
         if (name === "history") return service.history(current.documentId);
@@ -698,7 +749,11 @@ export async function handleMcp(request: Request) {
   const name = typeof rawName === "string" ? rawName : undefined;
   const required =
     catalog.find((t) => t.name === name)?.scope ??
-    (name === "details.save" || name === "datasets.saveSampleDocuments"
+    ([
+      "details.save",
+      "details.append",
+      "datasets.saveSampleDocuments",
+    ].includes(name ?? "")
       ? "data:write"
       : name?.startsWith("datasets.") && name !== "datasets.list"
         ? "datasets:manage"

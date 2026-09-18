@@ -314,18 +314,34 @@ export function presentReport(
               r.netRecordedIncome,
             ]),
           ) + "\n\n";
-      else
+      else {
+        const completeMonths =
+          String(report.from).endsWith("-01") &&
+          new Date(Date.parse(report.through) + 86400000)
+            .toISOString()
+            .slice(8, 10) === "01";
+        const average =
+          completeMonths &&
+          report.requestedMonths > 1 &&
+          report.totals.some((r: any) => r.averageMonthlyAmount);
         text +=
           table(
-            ["Type", "Recorded total", "Monthly average (requested months)"],
+            average
+              ? ["Type", "Recorded total", "Monthly average (requested months)"]
+              : ["Type", "Recorded total"],
             report.totals.map((r: any) => [
               r.type,
               amount(r.amount, r.currency),
-              r.averageMonthlyAmount
-                ? amount(r.averageMonthlyAmount, r.currency)
-                : "Not applicable",
+              ...(average
+                ? [
+                    r.averageMonthlyAmount
+                      ? amount(r.averageMonthlyAmount, r.currency)
+                      : "Not applicable",
+                  ]
+                : []),
             ]),
           ) + "\n\n";
+      }
       const grouped = new Map<
         string,
         {

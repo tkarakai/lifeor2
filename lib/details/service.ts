@@ -54,6 +54,16 @@ export class DetailsService {
     const locator = this.validate(await this.backend.ensure(target, this.repositoryKey), user._id);
     return this.saveLocator(locator, source, expectedCommit);
   }
+  async appendTarget(target: DetailsTarget, text: string, expectedCommit: string | null) {
+    if (!text.trim()) throw new DetailsError("invalid_source", "Append text must not be empty.");
+    const current = await this.forTarget(target);
+    const base = expectedCommit === null ? null : current.documentId ? await this.read(current.documentId, expectedCommit) : null;
+    if (expectedCommit !== null && !base) throw new DetailsError("stale_revision", "Read the document's current commit before appending.", 409);
+    const source = base?.source ?? "";
+    const next = source + (source ? source.endsWith("\n\n") ? "" : source.endsWith("\n") ? "\n" : "\n\n" : "") + text + "\n";
+    const saved = await this.saveTarget(target, next, expectedCommit);
+    return {documentId: saved.documentId, commit: saved.commit, changed: saved.changed, appendedText: text, warning: saved.warning};
+  }
   private async saveLocator(locator: DetailsLocator, source: string, expectedCommit: string | null) {
     if (expectedCommit === null) {
       const current = await this.repository.read(locator._id);

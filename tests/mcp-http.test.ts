@@ -180,6 +180,10 @@ test("read-only discovery hides writes and direct tool calls return a scope chal
     request("tools/call", { name: "entities.create", arguments: {} }),
   );
   expect(denied.status).toBe(403);
+  const appendDenied = await handleMcp(
+    request("tools/call", { name: "details.append", arguments: {} }),
+  );
+  expect(appendDenied.status).toBe(403);
   expect(denied.headers.get("www-authenticate")).toContain(
     'scope="data:write"',
   );
