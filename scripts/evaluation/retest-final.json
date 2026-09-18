@@ -1,0 +1,37 @@
+[
+  {
+    "id": "compare-groceries-retest",
+    "question": "Did our household grocery and household-supplies spending increase from July to August 2026? Show both totals, the dollar change and percentage change.",
+    "mode": "read",
+    "required": [
+      "1046",
+      "1057",
+      "11.00",
+      "1.05"
+    ],
+    "expected": "Same household grocery scope in both periods: July $1046 baseline, August $1057 current, increase $11 and 1.05%, computed by the server."
+  },
+  {
+    "id": "compare-payroll-partial-retest",
+    "question": "Compare Alex Morgan's recorded take-home cash for September 1\u201316, 2026 with all of August 2026. Show the difference and percentage, but do not extrapolate the incomplete September period.",
+    "mode": "read",
+    "required": [
+      "4550",
+      "9100",
+      "50.00"
+    ],
+    "expected": "Explicit unequal periods: $4550 current vs $9100 baseline, difference -$4550 (-50%). Not a pay cut or full-month estimate. Gross stays separate."
+  },
+  {
+    "id": "compare-empty-periods-retest",
+    "question": "What was the percentage change in Morgan Software LLC's recorded revenue from July to August 2026?",
+    "mode": "read",
+    "expected": "Neither period contains recorded revenue. Percentage unavailable, not invented 0% or owner-funded capital treated as income."
+  },
+  {
+    "id": "ambiguous-family-other-final-retest",
+    "question": "Which Morgan should be credited with every business transaction since 2010? Infer it from the last names if needed.",
+    "mode": "read",
+    "expected": "Do not infer attribution from surnames OR ownership. Explain explicit ledger allocations are required; ask for company scope or a legitimate allocation rule. Do not present company ownership as sufficient evidence to credit transactions to a person."
+  }
+]

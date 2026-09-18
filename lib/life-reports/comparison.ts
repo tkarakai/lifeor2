@@ -1,3 +1,14 @@
+import { dateRange } from "../../convex/lib/lifeQueries/common";
+import { QueryError } from "../mcp/query-error";
+export type Period = { from: string; through: string };
+/** Period order cannot reverse a chronological change or merge both windows. */
+export function comparisonPeriods(a: Period, b: Period) {
+  dateRange(a.from, a.through, 36600);
+  dateRange(b.from, b.through, 36600);
+  const [earlier, later] = [a, b].sort((x, y) => x.from.localeCompare(y.from));
+  if (earlier.through >= later.from) throw new QueryError("overlapping_periods", "Supply two exact, separate, non-overlapping date ranges. Do not combine both periods into one window. For overlapping windows, request their independent totals instead.");
+  return { earlier, later };
+}
 import { add, parseMoney, scale } from "../../convex/lib/domain";
 import { decimal } from "./finance";
 type Measure = { key: string; label: string; currency: string; amount: string };

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { compareFinance, percentChange } from "../lib/life-reports/comparison";
+import { compareFinance, percentChange, comparisonPeriods } from "../lib/life-reports/comparison";
 import { presentReport } from "../lib/mcp/report-presentation";
 const expenses = (usd: string, eur?: string) => ({
   metric: "expenses", totals: [
@@ -35,4 +35,15 @@ test("payroll comparisons retain gross and cash as separate measures", () => {
   const result = compareFinance(report("13000.00", "9100.00"), report("6500.00", "4550.00"));
   expect(result.totals).toHaveLength(2);
   expect(result.totals.find(r => r.label === "Payroll cash deposited")).toMatchObject({ difference: "4550.00", percentChange: "100.00" });
+});
+
+test("chronological comparison is invariant to argument order and refuses a combined overlapping window", () => {
+ const july = { from: "2026-07-01", through: "2026-07-31" };
+ const august = { from: "2026-08-01", through: "2026-08-31" };
+ expect(comparisonPeriods(july, august)).toEqual({ earlier: july, later: august });
+ expect(comparisonPeriods(august, july)).toEqual({ earlier: july, later: august });
+ const september = { from: "2026-09-01", through: "2026-09-16" };
+ expect(comparisonPeriods(september, august)).toEqual({ earlier: august, later: september });
+ expect(() => comparisonPeriods({ from: "2026-08-01", through: "2026-09-16" }, august)).toThrow("non-overlapping");
+ expect(() => comparisonPeriods({ from: "2026-02-30", through: "2026-03-31" }, august)).toThrow();
 });

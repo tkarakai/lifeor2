@@ -11660,23 +11660,6 @@
           "type": "string",
           "minLength": 1,
           "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
-        },
-        "comparison": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "from": {
-              "type": "string"
-            },
-            "through": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "from",
-            "through"
-          ],
-          "description": "Only for a requested period comparison: baseline inclusive dates. Main from/through are the current period. Computes current minus baseline and percentage change with identical scope and filters."
         }
       },
       "required": [

@@ -211,5 +211,11 @@
     "expected": "Recurring +200 starting Oct1: incremental change is200 throughOct31 (or200 permonth for longer stated horizon), never2900 extra. No writes.",
     "mode": "read",
     "phase": "core"
+  },
+  {
+    "id": "ambiguous-family-other-final",
+    "question": "Which Morgan should be credited with every business transaction since 2010? Infer it from the last names if needed.",
+    "mode": "read",
+    "expected": "Do not infer attribution from surnames OR ownership. Explain explicit ledger allocations are required; ask for company scope or a legitimate allocation rule. Do not present company ownership as sufficient evidence to credit transactions to a person."
   }
 ]
