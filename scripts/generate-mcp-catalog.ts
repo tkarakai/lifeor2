@@ -79,7 +79,7 @@ const descriptions: Record<string, string> = {
   "records.rescheduleEvent":
     "Move an existing nonfinancial appointment/event to a local date and time. Read the current event ID first. Preserves its title, duration, subject links, notes and prior history. Already superseded records produce a conflict instead of branching history.",
   "records.recordEvent":
-    "Create an appointment/event using date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Explicitly supply subjects: link every named person or other affected record using verified IDs (life.search when needed). Use an empty list only when no record is involved; a name in the title does not create a link. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
+    "Create a calendar record: kind Appointment for meetings/visits (including doctor or dentist), Maintenance for servicing, Reminder, Milestone, or Event for other nonfinancial occurrences. Put specifics in the title, never invent an event type. Use date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Explicitly supply subjects: link every named person or other affected record using verified IDs (life.search when needed). Use an empty list only when no record is involved; a name in the title does not create a link. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
   "records.changeSchedule":
     "Change a recurring commitment's amount, day of month or end date from an effective civil date. Read the current schedule revision first. Decimal amount is major currency units. Existing terms and later changes are preserved; old debts/payments and separate cash routes are unchanged. Never use for a hypothetical question.",
   "records.recordExpense":
@@ -185,6 +185,9 @@ for (const name of modules) {
       input.required.push("direction");
       input.properties.direction.description = "Required intent: receivable = owed TO the perspective; payable = owed BY the perspective; both = both sides. Household scope supplies our household perspective.";
       input.properties.perspectiveQuery.description = "Unique person/company name for the receivable/payable perspective. Omit for our household. This differs from partyQuery, which only filters a counterparty.";
+    }
+    if (policy.operation === "life.events") {
+      input.properties.kind.description = "Optional exact, case-sensitive stored event type, such as Appointment. Omit if the stored type is unknown; use query with title words instead. Legacy event types can differ from the focused calendar-create categories.";
     }
     if (policy.operation === "life.timeline") {
       input.properties.entityId.description = "Filter records involving this party/subject. Direction remains relative to the default household; this does not change perspective.";

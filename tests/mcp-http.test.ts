@@ -401,6 +401,9 @@ test("event creation requires explicit subjects before dispatch, preserving name
   const missing = await (await handleMcp(request("tools/call", { name: "records.recordEvent", arguments: args }))).json();
   expect(!!missing.error || missing.result?.isError === true).toBe(true);
   expect(mocks.mutation.mock.calls.some(([ref]) => getFunctionName(ref) === "agentWrites:recordEvent")).toBe(false);
+  const inventedKind = await (await handleMcp(request("tools/call", { name: "records.recordEvent", arguments: { ...args, kind: "dentist", subjects: [{ kind: "entity", id: "person1" }] } }))).json();
+  expect(!!inventedKind.error || inventedKind.result?.isError === true).toBe(true);
+  expect(mocks.mutation.mock.calls.some(([ref]) => getFunctionName(ref) === "agentWrites:recordEvent")).toBe(false);
   await handleMcp(request("tools/call", { name: "records.recordEvent", arguments: { ...args, subjects: [{ kind: "entity", id: "person1" }] } }));
   const dispatched = mocks.mutation.mock.calls.find(([ref]) => getFunctionName(ref) === "agentWrites:recordEvent");
   expect(dispatched?.[1]).toMatchObject({ subjects: [{ kind: "entity", id: "person1" }] });

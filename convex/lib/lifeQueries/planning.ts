@@ -8,7 +8,7 @@ import {
 import { outstanding } from "../../obligations";
 import type { CashSchedule, CashRoute } from "../../../lib/insights/types";
 
-async function currentClaims(ctx: LifeContext) {
+async function currentClaims(ctx: LifeContext, today?: string) {
   const w = await workspace(ctx);
   if (!w.dataset?.report_obligations_ready || ctx.scope.legacy)
     return referenceRows(ctx, "monetary_obligation");
@@ -22,7 +22,7 @@ async function currentClaims(ctx: LifeContext) {
     ctx.db
       .query("agent_obligation_state")
       .withIndex("by_dataset_due", (q) =>
-        q.eq("dataset_id", w.dataset!._id).gte("due_date", w.today),
+        q.eq("dataset_id", w.dataset!._id).gte("due_date", today ?? w.today),
       )
       .take(2001),
   ]);
@@ -35,7 +35,7 @@ async function currentClaims(ctx: LifeContext) {
   return rows.filter((r): r is NonNullable<typeof r> => r !== null);
 }
 /** Load current planning evidence; settled historical claims stay outside the scan. */
-export async function planningData(ctx: LifeContext, knownAt = Date.now()) {
+export async function planningData(ctx: LifeContext, knownAt = Date.now(), claimToday?: string) {
   const [
     obligations,
     schedules,
@@ -47,7 +47,7 @@ export async function planningData(ctx: LifeContext, knownAt = Date.now()) {
     arrangements,
     entities,
   ] = await Promise.all([
-    currentClaims(ctx),
+    currentClaims(ctx, claimToday),
     referenceRows(ctx, "commitment_schedule"),
     referenceRows(ctx, "commitment_schedule_version"),
     referenceRows(ctx, "commitment_schedule_revision"),

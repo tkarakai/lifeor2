@@ -11,7 +11,7 @@ export const recordEvent = mutation({
   agent: { operation: "records.recordEvent", scope: "data:write" },
   args: {
     title: v.string(),
-    kind: v.string(),
+    kind: v.union(v.literal("Appointment"), v.literal("Maintenance"), v.literal("Reminder"), v.literal("Milestone"), v.literal("Event")),
     date: v.string(),
     time: v.string(),
     timezone: v.optional(v.string()),
@@ -95,6 +95,7 @@ export const recordEvent = mutation({
     return {
       id,
       title: a.title,
+      kind: a.kind,
       date: a.date,
       time: a.time,
       timezone,
@@ -405,6 +406,7 @@ export const rescheduleEvent = mutation({
       id,
       correctsId: old._id,
       title: old.title,
+      kind: old.kind,
       date: a.date,
       time: a.time,
       timezone,

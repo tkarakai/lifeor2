@@ -44,6 +44,7 @@ try {
       const r = await call("life.read", { kind: "event", id });
       assert.equal(new Date(r.record.occurred_at).toISOString(), f.instants[i]);
       assert.equal(r.record.title, f.title);
+      assert.equal(r.record.kind, "Appointment", "A dentist appointment must remain searchable as an Appointment");
       chain.push({ id, occurredAt: f.instants[i] });
       if (i) {
         assert(r.record.corrects_id, "Every requested move must preserve its prior event");

@@ -83,7 +83,8 @@ export const timeline = query({
     dateRange(from, through, 366);
     const subject = a.entityId ? await entityAt(ctx, await owned(ctx, "entity", a.entityId, w.user._id)) : undefined;
     if (a.perspectiveId) await owned(ctx, "entity", a.perspectiveId, w.user._id);
-    const graph = await planningData(ctx),
+    // Retain settled current-day claims in the requested zone as projection suppressors.
+    const graph = await planningData(ctx, Date.now(), w.today),
       items: Item[] = [],
       blocked = new Set(graph.claims.map((o) => o.occurrence));
     const inRange = (date: string) => date >= from && date <= through;

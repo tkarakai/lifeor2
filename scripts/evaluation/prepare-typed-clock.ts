@@ -13,7 +13,7 @@ async function call(name:string,args:Record<string,unknown>) {
 try {
  const person=await call('life.search',{query:'Riley Ellis',kind:'entity'});
  assert.equal(person.identityStatus,'unique');
- const original=await call('records.recordEvent',{requestKey:'typed-clock-fixture-v1',title:'Riley clock-change visit',kind:'appointment',date:'2027-01-12',time:'10:00',timezone:'America/Chicago',subjects:[{kind:'entity',id:person.items[0].id}]});
+ const original=await call('records.recordEvent',{requestKey:'typed-clock-fixture-v1',title:'Riley clock-change visit',kind:'Appointment',date:'2027-01-12',time:'10:00',timezone:'America/Chicago',subjects:[{kind:'entity',id:person.items[0].id}]});
  assert.equal(original.occurredAt,'2027-01-12T16:00:00.000Z');
  const result={passed:true,at:new Date().toISOString(),event:original,personId:person.items[0].id};
  await writeFile(new URL('typed-clock-fixture.json',root),JSON.stringify(result,null,2));
