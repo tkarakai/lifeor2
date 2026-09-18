@@ -66,7 +66,7 @@ bunx convex run datasets:migrateExisting '{}'
 bun run seed:family -- <Better-Auth-user-ID>
 ```
 
-The seed command uses the existing private local Convex configuration and Git content repository. It does not embed credentials in source files. Back up `.convex/standalone/`, the content repository and `.env.local` together before migrations. A pre-change backup was taken at `.convex/backups/pre-datasets-20260916T143804Z/` before the Live backfill.
+The seed command uses the existing private local Convex configuration and Git content repository. It does not embed credentials in source files. Back up `.convex/standalone/`, the content repository and `.env.local` together before migrations. A private pre-change backup was taken before the Live backfill.
 
 ## Validation
 
@@ -74,4 +74,4 @@ Automated coverage checks dataset ownership and isolation of lists, direct IDs, 
 
 Local verification: 88 Vitest tests and 14 process-lifecycle tests pass, TypeScript passes, and the production build succeeds. The existing Next.js workspace-root and stale Browserslist notices remain non-failing build warnings.
 
-The local backfill assigned 69 original records across two existing owners. A read-only comparison against the pre-change SQLite snapshot confirmed their values and IDs were unchanged apart from `dataset_id`. The sample was loaded for the most recently created account with existing data; other accounts can use the Datasets page to prepare their own. The ready sample contains 31 entities, 27 arrangements, three charts, 51 ledger accounts, 308 posted journals, 738 postings, 19 obligations, and 18 Git documents. Browser verification covered loader retries, both switch directions, Git notes, the household trial balance, and archive → restore → archive → permanent deletion of a temporary entity. That entity was removed; selection was restored to Live.
+The local backfill assigned the original records to their existing owners' Live datasets. A read-only comparison against the pre-change SQLite snapshot confirmed their values and IDs were unchanged apart from `dataset_id`. Each account can use the Datasets page to prepare its own fictional sample. The ready sample contains 31 entities, 27 arrangements, three charts, 51 ledger accounts, 308 posted journals, 738 postings, 19 obligations, and 18 Git documents. Browser verification covered loader retries, both switch directions, Git notes, the household trial balance, and archive → restore → archive → permanent deletion of a temporary entity. That entity was removed; selection was restored to Live.

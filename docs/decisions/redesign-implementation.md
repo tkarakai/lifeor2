@@ -18,11 +18,11 @@ Component decisions: [backend](backend-redesign.md), [UI](ui-redesign.md), [Git 
 ## Backup evidence
 
 - Source backend stopped with `bun run convex:stop`.
-- Complete state and private environment backup: `.convex/backups/pre-redesign-20260916T050309Z/`.
+- Complete state and private environment backup stored under ignored `.convex/backups/`.
 - Backup SQLite `PRAGMA integrity_check`: `ok`.
 - The backup preserves the pre-redesign database, file storage, configuration, and authentication settings. It is a rollback source, not the live runtime.
 - Full Convex snapshot export also saved privately beside the backup as `export.zip`.
-- Source inventory: 10 entities, 1 Ownership arrangement, no role/event/property/measurement/account/journal/posting rows. Four auth users and four sessions are preserved. All existing business rows reference an existing auth owner; no owner reassignment is needed.
+- Source inventory and auth state were verified privately. All existing business rows reference an existing auth owner; no owner reassignment is needed.
 - Rehearsal copy: `.convex/redesign-rehearsal`, ports 3250/3251. `scripts/redesign_admin.py` starts the copied backend without a source watcher and provides explicit CLI access using its own private environment file. The original `.env.local` is unchanged by rehearsal.
 
 ## Migration and verification
@@ -32,13 +32,13 @@ Completed September 16, 2026. The separate workers completed backend, UI and Git
 ### Data migration
 
 1. Deployed the new schema explicitly to the rehearsal copy with `scripts/redesign_admin.py cli ... -- dev --once`.
-2. `migrations:dryRun` returned 10 entities, one arrangement, and zero rejects/warnings/issues.
-3. `scripts/redesign_admin.py migrate --state ...` applied each paginated stage in dependency order, repeated all stages, and verified identical source counts/totals with no new mappings on replay. Eleven original business records received migration mappings.
+2. `migrations:dryRun` confirmed the source inventory with zero rejects/warnings/issues.
+3. `scripts/redesign_admin.py migrate --state ...` applied each paginated stage in dependency order, repeated all stages, and verified identical source counts/totals with no new mappings on replay. Original business records received migration mappings.
 4. Exported the rehearsal database and independently compared original IDs, owners, descriptive fields and auth users using `scripts/verify_redesign_export.py`. All preserved.
 5. After the complete 83-test suite and TypeScript check passed, deployed the final audited code to live `.convex/standalone` and repeated the same migration/replay procedure.
-6. Compared live `post-redesign.zip` against the immediate pre-deploy export. Ten entities, one arrangement, all four auth users, sessions and auth account rows remain unchanged. `.env.local` is byte-identical to its backup. No synthetic smoke-test records were written to live data.
+6. Compared live `post-redesign.zip` against the immediate pre-deploy export. Existing business records, auth users, sessions, and auth account rows remain unchanged. `.env.local` is byte-identical to its backup. No synthetic smoke-test records were written to live data.
 
-Private evidence remains under `.convex/`: the pre-redesign full backup and exports, rehearsal `migration-verification.json`/`preservation.json`, and live `migration-verification.json`/`preservation.json`/`post-redesign.zip`. These contain private data and are deliberately ignored by source Git. The live content repository is empty because no old Property rows existed; no documents were fabricated.
+Private evidence remains under `.convex/`: the pre-redesign full backup and exports, rehearsal `migration-verification.json`/`preservation.json`, and live `migration-verification.json`/`preservation.json`/`post-redesign.zip`. These contain private data and are deliberately ignored by source Git. No documents were fabricated during migration.
 
 ### Integration decisions
 
@@ -47,7 +47,7 @@ Private evidence remains under `.convex/`: the pre-redesign full backup and expo
 - Browser testing exposed a pre-existing auth adapter cache retaining the previous identity after an in-app magic-code login. Login/signup and sign-out now use full navigation, discarding the old client connection and cached JWT. A fresh test session created records under the correct owner and could save Git details; ownership checks correctly denied the mismatched identity before this correction. Test records were confined to the isolated copy.
 - The content repository is bare, uses a single-writer lock and compare-and-swap commit semantics, and has no remote. No concurrent merge workflow was added.
 - Git pin ownership/hash validation happens in the database; actual pinned file availability is resolved by the Git adapter. Forecast runs remain `inputs_frozen`, never reported as computed projections.
-- Monetary conversion never silently rounds. The existing live dataset contained no postings; nontrivial financial and migration conversions are covered by synthetic regression fixtures.
+- Monetary conversion never silently rounds. Nontrivial financial and migration conversions are covered by synthetic regression fixtures.
 - Legacy Property data, if encountered on another installation, remains read-only until an explicitly verified content export. The current dataset has no such rows. Unknown legacy relationship/schedule meanings are preserved and reported rather than guessed.
 
 ### Validation
@@ -62,7 +62,7 @@ Private evidence remains under `.convex/`: the pre-redesign full backup and expo
 
 ### Operational rollback
 
-Stop frontend writes and the backend before restoring. Preserve the current state separately, restore the complete pre-redesign backend directory and environment from the private backup, and check out the pre-implementation code/spec commit `1c1f897` in a separate checkout. Never copy only SQLite or merge old and new runtime directories. The backup predates any application content documents; future rollback must also restore a matching content-repository snapshot. Do not overwrite subsequent user work automatically.
+Stop frontend writes and the backend before restoring. Preserve the current state separately, restore the complete pre-redesign backend directory and environment from the private backup, and check out the pre-implementation code/spec commit `1c1f897` in a separate checkout. Never copy only SQLite or merge old and new runtime directories. Rollback must also restore a matching content-repository snapshot when application content documents exist. Do not overwrite subsequent user work automatically.
 
 ### Remaining scope
 
