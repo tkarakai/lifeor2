@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { beforeAll, expect, test } from "vitest";
+import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { makeFunctionReference } from "convex/server";
 import schema from "../convex/schema";
 import authSchema from "../node_modules/@convex-dev/better-auth/src/component/schema";
@@ -14,7 +14,11 @@ const t = convexTest(schema, modules);
 t.registerComponent("betterAuth", authSchema, authModules);
 let alice: ReturnType<typeof t.withIdentity>, datasetId: string;
 const ref = (name: string) => makeFunctionReference<"query">(name);
+let restoreClock: (() => void) | undefined;
+afterAll(() => restoreClock?.());
 beforeAll(async () => {
+  const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-09-18T15:00:00Z"));
+  restoreClock = () => clock.mockRestore();
   const now = Date.now(),
     u = await t.mutation(components.betterAuth.adapter.create, {
       input: {

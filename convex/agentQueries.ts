@@ -120,6 +120,7 @@ export const searchJournals = query({
   handler: async (ctx, a) => {
     range(a.from ?? "0001-01-01", a.to ?? "9999-12-31");
     const text = a.text?.trim();
+    const normalizedMemo = (value: string) => value.normalize("NFC").trim().replace(/\s+/gu, " ").toLowerCase();
     if (text && text.length > 500) throw new Error("Use at most 500 characters of memo words");
     const user = await requireUser(ctx);
     if (a.chartId) await owned(ctx, "chart_of_accounts", a.chartId, user._id);
@@ -191,10 +192,13 @@ export const searchJournals = query({
         )
       )
         continue;
+      const chart = j.chart_id ? await ctx.db.get(j.chart_id) : null;
       records.push({
         id: j._id,
         date: j.accounting_date,
         memo: j.memo,
+        chart: chart ? { id: chart._id, name: chart.name } : null,
+        exactMemoMatch: !!text && normalizedMemo(j.memo) === normalizedMemo(text),
         status: j.status,
         reversesId: j.reverses_id,
         postings: lines.map(({ p, account, parts }) => ({
@@ -212,8 +216,17 @@ export const searchJournals = query({
         })),
       });
     }
+    // A last page alone cannot establish uniqueness across preceding pages.
+    const singleExactMemoMatch = !a.cursor && page.isDone && records.length === 1 && records[0].exactMemoMatch;
     return {
       records,
+      filters: { text: text ?? null, chartId: a.chartId ?? null, entityId: a.entityId ?? null, from: a.from ?? null, to: a.to ?? null },
+      singleExactMemoMatch,
+      lookupGuidance: singleExactMemoMatch
+        ? "The complete lookup found one exact memo match. Its accounting date, chart and full postings establish the recorded date, amounts and accounts. Answer from this evidence; do not search other charts or dates just to reconfirm the same receipt. Additional queries are only needed for other requested facts."
+        : !a.cursor && page.isDone && records.length === 0
+          ? "No recorded journal matches these filters. State this scoped absence; do not replace a missing exact identifier with unrelated transactions."
+          : "Use the returned chart identities and postings. Follow nextCursor before claiming complete results or uniqueness; do not guess unrequested chart, person or date filters.",
       nextCursor: page.isDone ? null : text ? JSON.stringify({ version: "memo1", key: cursorKey, term: selectedTerm, cursor: page.continueCursor }) : page.continueCursor,
       complete: page.isDone,
       ordering: text ? "memo_relevance" : "newest_accounting_date_first",

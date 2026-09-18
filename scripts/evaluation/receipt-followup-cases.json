@@ -1,0 +1,31 @@
+[
+  {
+    "id": "receipt-exact-memo",
+    "question": "Find the old transaction with memo \"Diverse synthetic Utilities and internet 180003\". I do not remember its date. When was it recorded for, how much was the purchase, and which payment account was used?",
+    "mode": "read",
+    "required": [
+      "43.82",
+      "2012",
+      "8844"
+    ],
+    "expected": "Unique historical transaction from2012-02-20:43.82USD utilities expense charged toHarborMastercard8844. Search memo across history without guessing dates or paging unrelated journals. Not4382USD or bank cash."
+  },
+  {
+    "id": "receipt-distinctive-reference",
+    "mode": "read",
+    "question": "Find the old utilities and internet purchase with receipt reference 180003. I do not remember the date. Which date, amount, and payment account are recorded?",
+    "expected": "One complete indexed match: February20,2012;43.82USD Expense;HarborMastercard8844 credit-card liability. No guessed date ranges or unrelated company-chart searches after complete matching evidence."
+  },
+  {
+    "id": "receipt-books",
+    "mode": "read",
+    "question": "For the transaction with memo \"Diverse synthetic Utilities and internet 180003\", was it in our household books or a company’s books, and which account paid for it?",
+    "expected": "Morgan household USD chart, HarborMastercard8844,43.82USD card purchase. Use returned journal chart identity; do not independently search unrelated company charts after exact match."
+  },
+  {
+    "id": "receipt-missing",
+    "mode": "read",
+    "question": "Look for a receipt with memo \"Never recorded receipt 999999999\". If none is recorded, say so.",
+    "expected": "Complete scoped absence; no fabricated transaction. No broadening an exact nonexistent identifier into unrelated receipts."
+  }
+]

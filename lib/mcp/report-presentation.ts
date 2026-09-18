@@ -220,6 +220,7 @@ export function presentReport(
     const r = report.actuals,
       rows = r.rows as any[];
     text = `${escape(report.project.name)} — recorded activity ${escape(report.from)} through ${escape(report.through)}\n\n`;
+    text += "Recorded costs, budgets and planned milestones cannot establish or guarantee when work will finish.\n\n";
     for (const currency of [...new Set<string>(rows.map((r) => r.currency))]) {
       const selected = rows.filter((r) => r.currency === currency),
         sum = (test: (r: any) => boolean) =>
