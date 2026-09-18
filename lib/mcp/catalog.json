@@ -4442,7 +4442,7 @@
     "name": "life.timeline",
     "title": "agentTimeline: timeline",
     "primary": true,
-    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to entityId or the default household. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. The complete saved report is available to present; returned items are a preview. Set includeEvents=false for commitments only.",
+    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to the default household. entityId ONLY filters the involved party and never changes direction; set perspectiveId explicitly only when asking from another person’s/company’s perspective. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. The complete saved report is available to present; returned items are a preview. Set includeEvents=false for commitments only.",
     "functionName": "agentTimeline:timeline",
     "kind": "query",
     "scope": "data:read",
@@ -4458,7 +4458,12 @@
         "entityId": {
           "type": "string",
           "minLength": 1,
-          "description": "Stable entity record ID returned by LifeOR2."
+          "description": "Filter records involving this party/subject. Direction remains relative to the default household; this does not change perspective."
+        },
+        "perspectiveId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional explicit incoming/outgoing-money perspective. Omit for our/my household, even when filtering another party with entityId."
         },
         "query": {
           "type": "string"
@@ -11634,7 +11639,7 @@
         "entityId": {
           "type": "string",
           "minLength": 1,
-          "description": "Only explicitly attributed subject income/costs. For a company's books use chartId, not its entity ID or its owner's ID."
+          "description": "Set this when the user names a person: filters explicitly attributed subject income/costs. Omission includes all subjects in the selected books. For a company's books use chartId, not its entity ID or its owner's ID."
         },
         "beneficiaryId": {
           "type": "string",

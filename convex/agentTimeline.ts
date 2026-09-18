@@ -18,6 +18,7 @@ type Item = {
   date: string;
   time?: string;
   title: string;
+  commitment?: string;
   kind: string;
   amount?: string;
   outstandingAmount?: string;
@@ -40,6 +41,7 @@ export const timeline = query({
     from: v.optional(v.string()),
     through: v.optional(v.string()),
     entityId: v.optional(v.id("entity")),
+    perspectiveId: v.optional(v.id("entity")),
     query: v.optional(v.string()),
     status: v.optional(
       v.union(v.literal("overdue"), v.literal("due"), v.literal("expected")),
@@ -65,13 +67,17 @@ export const timeline = query({
           .slice(0, 10);
     dateRange(from, through, 366);
     const subject = a.entityId ? await entityAt(ctx, await owned(ctx, "entity", a.entityId, w.user._id)) : undefined;
+    if (a.perspectiveId) await owned(ctx, "entity", a.perspectiveId, w.user._id);
     const graph = await planningData(ctx),
       items: Item[] = [],
       blocked = new Set(graph.claims.map((o) => o.occurrence));
     const inRange = (date: string) => date >= from && date <= through;
     const affected = (ids: (string | undefined)[]) =>
       !a.entityId || ids.includes(a.entityId);
-    const perspective = a.entityId ?? w.household;
+    const perspective = a.perspectiveId ?? w.household;
+    if (a.direction && !perspective)
+      throw new Error("No default household is configured. Specify perspectiveId for whose incoming/outgoing money is requested; entityId only filters the parties involved.");
+    const customPerspective = a.perspectiveId && a.perspectiveId !== w.household;
     const claimDirection = (creditor: string, debtor: string) =>
       perspective === creditor
         ? "inflow"
@@ -99,6 +105,7 @@ export const timeline = query({
           id: f._id,
           date: f.expected_date,
           title: f.name,
+          commitment: graph.scheduleName(f.claim?.schedule_version_id ?? f.schedule_version_id),
           parties: f.claim
             ? [graph.name(f.claim.debtor_id), graph.name(f.claim.creditor_id)]
             : undefined,
@@ -110,7 +117,7 @@ export const timeline = query({
           amount: money(Math.abs(f.remaining), f.currency),
           ...(f.claim ? { outstandingAmount: money(f.claim.outstanding_minor_units, f.currency) } : {}),
           currency: f.currency,
-          direction: a.entityId && (f.claim || f.version)
+          direction: customPerspective && (f.claim || f.version)
             ? claimDirection((f.claim ?? f.version)!.creditor_id, (f.claim ?? f.version)!.debtor_id)
             : f.remaining < 0 ? "outflow" : "inflow",
           dueDate: f.claim?.due_date,
@@ -143,6 +150,7 @@ export const timeline = query({
         date: o.due_date,
         dueDate: o.due_date,
         title: graph.name(o.arrangement_id),
+        commitment: graph.scheduleName(o.schedule_version_id),
         kind: "obligation",
         direction: claimDirection(o.creditor_id, o.debtor_id),
         amount: money(o.outstanding_minor_units, o.currency),
@@ -173,7 +181,7 @@ export const timeline = query({
             status: "expected",
             amount: money(o.amount, s.currency),
             currency: s.currency,
-            direction: a.entityId ? claimDirection(s.creditor, s.debtor) :
+            direction: customPerspective ? claimDirection(s.creditor, s.debtor) :
               route?.from && route.to
                 ? "transfer"
                 : route?.from
@@ -275,14 +283,14 @@ export const timeline = query({
         (i) =>
           !a.query ||
           matchesText(
-            [i.title, i.kind, i.status, ...(i.parties ?? [])].join(" "),
+            [i.title, i.commitment, i.kind, i.status, ...(i.parties ?? [])].join(" "),
             a.query,
           ),
       )
       .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
     return {
       ...page(filtered, a.limit, a.offset),
-      filters: { subject: subject?.display_name, query: a.query, direction: a.direction, status: a.status },
+      filters: { subject: subject?.display_name, perspective: graph.name(perspective), query: a.query, direction: a.direction, status: a.status },
       queryComplete: eventsComplete,
       from,
       through,

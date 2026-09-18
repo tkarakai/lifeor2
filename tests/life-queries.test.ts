@@ -89,9 +89,13 @@ test("due filters retain claims with linked cash expectations and expected filte
   const due = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "due", includeEvents: false });
   expect(due.items.map((r: any) => r.amount).sort()).toEqual(["15000.00", "700.00"]);
   const tenant = (await query("agentLife:search", { query: "Casey Chen", kind: "entity" })).items[0].id;
-  const tenantDue = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", entityId: tenant, direction: "outflow", includeEvents: false });
+  const tenantDue = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", entityId: tenant, perspectiveId: tenant, direction: "outflow", includeEvents: false });
   expect(tenantDue.items).toHaveLength(1);
   expect(tenantDue.items[0].amount).toBe("700.00");
+  const householdReceipt = await query("agentTimeline:timeline", { entityId: tenant, direction: "inflow", status: "due", query: "Maple Avenue rent", from: "2026-09-18", through: "2026-09-30" });
+  expect(householdReceipt.items).toHaveLength(1);
+  expect(householdReceipt.items[0]).toMatchObject({ amount: "700.00", dueDate: "2026-09-01", direction: "inflow" });
+  expect(householdReceipt.filters.perspective).toBe("Morgan family");
 });
 test("a partial cash expectation must not shrink the reported unpaid debt", async () => {
   const all = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", direction: "outflow", includeEvents: false });

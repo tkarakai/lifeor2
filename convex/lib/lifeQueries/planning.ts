@@ -161,6 +161,10 @@ export async function planningData(ctx: LifeContext, knownAt = Date.now()) {
     routes: latestRoutes,
     expected,
     name,
+    scheduleName: (versionId: string | undefined) => {
+      const version = versions.find((v) => v._id === versionId);
+      return version ? name(version.schedule_id) : undefined;
+    },
     entities,
     arrangements,
     assumptions,

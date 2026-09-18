@@ -19,6 +19,15 @@
     "expected": "Casey owes household$700 unpaid rent dueSep1; expected cashSep20 notpaid. Resolve counterparty and perspective without reversing debtor/creditor."
   },
   {
+    "id": "counterparty-tenant-perspective",
+    "question": "From Casey Chen\u2019s perspective, what unpaid Maple Avenue rent does Casey still owe the Morgan household, and when was it due?",
+    "mode": "read",
+    "required": [
+      "700"
+    ],
+    "expected": "Explicit tenant perspective:700outflow owed toMorgan household, originallydueSep1. Not2700fullmonthlyrent, not a household outflow."
+  },
+  {
     "id": "compare-groceries-retest",
     "question": "Did our household grocery and household-supplies spending increase from July to August 2026? Show both totals, the dollar change and percentage change.",
     "mode": "read",
@@ -39,7 +48,7 @@
       "9100",
       "50.00"
     ],
-    "expected": "Explicit unequal periods: $4550 current vs $9100 baseline, difference -$4550 (-50%). Not a pay cut or full-month estimate. Gross stays separate."
+    "expected": "Explicit unequal periods: $4550 current vs $9100 baseline, difference -$4550 (-50%). Not a pay cut or full-month estimate. Gross stays separate. Filter explicitly to Alex, not every payroll subject in the household books."
   },
   {
     "id": "compare-empty-periods-retest",

@@ -156,7 +156,7 @@ export function createAgentServer(token: string, grant: Grant) {
   const comparisonProperties = { ...(financialSchema.properties as Record<string, unknown>) };
   for (const key of ["from", "through", "comparison"]) delete comparisonProperties[key];
   definitions.push({
-    name: "reports.comparePeriods", scope: "data:read", title: "Compare two financial periods", write: false,
+    name: "reports.comparePeriods", scope: "data:read", title: "Compare two financial periods", write: false, primary: true,
     description: "Compare income, payroll/take-home cash, expenses or profit between two exact separate date ranges, using identical scope and filters. Supply periodA and periodB in either order; the SERVER orders them chronologically and reports later minus earlier and percentage change. Each period must contain only its own dates, never the combined span of both periods. Overlapping ranges are rejected. Zero baselines have no percentage; currencies remain separate. Use instead of manually subtracting financial reports, then present_report.",
     inputSchema: schema({ ...comparisonProperties, periodA: schema({ from: text, through: text }), periodB: schema({ from: text, through: text }) },
       [...(financialSchema.required ?? []).filter(k => !["from", "through", "comparison"].includes(k)), "periodA", "periodB"]),
