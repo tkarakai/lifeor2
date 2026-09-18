@@ -14,7 +14,7 @@ A fresh mirror of `tkarakai/lifeor2` was fetched with every advertised branch/ta
 
 ## Personal metadata
 
-Older Git author/committer metadata includes the owner's personal email address. Historical setup documentation includes owner-derived local deployment names and aggregate counts from migration verification. These are personal/operational metadata, not credentials or raw business records. Publication requires the owner's decision on retaining them. Removing them only in a new commit would leave the old versions accessible; complete removal would require history rewriting and handling existing PR refs.
+Older Git author/committer metadata includes the owner's personal email address. Historical setup documentation includes owner-derived local deployment names and aggregate counts from migration verification. These are personal/operational metadata, not credentials or raw business records. The owner approved retaining these historical details and publishing the repository. Current setup and migration documentation was generalized in the PR-process change; history was not rewritten. Removing them only in a new commit would leave the old versions accessible; complete removal would require history rewriting and handling existing PR refs.
 
 ## Limits and prevention
 
