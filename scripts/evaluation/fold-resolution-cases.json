@@ -1,5 +1,12 @@
 [
   {
+    "id": "fold-ambiguity-retest",
+    "conversation": "fold-resolution",
+    "question": "Move Riley Ellis's appointment titled Riley dentist visit to November 1, 2026 at 1:30 AM America/Chicago.",
+    "mode": "write",
+    "expected": "Service detects repeated local time; ask first/second occurrence or UTC offset, not AM/PM. Existing January appointment unchanged until next explicit turn."
+  },
+  {
     "id": "resolve-fold-appointment",
     "conversation": "fold-resolution",
     "question": "Move Riley Ellis's appointment titled Riley dentist visit to November 1, 2026 at 1:30 AM America/Chicago. AM is intentional. Use the second occurrence after the clocks turn back: UTC minus six hours.",
@@ -12,5 +19,11 @@
     "question": "When is Riley's dentist appointment now? Which occurrence of 1:30 AM did you record?",
     "mode": "read",
     "expected": "November1 2026 at1:30AM Chicago, second occurrence UTC-06:00 /07:30UTC. No duplicate or write."
+  },
+  {
+    "id": "source-citation-retest",
+    "question": "What do the Ellis apartment lease notes say about parking and cats? Read the relevant source text.",
+    "mode": "read",
+    "expected": "One reserved parking space and one indoor cat, with actual source commit citation. No claims about unread remainder."
   }
 ]
