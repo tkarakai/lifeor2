@@ -103,6 +103,7 @@ test("rescheduling preserves subject links, hides superseded occurrences and rej
     date: "2026-09-22",
     time: "09:00",
   });
+  expect(original.subjects).toEqual([{ kind: "entity", id: person }]);
   expect(next.correctsId).toBe(original.id);
   const list = await f.query("agentLife:events", {
     from: "2026-09-01",

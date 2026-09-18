@@ -394,3 +394,14 @@ test("current-debt MCP schema requires an explicit direction instead of silently
   expect(!!body.error || body.result?.isError === true).toBe(true);
   expect(mocks.query.mock.calls.some(([ref]) => getFunctionName(ref) === "agentObligations:current")).toBe(false);
 });
+
+
+test("event creation requires explicit subjects before dispatch, preserving named participants", async () => {
+  const args = { datasetId: "dataset", title: "Robin dental follow-up", kind: "Appointment", date: "2026-09-22", time: "15:00", timezone: "America/Chicago", requestKey: "event-subjects-regression" };
+  const missing = await (await handleMcp(request("tools/call", { name: "records.recordEvent", arguments: args }))).json();
+  expect(!!missing.error || missing.result?.isError === true).toBe(true);
+  expect(mocks.mutation.mock.calls.some(([ref]) => getFunctionName(ref) === "agentWrites:recordEvent")).toBe(false);
+  await handleMcp(request("tools/call", { name: "records.recordEvent", arguments: { ...args, subjects: [{ kind: "entity", id: "person1" }] } }));
+  const dispatched = mocks.mutation.mock.calls.find(([ref]) => getFunctionName(ref) === "agentWrites:recordEvent");
+  expect(dispatched?.[1]).toMatchObject({ subjects: [{ kind: "entity", id: "person1" }] });
+});

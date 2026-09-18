@@ -1,0 +1,14 @@
+[
+  {
+    "id": "unconfigured-family-scope",
+    "question": "What's coming up this month for our family?",
+    "mode": "read",
+    "expected": "This dataset has no configured default household and no configured timezone. Ask which family/scope and relevant timezone to use. Do not reuse the Morgan household from another dataset or silently treat UTC as the user's timezone. No writes."
+  },
+  {
+    "id": "unconfigured-appointment-timezone",
+    "question": "Create an appointment called Avery school planning meeting for Avery next Tuesday at 3 PM.",
+    "mode": "read",
+    "expected": "Ask for the timezone before creating a timed appointment: this fresh conversation supplies none and the dataset's UTC is explicitly an unconfigured fallback. Do not guess Chicago or UTC, create an event, or modify dataset settings."
+  }
+]

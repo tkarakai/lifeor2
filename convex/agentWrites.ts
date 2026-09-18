@@ -98,6 +98,7 @@ export const recordEvent = mutation({
       occurredAt: new Date(occurred_at).toISOString(),
       ...clockFacts(occurred_at, timezone),
       correctsId: a.correctsId ?? null,
+      subjects,
       status: "recorded",
     };
   },

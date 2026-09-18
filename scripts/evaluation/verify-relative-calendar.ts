@@ -3,8 +3,13 @@ import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/cli
 import { readFile, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 const root = new URL("../../.convex/query-evaluation/", import.meta.url);
-const c = JSON.parse(await readFile(new URL("write-credentials.json", root), "utf8"));
-const f = JSON.parse(await readFile(new URL("relative-calendar-fixture.json", root), "utf8"));
+const tag = process.argv.find((a) => a.startsWith("--tag="))?.slice(6) ?? "";
+assert(/^[a-z0-9-]{0,40}$/.test(tag), "Use a simple fixture tag");
+const suffix = tag ? "-" + tag : "";
+const f = JSON.parse(await readFile(new URL(`relative-calendar-fixture${suffix}.json`, root), "utf8"));
+const credentialFile = f.credentials ?? "write-credentials.json";
+assert(/^[a-z0-9-]+\.json$/.test(credentialFile));
+const c = JSON.parse(await readFile(new URL(credentialFile, root), "utf8"));
 const today = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit",
 }).format(new Date());
@@ -21,7 +26,7 @@ async function call(name: string, args: Record<string, unknown>) {
   return r.structuredContent as any;
 }
 try {
-  const person = await call("life.search", { query: "Robin Hayes", kind: "entity" });
+  const person = await call("life.search", { query: f.personName ?? "Robin Hayes", kind: "entity" });
   assert.equal(person.identityStatus, "unique");
   assert.equal(person.items[0].id, f.personId);
   const events = await call("life.events", { entityId: f.personId, query: f.title, limit: 50 });
@@ -46,7 +51,7 @@ try {
       } else assert(!r.record.corrects_id, "Exactly two corrections of one original event");
     }
     const result = { passed: true, at: new Date().toISOString(), localToday: today, chain };
-    await writeFile(new URL("relative-calendar-postconditions.json", root), JSON.stringify(result, null, 2), { mode: 0o600 });
+    await writeFile(new URL(`relative-calendar-postconditions${suffix}.json`, root), JSON.stringify(result, null, 2), { mode: 0o600 });
     console.log(JSON.stringify(result));
   }
 } finally { await client.close(); }

@@ -79,7 +79,7 @@ const descriptions: Record<string, string> = {
   "records.rescheduleEvent":
     "Move an existing nonfinancial appointment/event to a local date and time. Read the current event ID first. Preserves its title, duration, subject links, notes and prior history. Already superseded records produce a conflict instead of branching history.",
   "records.recordEvent":
-    "Create an appointment/event using date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Link verified subject IDs atomically. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
+    "Create an appointment/event using date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Explicitly supply subjects: link every named person or other affected record using verified IDs (life.search when needed). Use an empty list only when no record is involved; a name in the title does not create a link. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
   "records.changeSchedule":
     "Change a recurring commitment's amount, day of month or end date from an effective civil date. Read the current schedule revision first. Decimal amount is major currency units. Existing terms and later changes are preserved; old debts/payments and separate cash routes are unchanged. Never use for a hypothetical question.",
   "records.recordExpense":
@@ -175,6 +175,11 @@ for (const name of modules) {
         "Scope to a company's or household's ledger books; IDs and names are in life.context.charts. Omit for all dataset books.";
       delete input.properties.cursor;
       input.required = input.required.filter((key: string) => key !== "cursor");
+    }
+    if (policy.operation === "records.recordEvent") {
+      input.required.push("subjects");
+      input.properties.subjects.description = "Required explicit participants/affected records. Resolve every person named by the user to a verified ID and link them here; title text alone does not link anyone. Use [] only when the event has no affected records.";
+      input.properties.subjects.maxItems = 20;
     }
     if (policy.operation === "life.obligations") {
       input.required.push("direction");

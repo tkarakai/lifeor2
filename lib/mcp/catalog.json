@@ -11409,7 +11409,7 @@
   {
     "name": "records.recordEvent",
     "title": "agentWrites: record event",
-    "description": "Create an appointment/event using date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Link verified subject IDs atomically. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
+    "description": "Create an appointment/event using date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Explicitly supply subjects: link every named person or other affected record using verified IDs (life.search when needed). Use an empty list only when no record is involved; a name in the title does not create a link. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
     "functionName": "agentWrites:recordEvent",
     "kind": "mutation",
     "scope": "data:write",
@@ -11467,7 +11467,9 @@
               "id"
             ],
             "additionalProperties": false
-          }
+          },
+          "description": "Required explicit participants/affected records. Resolve every person named by the user to a verified ID and link them here; title text alone does not link anyone. Use [] only when the event has no affected records.",
+          "maxItems": 20
         },
         "correctsId": {
           "type": "string",
@@ -11493,6 +11495,7 @@
         "date",
         "time",
         "datasetId",
+        "subjects",
         "requestKey"
       ],
       "additionalProperties": false
