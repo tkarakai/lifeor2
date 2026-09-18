@@ -43,5 +43,23 @@
       "75.00"
     ],
     "expected": "2018 has $75 net; every other synthetic historical year nets zero. Rank net income, not gross revenue or alphabetical year, across the complete 308000-journal fixture."
+  },
+  {
+    "id": "additional-spending-clarification",
+    "conversation": "additional-spending-clarification",
+    "question": "If we spent an extra $10000 from Morgan household checking on October 10, 2026, how would that affect our household cash through November 30? Include the existing planned commitments. Do not record a payment.",
+    "mode": "read",
+    "expected": "Ask which of the two household checking accounts to use, or compute clearly labeled aggregate-only hypothetical effects without inventing an account. No write."
+  },
+  {
+    "id": "additional-spending-after-clarification",
+    "conversation": "additional-spending-clarification",
+    "question": "Use Household bills checking \u00b7 1042 for that hypothetical expense.",
+    "mode": "read",
+    "required": [
+      "58678.11",
+      "10000"
+    ],
+    "expected": "Complete the earlier scenario: baseline68678.11, proposed58678.11, effect-10000, minimum54128.11. Existing commitments included, no write."
   }
 ]
