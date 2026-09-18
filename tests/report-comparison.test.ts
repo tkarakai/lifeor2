@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { compareFinance, percentChange, comparisonPeriods } from "../lib/life-reports/comparison";
+import { compareFinance, percentChange, comparisonPeriods, comparisonSelection } from "../lib/life-reports/comparison";
 import { presentReport } from "../lib/mcp/report-presentation";
 const expenses = (usd: string, eur?: string) => ({
   metric: "expenses", totals: [
@@ -46,4 +46,12 @@ test("chronological comparison is invariant to argument order and refuses a comb
  expect(comparisonPeriods(september, august)).toEqual({ earlier: august, later: september });
  expect(() => comparisonPeriods({ from: "2026-08-01", through: "2026-09-16" }, august)).toThrow("non-overlapping");
  expect(() => comparisonPeriods({ from: "2026-02-30", through: "2026-03-31" }, august)).toThrow();
+});
+test("an explicitly later baseline supports reverse comparisons without reversing the ordinary default", () => {
+  const july = { from: "2026-07-01", through: "2026-07-31" };
+  const august = { from: "2026-08-01", through: "2026-08-31" };
+  expect(comparisonSelection(august, july)).toEqual({ current: august, baseline: july });
+  expect(comparisonSelection(august, july, "later")).toEqual({ current: july, baseline: august });
+  expect(comparisonSelection(july, august, "later")).toEqual({ current: july, baseline: august });
+  expect(compareFinance(expenses("1046.00"), expenses("1057.00")).totals[0]).toMatchObject({ difference: "-11.00", percentChange: "-1.04" });
 });

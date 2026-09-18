@@ -1,4 +1,4 @@
-import { comparisonPeriods, type Period } from "../life-reports/comparison";
+import { comparisonSelection, type Period } from "../life-reports/comparison";
 import { matchesText, queryTerms } from "../../convex/lib/lifeQueries/text";
 import { commitmentReport } from "./commitment-report";
 import { documentPage } from "./document-page";
@@ -157,14 +157,14 @@ export function createAgentServer(token: string, grant: Grant) {
   for (const key of ["from", "through", "comparison"]) delete comparisonProperties[key];
   definitions.push({
     name: "reports.comparePeriods", scope: "data:read", title: "Compare two financial periods", write: false, primary: true,
-    description: "Compare income, payroll/take-home cash, expenses or profit between two exact separate date ranges, using identical scope and filters. Supply periodA and periodB in either order; the SERVER orders them chronologically and reports later minus earlier and percentage change. Each period must contain only its own dates, never the combined span of both periods. Overlapping ranges are rejected. Zero baselines have no percentage; currencies remain separate. Use instead of manually subtracting financial reports, then present_report.",
-    inputSchema: schema({ ...comparisonProperties, periodA: schema({ from: text, through: text }), periodB: schema({ from: text, through: text }) },
+    description: "Compare income, payroll/take-home cash, expenses or profit between two exact separate date ranges, using identical scope and filters. Supply periodA and periodB in either order; the SERVER orders them chronologically and by default reports later minus earlier and percentage change. Only if the user explicitly requests the earlier period relative to the later baseline, set baselinePeriod=later. Each period must contain only its own dates, never the combined span of both periods. Overlapping ranges are rejected. Zero baselines have no percentage; currencies remain separate. Use instead of manually subtracting financial reports, then present_report.",
+    inputSchema: schema({ ...comparisonProperties, periodA: schema({ from: text, through: text }), periodB: schema({ from: text, through: text }), baselinePeriod: { type: "string", enum: ["earlier", "later"], description: "Default earlier: chronological change. Select later ONLY for an explicitly requested reverse comparison using the later period as baseline." } },
       [...(financialSchema.required ?? []).filter(k => !["from", "through", "comparison"].includes(k)), "periodA", "periodB"]),
     call: async a => {
-      const { periodA, periodB, ...filters } = a;
-      const { earlier, later } = comparisonPeriods(periodA as Period, periodB as Period);
+      const { periodA, periodB, baselinePeriod, ...filters } = a;
+      const { current, baseline } = comparisonSelection(periodA as Period, periodB as Period, baselinePeriod as "earlier" | "later" | undefined);
       return financialReport(client, token, { userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) },
-        { ...filters, ...later, comparison: earlier });
+        { ...filters, ...current, comparison: baseline });
     },
   });
   definitions.push({

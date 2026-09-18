@@ -9,6 +9,12 @@ export function comparisonPeriods(a: Period, b: Period) {
   if (earlier.through >= later.from) throw new QueryError("overlapping_periods", "Supply two exact, separate, non-overlapping date ranges. Do not combine both periods into one window. For overlapping windows, request their independent totals instead.");
   return { earlier, later };
 }
+export function comparisonSelection(a: Period, b: Period, baselinePeriod: "earlier" | "later" = "earlier") {
+  const { earlier, later } = comparisonPeriods(a, b);
+  return baselinePeriod === "later"
+    ? { current: earlier, baseline: later }
+    : { current: later, baseline: earlier };
+}
 import { add, parseMoney, scale } from "../../convex/lib/domain";
 import { decimal } from "./finance";
 type Measure = { key: string; label: string; currency: string; amount: string };

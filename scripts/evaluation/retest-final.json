@@ -98,5 +98,17 @@
       "42.50"
     ],
     "expected": "Original debits groceries42.50, creditsCedarVisa42.50. No bank account posting and no bank cash movement. Distinguish later reversal; do not say bank money moved to liability."
+  },
+  {
+    "id": "explicit-later-baseline",
+    "question": "Using August 2026 as the baseline, how much lower was our household grocery and household-supplies spending in July 2026? Show the dollar difference and the percentage relative to August.",
+    "mode": "read",
+    "required": [
+      "1046",
+      "1057",
+      "11.00",
+      "1.04"
+    ],
+    "expected": "Explicit reverse comparison: baselineAugust1057, currentJuly1046, difference-11, percentage-1.04%. Do not substitute the chronological+1.05%."
   }
 ]
