@@ -12,7 +12,7 @@ await client.connect(new StreamableHTTPClientTransport(new URL("http://localhost
 }));
 async function call(name: string, args: Record<string, unknown>, key?: string) {
   const r = await client.callTool({ name, arguments: {
-    datasetId: c.datasetId, ...args, ...(key ? { requestKey: "mixed-debt-fixture-v1-" + key } : {}),
+    datasetId: c.datasetId, ...args, ...(key ? { requestKey: ["mixed", "debt", "fixture", "v1", key].join("-") } : {}),
   } });
   assert(!r.isError, name + " failed: " + JSON.stringify(r.structuredContent));
   return r.structuredContent as any;

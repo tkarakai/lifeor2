@@ -1,0 +1,3 @@
+# Public deterministic idempotency prefix in an isolated fixture, not an API credential.
+# Exact historical finding only; credential loading/token values remain scanned.
+97419784a0d4b0fba0fa22b417284a12721b1640:scripts/evaluation/prepare-mixed-debt.ts:generic-api-key:15
