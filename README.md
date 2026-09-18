@@ -62,6 +62,8 @@ Agent writes update open browsers through Convex without refresh. Markdown edito
 
 ## Development checks
 
+Changes go through a feature branch and a pull request to `main`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the required **LifeOR2 validation** check and merge policy shared with `lifeor2-client`.
+
 After starting the backend to generate Convex types, run `bun run typecheck`. Use `bun run build` for a production build. Run `bun run test` for the Convex/Better Auth regression suite. Linting is not configured yet.
 
 ## References

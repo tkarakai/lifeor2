@@ -8,7 +8,7 @@
 - Its matching cached backend executable at `~/.cache/convex/binaries/<backendVersion>/convex-local-backend`.
 - Free ports **3000, 3240, and 3241**.
 
-This guide restores the database already on this Mac. It does not provision a new database or download a backend. The recovery trial succeeded with backend `precompiled-2026-01-15-002379a` and Convex CLI `1.31.5`; no upgrade was necessary.
+This guide restores an existing saved local database. It does not provision a new database or download a backend. The recovery trial succeeded with backend `precompiled-2026-01-15-002379a` and Convex CLI `1.31.5`; no upgrade was necessary.
 
 ## 1. Install dependencies
 
@@ -25,7 +25,7 @@ Stop any process using the source deployment before copying it, so SQLite and fi
 For the deployment previously selected by this project:
 
 ```bash
-bun run local:setup --from "$HOME/.convex/convex-backend-state/local-tamas_karakai-lifeor2_23378"
+bun run local:setup --from "/path/to/saved-deployment"
 ```
 
 The setup command:
@@ -39,7 +39,7 @@ The setup command:
 
 The original source files stay unchanged. Setup refuses to overwrite an existing `.convex/standalone/` directory. Once configured, skip this step on subsequent starts.
 
-Other saved snapshots found on this Mac are `local-tamas_karakai-lifeor2` and `local-tamas_karakai-lifeor2_b78f2`. They are separate databases; setup does not merge them. Restoring a database does not guarantee that a particular historical account or its records exist in it.
+Choose the saved deployment directory you intend to restore. Separate snapshots are separate databases; setup does not merge them. Restoring a database does not guarantee that a particular historical account or its records exist in it.
 
 Do not copy `.env.local.example` over the generated `.env.local`.
 
@@ -84,7 +84,7 @@ bunx convex logs
 
 Run `bun run convex:dev` and `bun dev` in two terminals. Ctrl+C stops each process; the backend supervisor completes cleanup even if Ctrl+C is pressed repeatedly. It terminates and reaps its backend and watcher process groups. A project lock prevents two supervisors from opening the same database. Data remains in `.convex/standalone/`.
 
-The old recovery trial at `http://localhost:3020` under `/private/tmp/lifeor2-auth-trial` is separate. It is not the project's permanent setup, and trial logins/data are not automatically copied here.
+Recovery trials are separate from the project's permanent setup. Their logins and data are not automatically copied here.
 
 ## Configuration and backups
 
