@@ -378,6 +378,9 @@ export const rescheduleEvent = mutation({
       corrects_id: old._id,
       payload_json: JSON.stringify({
         ...JSON.parse(old.payload_json),
+        timezone,
+        localDate: a.date,
+        localTime: a.time,
         rescheduled: {
           localDate: a.date,
           localTime: a.time,
@@ -396,6 +399,7 @@ export const rescheduleEvent = mutation({
       time: a.time,
       timezone,
       status: "rescheduled",
+      occurredAt: new Date(occurred_at).toISOString(),
       basis:
         "New event supersedes the prior occurrence; duration, subject links and history are preserved.",
     };

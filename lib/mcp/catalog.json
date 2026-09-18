@@ -4123,7 +4123,7 @@
     "name": "life.events",
     "title": "agentLife: events",
     "primary": true,
-    "description": "Find recorded events/appointments by title words, kind, subject and inclusive dates. For the next appointment, set from=today and OMIT through: returns earliest matches across all future recorded dates, not a guessed year-end cutoff. Otherwise date-only queries are newest first; title searches are relevance ranked. Compact pages with exact timestamps and timezone. Follow cursors even on empty pages. Prefer this to listing raw events; use life.timeline for upcoming commitments.",
+    "description": "Find recorded events/appointments by title words, kind, subject and optional inclusive dates. Omit both dates to locate an existing event whose current date is unknown, including before rescheduling; never substitute its proposed new date or guess a year-end cutoff. Event titles belong here, not life.search. For the next appointment, set from=today and OMIT through: returns earliest matches across all future recorded dates, not a guessed year-end cutoff. Otherwise date-only queries are newest first; title searches are relevance ranked. Compact pages with exact timestamps and timezone. Follow cursors even on empty pages. Prefer this to listing raw events; use life.timeline for upcoming commitments.",
     "functionName": "agentLife:events",
     "kind": "query",
     "scope": "data:read",
@@ -4162,7 +4162,6 @@
         }
       },
       "required": [
-        "from",
         "datasetId"
       ],
       "additionalProperties": false

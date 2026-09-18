@@ -62,6 +62,10 @@ Deterministic tests compare indexed answers with direct source-ledger scans, inc
 Scale fixtures grow transaction history across 2010–2025 while keeping the household graph small. A second fixture varies household categories, amounts, banks, cards, subjects and beneficiaries; fully funded purchase/card-payment cycles independently reconcile to unchanged cash and card balances. Sample generation itself uses indexed monthly enrichment, avoiding cross-dataset scans and oversized final mutations. Every synthetic journal balances, generated income/expense totals have independent mathematical expectations, and synthetic cash reconciles into the original sample opening state. The evaluation deployment and its private credentials are isolated from the normal backend. At 1,000×, the target is 308,000 journals, not 308,000 people. Measured results and remaining limitations will be recorded separately before acceptance.
 
 
+## Unknown-date lookups
+
+An existing appointment can be located by title/subject with both dates omitted. A proposed replacement date is not a filter for its old occurrence. Explicit next-appointment questions still use `from=today` with no upper cutoff and chronological ordering. Calendar corrections update the stored display timezone as well as the UTC instant, while preserving prior records and subject links.
+
 ## Individual receipt lookup
 
 Journal memo search uses a dataset/user-scoped full-text index, with optional dates and chart/person filters. Unknown dates are omitted rather than guessed. Convex full-text search matches any query term, so a bounded probe (33 hits per literal word, at most 16 words) selects a candidate stream and the service requires all words before returning a receipt. The selected stream and filters are bound into the continuation cursor. Empty filtered pages retain their cursor; they do not establish absence. Exact decimal posting amounts accompany ledger minor units. Aggregate questions still use report queries.

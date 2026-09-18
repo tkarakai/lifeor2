@@ -576,7 +576,7 @@ export const documents = query({
 export const events = query({
   agent: { operation: "life.events", scope: "data:read" },
   args: {
-    from: v.string(),
+    from: v.optional(v.string()),
     through: v.optional(v.string()),
     query: v.optional(v.string()),
     kind: v.optional(v.string()),
@@ -585,15 +585,15 @@ export const events = query({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
-    if (a.through) dateRange(a.from, a.through, 36600);
-    else date(a.from);
-    const nextEvent = a.through === undefined;
+    if (a.from && a.through) dateRange(a.from, a.through, 36600);
+    else { if (a.from) date(a.from); if (a.through) date(a.through); }
+    const nextEvent = a.from !== undefined && a.through === undefined;
     const w = await workspace(ctx),
       limit = a.limit ?? 20;
     if (!Number.isInteger(limit) || limit < 1 || limit > 50)
       throw new Error("limit must be 1–50");
     if (a.entityId) await owned(ctx, "entity", a.entityId, w.user._id);
-    const lo = Date.parse(a.from) - 86400000,
+    const lo = a.from ? Date.parse(a.from) - 86400000 : -8640000000000000,
       hi = a.through ? Date.parse(a.through) + 2 * 86400000 : 8640000000000000;
     const useSubjectIndex = !!(a.entityId && !a.query && !nextEvent && (await ctx.db.query("event_affects").withIndex("by_target", q => q.eq("target_type", "entity").eq("target_id", a.entityId!)).take(51)).length <= 50);
     const state =
@@ -656,9 +656,9 @@ export const events = query({
         (a.kind && e.kind !== a.kind) ||
         e.archived ||
         e.voided_at !== undefined ||
-        day < a.from ||
+        (a.from && day < a.from) ||
         (a.through && day > a.through) ||
-        (nextEvent && a.query && !matchesText(`${e.title ?? ""} ${e.kind}`, a.query))
+        (a.query && !matchesText(`${e.title ?? ""} ${e.kind}`, a.query))
       )
         continue;
       if (
@@ -723,9 +723,9 @@ export const events = query({
       queryComplete: nextCursor === null,
       datasetCompleteness: "unknown",
       order: nextEvent ? "earliest_first" : a.query ? "text_relevance" : subjectLinks ? "subject_link_order" : "most_recent_first",
-      filter: { from: a.from, through: a.through ?? null, query: a.query ?? null, entityId: a.entityId ?? null },
+      filter: { from: a.from ?? null, through: a.through ?? null, query: a.query ?? null, entityId: a.entityId ?? null },
       basis:
-        "Recorded events only. Without through, earliest-first search covers all recorded future dates: the first matching item is the next occurrence; an empty page with a cursor is not absence. Bounded title searches use the text index and bounded subject-only queries use the subject-link index. Follow nextCursor even on empty filtered pages before concluding absence. Projections and obligations use life.timeline.",
+        "Recorded events only. Omit unknown dates for title/subject lookup across recorded history. With from but no through, earliest-first search covers all recorded dates from that day: the first matching item is the next occurrence; an empty page with a cursor is not absence. Bounded title searches use the text index and bounded subject-only queries use the subject-link index. Follow nextCursor even on empty filtered pages before concluding absence. Projections and obligations use life.timeline.",
     };
   },
 });

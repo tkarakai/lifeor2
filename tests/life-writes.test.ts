@@ -106,6 +106,22 @@ test("rescheduling preserves subject links, hides superseded occurrences and rej
     }),
   ).rejects.toThrow("newer correction");
 });
+test("rescheduling into a different timezone updates displayed civil time without changing history", async () => {
+  const f = await setup();
+  const original = await f.mutation("agentWrites:recordEvent", {
+    title: "Travel appointment", kind: "Appointment", date: "2026-09-20", time: "14:30", timezone: "America/Chicago",
+  });
+  const next = await f.mutation("agentWrites:rescheduleEvent", {
+    id: original.id, date: "2026-09-22", time: "09:00", timezone: "America/New_York",
+  });
+  expect(next.occurredAt).toBe("2026-09-22T13:00:00.000Z");
+  const list = await f.query("agentLife:events", { from: "2026-09-01", through: "2026-09-30" });
+  expect(list.items).toHaveLength(1);
+  expect(list.items[0]).toMatchObject({ id: next.id, date: "2026-09-22", time: "09:00", timezone: "America/New_York", occurredAt: next.occurredAt });
+  const old = await f.t.run(ctx => ctx.db.get<"event">(original.id));
+  expect(JSON.parse(old!.payload_json).timezone).toBe("America/Chicago");
+  expect(new Date(old!.occurred_at).toISOString()).toBe("2026-09-20T19:30:00.000Z");
+});
 test("expense writes and reversals update the reporting index in the same transaction", async () => {
   const f = await setup(),
     chart = await f.mutation("finance:createChart", { name: "Household" });
@@ -544,6 +560,20 @@ test("next appointments are earliest-first without an invented year-end cutoff",
   expect(result.filter.through).toBeNull();
 });
 
+
+test("event title lookup omits unknown dates and excludes partial-word-query matches", async () => {
+  const f = await setup();
+  const person = await f.mutation("entities:create", { kind: "Person", display_name: "Riley" });
+  const visit = await f.mutation("agentWrites:recordEvent", { title: "Riley dentist visit", kind: "Appointment", date: "2027-01-12", time: "10:00", subjects: [{ kind: "entity", id: person }] });
+  await f.mutation("agentWrites:recordEvent", { title: "Avery dentist visit", kind: "Appointment", date: "2026-10-12", time: "10:00" });
+  const result = await f.query("agentLife:events", { query: "Riley dentist visit" });
+  expect(result.items.map((e: any) => e.id)).toEqual([visit.id]);
+  expect(result.queryComplete).toBe(true);
+  expect(result.filter.from).toBeNull();
+  expect(result.filter.through).toBeNull();
+  const past = await f.query("agentLife:events", { query: "Riley dentist visit", through: "2026-12-31" });
+  expect(past.items).toEqual([]);
+});
 
 test("next-event ordering merges visible legacy and named default-dataset records", async () => {
   const f = await setup();
