@@ -5,6 +5,7 @@ import { money, add, date, period, instant, nonempty } from "./lib/domain";
 import { posted, postingAmount, accountBalance } from "./lib/ledger";
 import { moneyValue } from "./schema/shared";
 export const createStatement = mutation({
+  agent: { operation: "observations.createStatement", scope: "finance:write" },
   args: {
     financial_account_id: v.id("financial_account"),
     evidence_id: v.id("evidence_item"),
@@ -40,6 +41,7 @@ export const createStatement = mutation({
   },
 });
 export const addStatementLine = mutation({
+  agent: { operation: "observations.addStatementLine", scope: "finance:write" },
   args: {
     statement_id: v.id("statement"),
     external_key: v.string(),
@@ -96,6 +98,7 @@ export const addStatementLine = mutation({
   },
 });
 export const observeBalance = mutation({
+  agent: { operation: "observations.observeBalance", scope: "finance:write" },
   args: {
     financial_account_id: v.id("financial_account"),
     minor_units: v.number(),
@@ -146,6 +149,7 @@ export const observeBalance = mutation({
   },
 });
 export const reconcile = mutation({
+  agent: { operation: "observations.reconcile", scope: "finance:write" },
   args: {
     financial_account_id: v.id("financial_account"),
     statement_id: v.optional(v.id("statement")),
@@ -229,6 +233,7 @@ export const reconcile = mutation({
   },
 });
 export const match = mutation({
+  agent: { operation: "observations.match", scope: "finance:write" },
   args: {
     reconciliation_id: v.id("reconciliation"),
     line_id: v.id("statement_line"),
@@ -304,6 +309,7 @@ export const match = mutation({
   },
 });
 export const list = query({
+  agent: { operation: "observations.list", scope: "data:read" },
   args: { financialAccountId: v.id("financial_account") },
   handler: async (ctx, a) => {
     await owned(

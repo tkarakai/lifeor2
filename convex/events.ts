@@ -1,13 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./lib/scoped";
-import { authComponent } from "./auth";
+import { currentUser } from "./lib/access";
 import { owned, ownedTarget, requireUser, validateJson } from "./lib/access";
 import { nonempty, instant, period } from "./lib/domain";
 import { target } from "./schema/shared";
 export const list = query({
+  agent: { operation: "events.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     return u
       ? (
           await ctx.db
@@ -20,11 +21,13 @@ export const list = query({
   },
 });
 export const get = query({
+  agent: { operation: "events.get", scope: "data:read" },
   args: { id: v.id("event") },
   handler: async (ctx, a) =>
     owned(ctx, "event", a.id, (await requireUser(ctx))._id),
 });
 export const create = mutation({
+  agent: { operation: "events.create", scope: "data:write" },
   args: {
     kind: v.string(),
     title: v.optional(v.string()),
@@ -51,6 +54,7 @@ export const create = mutation({
   },
 });
 export const getAffects = query({
+  agent: { operation: "events.getAffects", scope: "data:read" },
   args: { eventId: v.id("event") },
   handler: async (ctx, a) => {
     await owned(ctx, "event", a.eventId, (await requireUser(ctx))._id);
@@ -61,6 +65,7 @@ export const getAffects = query({
   },
 });
 export const addAffects = mutation({
+  agent: { operation: "events.addAffects", scope: "data:write" },
   args: {
     eventId: v.id("event"),
     target: v.optional(target),
@@ -97,6 +102,7 @@ export const addAffects = mutation({
   },
 });
 export const remove = mutation({
+  agent: { operation: "events.remove", scope: "data:write" },
   args: { id: v.id("event") },
   handler: async (ctx, a) => {
     await owned(ctx, "event", a.id, (await requireUser(ctx))._id);
@@ -104,6 +110,7 @@ export const remove = mutation({
   },
 });
 export const voidEvent = mutation({
+  agent: { operation: "events.voidEvent", scope: "data:write" },
   args: { id: v.id("event"), reason: v.string() },
   handler: async (ctx, a) => {
     await owned(ctx, "event", a.id, (await requireUser(ctx))._id);

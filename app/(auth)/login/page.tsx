@@ -45,7 +45,8 @@ export default function LoginPage() {
       if (result.error) throw new Error(result.error.message);
       // Start a fresh Convex connection after changing the cookie session.
       // The auth adapter can otherwise retain the previous user's cached JWT.
-      window.location.assign("/dashboard");
+      const next = new URLSearchParams(window.location.search).get("next");
+      window.location.assign(next?.startsWith("/oauth/authorize?") ? next : "/dashboard");
     } catch (err) {
       setError("Invalid or expired code. Please try again.");
       console.error(err);

@@ -14,6 +14,7 @@ export const routeSource = v.union(
 );
 /** Payment instructions, not a change to the underlying claim or ledger. Revisions are retained. */
 export const save = mutation({
+  agent: { operation: "cashRouting.save", scope: "finance:write", revision: true },
   args: {
     source: routeSource,
     from_account_id: v.optional(v.id("ledger_account")),

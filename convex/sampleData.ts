@@ -56,7 +56,7 @@ async function context(
   );
   return { ctx, registry, dataset };
 }
-async function buildStructure(raw: MutationCtx, userId: string) {
+export async function buildStructure(raw: MutationCtx, userId: string) {
   if (!(await authComponent.getAnyUserById(raw, userId)))
     throw new Error("Sample owner must be an existing signed-in user");
   await ensureLive(raw, userId);
@@ -742,7 +742,7 @@ async function buildStructure(raw: MutationCtx, userId: string) {
 }
 
 /** One atomic month at a time keeps the seed resumable and below transaction limits. */
-async function appendMonth(
+export async function appendMonth(
   raw: MutationCtx,
   userId: string,
   datasetId: Id<"dataset">,
@@ -1423,6 +1423,7 @@ function source(name: string, body: string) {
   return `---\nfictional: true\nas_of: "${SAMPLE_AS_OF}"\n---\n\n# ${name}\n\n${body}\n`;
 }
 export const documents = query({
+  agent: { operation: "sampleData.documents", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     await requireUser(ctx);

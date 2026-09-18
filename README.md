@@ -44,6 +44,12 @@ The [redesign specification](docs/design/redesign-spec.md) is implemented and th
 
 Data, file storage, and local backend configuration live in **`.convex/standalone/`**, which Git ignores. `.env.local` contains the frontend URLs and private self-hosted admin key. Keep both out of version control. Markdown lives in the separate `.convex/details-content.git` repository; back it up alongside the database (see QUICKSTART).
 
+## Agent connectivity
+
+Open **Workspace → Agent connections** to register an MCP client and manage its grants. The server at `/mcp` implements MCP **2026-07-28**, with OAuth browser consent, PKCE, scoped dataset access, revocation, retry-safe writes and connection activity. The full catalog covers 113 tools, including records, finance, planning, trash and Markdown; Observatory rendering is excluded.
+
+Agent writes update open browsers through Convex without refresh. Markdown editors also update automatically, preserving unsaved drafts. See the **[MCP client and deployment guide](docs/decisions/mcp-agent-interface.md)** for authorization endpoints, the primary-client SDK configuration and remote-hosting requirements.
+
 ## Project layout
 
 - `app/` — Next.js pages and auth proxy

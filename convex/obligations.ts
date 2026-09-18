@@ -110,6 +110,7 @@ export async function validateSchedule(
     throw new Error("Invalid recurrence");
 }
 export const createSchedule = mutation({
+  agent: { operation: "obligations.createSchedule", scope: "finance:write" },
   args: {
     arrangement_id: v.id("arrangement"),
     name: v.string(),
@@ -153,6 +154,7 @@ export const createSchedule = mutation({
   },
 });
 export const reviseSchedule = mutation({
+  agent: { operation: "obligations.reviseSchedule", scope: "finance:write", revision: true },
   args: {
     id: v.id("commitment_schedule"),
     expectedRevision: v.number(),
@@ -199,6 +201,7 @@ export const reviseSchedule = mutation({
   },
 });
 export const listSchedules = query({
+  agent: { operation: "obligations.listSchedules", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const u = await requireUser(ctx);
@@ -218,6 +221,7 @@ export const listSchedules = query({
   },
 });
 export const create = mutation({
+  agent: { operation: "obligations.create", scope: "finance:write" },
   args: {
     creditor_id: v.id("entity"),
     debtor_id: v.id("entity"),
@@ -306,6 +310,7 @@ export const create = mutation({
   },
 });
 export const list = query({
+  agent: { operation: "obligations.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const u = await requireUser(ctx);
@@ -319,6 +324,7 @@ export const list = query({
   },
 });
 export const settle = mutation({
+  agent: { operation: "obligations.settle", scope: "finance:write" },
   args: {
     obligationId: v.id("monetary_obligation"),
     capacityPostingId: v.id("posting"),
@@ -435,6 +441,7 @@ const journalInput = v.object({
   ),
 });
 export const adjust = mutation({
+  agent: { operation: "obligations.adjust", scope: "finance:write" },
   args: {
     obligationId: v.id("monetary_obligation"),
     minor_units: v.number(),
@@ -498,6 +505,7 @@ export const adjust = mutation({
   },
 });
 export const voidObligation = mutation({
+  agent: { operation: "obligations.voidObligation", scope: "finance:write" },
   args: { id: v.id("monetary_obligation"), reason: v.string() },
   handler: async (ctx, a) => {
     const o = await owned(
@@ -520,6 +528,7 @@ export const voidObligation = mutation({
   },
 });
 export const scheduleAt = query({
+  agent: { operation: "obligations.scheduleAt", scope: "data:read" },
   args: {
     id: v.id("commitment_schedule"),
     effectiveAt: v.number(),

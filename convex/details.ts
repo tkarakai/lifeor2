@@ -4,6 +4,7 @@ import { owned, ownedTarget, requireUser } from "./lib/access";
 import { nonempty } from "./lib/domain";
 import { target } from "./schema/shared";
 export const ensure = mutation({
+  agent: { operation: "details.ensure", scope: "data:write" },
   args: { target, repositoryKey: v.string() },
   handler: async (ctx, a) => {
     const u = await requireUser(ctx),
@@ -32,11 +33,13 @@ export const ensure = mutation({
   },
 });
 export const get = query({
+  agent: { operation: "details.get", scope: "data:read" },
   args: { id: v.id("details_document") },
   handler: async (ctx, a) =>
     owned(ctx, "details_document", a.id, (await requireUser(ctx))._id),
 });
 export const forTarget = query({
+  agent: { operation: "details.forTarget", scope: "data:read" },
   args: { target },
   handler: async (ctx, a) => {
     const u = await requireUser(ctx);
@@ -54,6 +57,7 @@ export const forTarget = query({
   },
 });
 export const observe = mutation({
+  agent: { operation: "details.observe", scope: "data:write" },
   args: {
     id: v.id("details_document"),
     commit: v.optional(v.string()),

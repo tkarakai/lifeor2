@@ -4,8 +4,14 @@ import { authComponent } from "../auth";
 
 type OwnedTable = TableNames;
 
+export async function currentUser(ctx: QueryCtx): Promise<{ _id: string } | null> {
+  const principal = (ctx as QueryCtx & { principal?: { _id: string } | null }).principal;
+  return principal === undefined ? (await authComponent.safeGetAuthUser(ctx)) ?? null : principal;
+}
 export async function requireUser(ctx: QueryCtx) {
-  return await authComponent.getAuthUser(ctx);
+  const user = await currentUser(ctx);
+  if (!user) throw new Error("Unauthenticated");
+  return user;
 }
 
 export async function owned<T extends OwnedTable>(

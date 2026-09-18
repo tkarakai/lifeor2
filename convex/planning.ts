@@ -715,6 +715,7 @@ function validateAssumption(value: Infer<typeof overrideValue>) {
 }
 
 export const listPlans = query({
+  agent: { operation: "planning.listPlans", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
@@ -728,6 +729,7 @@ export const listPlans = query({
 });
 
 export const createPlan = mutation({
+  agent: { operation: "planning.createPlan", scope: "data:write" },
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -740,6 +742,7 @@ export const createPlan = mutation({
 });
 
 export const listPlanVersions = query({
+  agent: { operation: "planning.listPlanVersions", scope: "data:read" },
   args: { planId: v.id("plan") },
   handler: async (ctx, args) => {
     await owned(ctx, "plan", args.planId, (await requireUser(ctx))._id);
@@ -751,6 +754,7 @@ export const listPlanVersions = query({
 });
 
 export const createPlanVersion = mutation({
+  agent: { operation: "planning.createPlanVersion", scope: "data:write" },
   args: {
     planId: v.id("plan"),
     period_start: v.string(),
@@ -791,6 +795,7 @@ export const createPlanVersion = mutation({
 });
 
 export const publishPlanVersion = mutation({
+  agent: { operation: "planning.publishPlanVersion", scope: "data:write" },
   args: { id: v.id("plan_version") },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -807,6 +812,7 @@ export const publishPlanVersion = mutation({
 });
 
 export const createBudgetTarget = mutation({
+  agent: { operation: "planning.createBudgetTarget", scope: "data:write" },
   args: {
     plan_version_id: v.id("plan_version"),
     period_start: v.string(),
@@ -875,6 +881,7 @@ export const createBudgetTarget = mutation({
 });
 
 export const listBudgetTargets = query({
+  agent: { operation: "planning.listBudgetTargets", scope: "data:read" },
   args: { planVersionId: v.id("plan_version") },
   handler: async (ctx, args) => {
     await owned(
@@ -893,6 +900,7 @@ export const listBudgetTargets = query({
 });
 
 export const listScenarios = query({
+  agent: { operation: "planning.listScenarios", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
@@ -906,6 +914,7 @@ export const listScenarios = query({
 });
 
 export const createScenario = mutation({
+  agent: { operation: "planning.createScenario", scope: "data:write" },
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -918,6 +927,7 @@ export const createScenario = mutation({
 });
 
 export const createScenarioVersion = mutation({
+  agent: { operation: "planning.createScenarioVersion", scope: "data:write" },
   args: {
     scenarioId: v.id("scenario"),
     base_plan_version_id: v.id("plan_version"),
@@ -966,6 +976,7 @@ export const createScenarioVersion = mutation({
 });
 
 export const listScenarioVersions = query({
+  agent: { operation: "planning.listScenarioVersions", scope: "data:read" },
   args: { scenarioId: v.id("scenario") },
   handler: async (ctx, args) => {
     await owned(ctx, "scenario", args.scenarioId, (await requireUser(ctx))._id);
@@ -977,6 +988,7 @@ export const listScenarioVersions = query({
 });
 
 export const createAssumption = mutation({
+  agent: { operation: "planning.createAssumption", scope: "data:write" },
   args: {
     name: v.string(),
     value: assumptionValue,
@@ -1001,6 +1013,7 @@ export const createAssumption = mutation({
 });
 
 export const listAssumptions = query({
+  agent: { operation: "planning.listAssumptions", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
@@ -1193,6 +1206,7 @@ export async function remaining(ctx: QueryCtx, flow: Doc<"expected_flow">) {
 }
 
 export const createExpectedFlow = mutation({
+  agent: { operation: "planning.createExpectedFlow", scope: "data:write" },
   args: {
     expected_date: v.string(),
     minor_units: v.number(),
@@ -1318,6 +1332,7 @@ export const createExpectedFlow = mutation({
 });
 
 export const listExpectedFlows = query({
+  agent: { operation: "planning.listExpectedFlows", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);
@@ -1335,6 +1350,7 @@ export const listExpectedFlows = query({
 });
 
 export const fulfillExpectedFlow = mutation({
+  agent: { operation: "planning.fulfillExpectedFlow", scope: "data:write" },
   args: {
     id: v.id("expected_flow"),
     postingId: v.id("posting"),
@@ -1399,6 +1415,7 @@ export const fulfillExpectedFlow = mutation({
 });
 
 export const createForecastRun = mutation({
+  agent: { operation: "planning.createForecastRun", scope: "data:write" },
   args: {
     plan_version_id: v.id("plan_version"),
     scenario_version_id: v.optional(v.id("scenario_version")),
@@ -1518,6 +1535,7 @@ export const createForecastRun = mutation({
 });
 
 export const listForecastRuns = query({
+  agent: { operation: "planning.listForecastRuns", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx);

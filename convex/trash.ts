@@ -39,6 +39,7 @@ function name(row: Row) {
   return row._id;
 }
 export const list = query({
+  agent: { operation: "trash.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     await requireUser(ctx);
@@ -173,6 +174,7 @@ async function deletionPlan(
   return { ids, rows, blockers, rootName: name(root as Row) };
 }
 export const inspect = query({
+  agent: { operation: "trash.inspect", scope: "data:read" },
   args: { target },
   handler: async (ctx, args) => {
     const result = await deletionPlan(ctx, args.target);
@@ -184,6 +186,7 @@ export const inspect = query({
   },
 });
 export const restore = mutation({
+  agent: { operation: "trash.restore", scope: "data:write" },
   args: { target },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx),
@@ -238,6 +241,7 @@ export const restore = mutation({
   },
 });
 export const permanentlyDelete = mutation({
+  agent: { operation: "trash.permanentlyDelete", scope: "data:delete" },
   args: { target, confirmation: v.string() },
   handler: async (ctx, args) => {
     const result = await deletionPlan(ctx, args.target);
