@@ -82,7 +82,7 @@ const descriptions: Record<string, string> = {
   "records.changeSchedule":
     "Change a recurring commitment's amount, day of month or end date from an effective civil date. Read the current schedule revision first. Decimal amount is major currency units. Existing terms and later changes are preserved; old debts/payments and separate cash routes are unchanged. Never use for a hypothetical question.",
   "records.recordExpense":
-    "Record a paid expense as a balanced posted journal. Decimal amount is major currency units. Resolve explicit expense and asset payment accounts in the same chart; ask which payment account if unspecified. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
+    "Record a paid expense as a balanced posted journal. Decimal amount is major currency units. Resolve explicit expense and asset payment accounts in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
   "life.events":
     "Find specific recorded events/appointments by title words, kind, subject and inclusive dates. Date-only queries are newest first; title searches are relevance ranked. Compact pages with exact timestamps and timezone. Follow cursors even on empty pages. Prefer this to listing raw events; use life.timeline for upcoming commitments.",
   "life.context":

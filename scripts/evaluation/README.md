@@ -59,3 +59,8 @@ bun scripts/evaluation/admin.ts --obligations-only
 For an actual deployment, use its authenticated operator environment and run the internal `reportIndex:backfill` and `reportIndex:backfillObligations` mutations, passing the explicit dataset ID and each returned cursor until `ready: true`. Do not use the evaluation admin script against another URL. Never set readiness manually. Source records remain authoritative and are not rewritten by these migrations.
 
 Report files use private permissions, per-user/connection/dataset isolation, bounded size/count, and a 24-hour access TTL. Configure `LIFEOR_REPORT_DIRECTORY` on durable local/shared storage when deploying multiple workers; ephemeral serverless disks cannot guarantee cross-worker report availability. Expired files are pruned on subsequent saves in that scope; operators should also clean expired inactive scopes under their normal retention process. Conversations contain evidence snapshots, not a new source of truth.
+
+
+`heldout.json` adds fresh phrasings and a three-turn conversation that reuses a saved report. `long-note.ts prepare`, `long-note-cases.json`, and `long-note.ts verify` test a source document exceeding 40,000 characters: appending must preserve its exact prefix, and reading facts must use bounded text pages. These scripts are restricted to the separate write fixture.
+
+Preserve failed negative-test writes as evidence. If an operator explicitly reverses a failed isolated test, `verify-writes.ts --allow-corrected-negative` checks the documented original/reversal pair in private `negative-test-reversal.json` and rejects any additional journals. This is validation of compensated state, not a pass for the original model attempt. Ordinary acceptance uses the strict default.

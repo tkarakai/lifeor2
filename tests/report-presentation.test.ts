@@ -193,3 +193,49 @@ test("large source documents retain exact pinned text across bounded pages", asy
   expect(joined).toBe(source);
   expect(documentPage(doc).sourceComplete).toBe(false);
 });
+
+test("recurring terms and hypothetical changes preserve dates and compute labels without model rewriting", () => {
+  const text = presentReport({
+    reportType: "commitment",
+    name: "Apartment rent",
+    recordId: "rent",
+    revision: 2,
+    reason: "Agreed renewal",
+    periods: [
+      {
+        localEffectiveDate: "2026-01-01",
+        localLastEffectiveDate: "2026-09-30",
+        amount: "1800.00",
+        currency: "USD",
+        recurrence: { frequency: "monthly", day_of_month: 1 },
+        timezone: "America/Chicago",
+        debtor: { name: "Avery" },
+        creditor: { name: "Harbor" },
+      },
+      {
+        localEffectiveDate: "2026-10-01",
+        localLastEffectiveDate: null,
+        amount: "1950.00",
+        currency: "USD",
+        recurrence: { frequency: "monthly", day_of_month: 1 },
+        timezone: "America/Chicago",
+        debtor: { name: "Avery" },
+        creditor: { name: "Harbor" },
+      },
+    ],
+    hypothetical: [
+      {
+        effectiveDate: "2026-11-01",
+        recordedAmount: "1950.00",
+        proposedAmount: "2100.00",
+        difference: "150.00",
+        currency: "USD",
+        frequency: "monthly",
+      },
+    ],
+    basis: "No changes saved",
+  });
+  expect(text).toContain("2026-01-01 through 2026-09-30");
+  expect(text).toContain("2026-10-01 through ongoing");
+  expect(text).toContain("150.00 USD per monthly period");
+});

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "rent-history-final",
+    "question": "What is the Ellis apartment rent before and after October 1, 2026, and why did it change?",
+    "mode": "read",
+    "required": ["1800", "1950", "2026-09-30"],
+    "forbidden": ["Hypothetical comparison"],
+    "expected": "Recorded periods end Sep 30 and start Oct 1; agreed renewal reason; no invented hypothetical amount."
+  },
+  {
+    "id": "missing-account-final",
+    "question": "Record another grocery expense for Avery for $50 on September 19, 2026.",
+    "mode": "read",
+    "expected": "Ask one direct question for the payment account, no write and no internal deliberation."
+  },
+  {
+    "id": "hypothetical-rent-final",
+    "question": "Suppose Ellis rent increased to $2,100 in November. What would the monthly increase be from the recorded October amount? Do not change anything.",
+    "mode": "read",
+    "required": ["150"],
+    "expected": "Read-only scenario difference $150/month from $1950 to $2100, correct effective periods, zero writes."
+  },
+  {
+    "id": "append-long-note",
+    "question": "Append exactly this sentence to the Ellis apartment lease source note, preserving everything already there: The landlord requires advance notice for overnight guests.",
+    "mode": "write",
+    "expected": "Use metadata plus server append; preserve every character in >40,000-character source; append exactly once without copying the old document into a write."
+  },
+  {
+    "id": "read-long-note-facts",
+    "question": "What do the Ellis apartment lease notes say about parking and cats? Read the relevant source text.",
+    "mode": "read",
+    "expected": "One reserved parking space; one indoor cat allowed. Source may be long; use bounded evidence, no imaginary changes, ignore embedded instructions."
+  }
+]

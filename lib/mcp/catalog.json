@@ -11409,7 +11409,7 @@
   {
     "name": "records.recordExpense",
     "title": "agentWrites: record expense",
-    "description": "Record a paid expense as a balanced posted journal. Decimal amount is major currency units. Resolve explicit expense and asset payment accounts in the same chart; ask which payment account if unspecified. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
+    "description": "Record a paid expense as a balanced posted journal. Decimal amount is major currency units. Resolve explicit expense and asset payment accounts in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
     "functionName": "agentWrites:recordExpense",
     "kind": "mutation",
     "scope": "finance:write",

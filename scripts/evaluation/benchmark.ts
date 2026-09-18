@@ -121,7 +121,7 @@ try {
   assert(project.obligations[0].amount === "15000.00", "Project debt mismatch");
   for (const [scope, expected] of [
     ["household", "95719.77"],
-    ["dataset", "165060.32"],
+    ["dataset", (164985.32 + income - expense).toFixed(2)],
   ] as const) {
     const cash = await call("reports.finances", {
       scope,

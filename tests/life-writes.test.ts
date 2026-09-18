@@ -216,6 +216,10 @@ test("schedule changes preserve earlier and later effective terms and reject sta
       ["2026-12-01", "2100.00"],
     ]);
     expect(editable.revisionReason).toBe("Autumn agreement");
+    expect(editable.periods[0].localLastEffectiveDate).toBe("2026-09-30");
+    expect(editable.periods[1].effectivePeriod).toBe(
+      "2026-10-01 through 2026-11-30 (inclusive local dates)",
+    );
     const report = await f.query("agentTimeline:timeline", {
       from: "2026-09-01",
       through: "2026-12-31",

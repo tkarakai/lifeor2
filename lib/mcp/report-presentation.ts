@@ -110,6 +110,49 @@ export function presentReport(
       .slice(0, 20)
       .map((id) => "`" + escape(id) + "`")
       .join(", ")}.`;
+  } else if (report.reportType === "commitment") {
+    text = `${escape(report.name)} — recorded recurring terms (revision ${escape(report.revision)})\n\n`;
+    text +=
+      table(
+        [
+          "Effective local dates (inclusive)",
+          "Amount",
+          "Recurrence",
+          "Debtor",
+          "Creditor",
+        ],
+        report.periods.map((p: any) => [
+          `${p.localEffectiveDate} through ${p.localLastEffectiveDate ?? "ongoing"}`,
+          p.amount === null ? "Variable" : amount(p.amount, p.currency),
+          `${p.recurrence.frequency}; interval ${p.recurrence.interval ?? 1}${p.recurrence.day_of_month ? "; day " + p.recurrence.day_of_month : ""} (${p.timezone})`,
+          p.debtor.name,
+          p.creditor.name,
+        ]),
+      ) + "\n\n";
+    if (report.reason)
+      text += `Recorded reason for the latest revision: ${escape(report.reason)}.\n\n`;
+    if (report.hypothetical?.length)
+      text +=
+        "Hypothetical comparison — no changes saved:\n\n" +
+        table(
+          [
+            "Effective date",
+            "Recorded amount",
+            "Proposed amount",
+            "Difference per period",
+          ],
+          report.hypothetical.map((h: any) => [
+            h.effectiveDate,
+            amount(h.recordedAmount, h.currency),
+            amount(h.proposedAmount, h.currency),
+            amount(h.difference, h.currency) +
+              " per " +
+              h.frequency +
+              " period",
+          ]),
+        ) +
+        "\n\n";
+    text += `${escape(report.basis)}\n\nSource schedule: \`${escape(report.recordId)}\`.`;
   } else if (report.reportType === "project") {
     const r = report.actuals,
       rows = r.rows as any[];

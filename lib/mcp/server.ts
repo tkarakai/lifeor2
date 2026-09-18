@@ -1,3 +1,4 @@
+import { commitmentReport } from "./commitment-report";
 import { documentPage } from "./document-page";
 import { timelineReport } from "./timeline-report";
 import {
@@ -218,6 +219,41 @@ export function createAgentServer(token: string, grant: Grant) {
         a,
       ),
   });
+  for (const scenario of [false, true])
+    definitions.push({
+      name: scenario ? "reports.commitmentScenario" : "reports.commitment",
+      scope: "data:read",
+      title: scenario
+        ? "Hypothetical recurring amount"
+        : "Recorded recurring terms",
+      primary: true,
+      description: scenario
+        ? "Compare a user-proposed rent, salary or other recurring amount with the recorded terms on effectiveDate. All inputs are required: schedule name, hypotheticalAmount (decimal currency units), effectiveDate (YYYY-MM-DD). Read-only calculation; never changes the schedule. Present the saved comparison."
+        : "Read recorded recurring rent, salary or other commitment terms, before/after inclusive effective dates, parties and revision reason. Supply its schedule name. This reads actual terms only; use reports.commitmentScenario for a user-requested hypothetical amount. Present this saved report.",
+      inputSchema: scenario
+        ? schema({
+            datasetId: dataset,
+            schedule: text,
+            hypotheticalAmount: {
+              type: "string",
+              pattern: "^[0-9]+(?:\\.[0-9]+)?$",
+            },
+            effectiveDate: text,
+          })
+        : schema({ datasetId: dataset, schedule: text }),
+      write: false,
+      call: (a) =>
+        commitmentReport(
+          client,
+          token,
+          {
+            userId: grant.userId,
+            connectionId: grant.connectionId,
+            datasetId: String(a.datasetId),
+          },
+          a,
+        ),
+    });
   definitions.push({
     name: "reports.present",
     scope: "data:read",

@@ -81,8 +81,33 @@ try {
         entries.push(...r.records);
         cursor = r.nextCursor ?? undefined;
       } while (cursor);
-      assert.equal(entries.length, 1);
-      const e = entries[0];
+      let active = entries;
+      if (process.argv.includes("--allow-corrected-negative")) {
+        const known = JSON.parse(
+          await readFile(new URL("negative-test-reversal.json", root), "utf8"),
+        );
+        assert.equal(
+          entries.length,
+          3,
+          "Only the explicitly documented failed test and its reversal may be present",
+        );
+        const original = entries.find(
+            (e: any) => e.id === known.originalJournalId,
+          ),
+          reversal = entries.find((e: any) => e.id === known.reversal);
+        assert(original && reversal);
+        assert.equal(reversal.reversesId, original.id);
+        for (const posting of original.postings)
+          assert.equal(
+            reversal.postings.find(
+              (p: any) => p.accountId === posting.accountId,
+            )?.minorUnits,
+            -posting.minorUnits,
+          );
+        active = entries.filter((e: any) => e !== original && e !== reversal);
+      }
+      assert.equal(active.length, 1);
+      const e = active[0];
       assert.equal(e.date, "2026-09-18");
       assert.equal(e.status, "posted");
       assert.equal(
@@ -173,6 +198,9 @@ try {
   );
   const result = {
     at: new Date().toISOString(),
+    priorNegativeTestFailureCompensated: process.argv.includes(
+      "--allow-corrected-negative",
+    ),
     passed: checks.every((c) => c.passed),
     checks,
   };

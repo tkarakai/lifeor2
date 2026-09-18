@@ -163,6 +163,8 @@ test("current MCP discovery and tool listing work without initialization and use
     "life.search",
     "life.timeline",
     "reports.cashProjection",
+    "reports.commitment",
+    "reports.commitmentScenario",
     "reports.finances",
     "reports.project",
   ]);

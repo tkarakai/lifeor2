@@ -220,6 +220,11 @@ async function scheduleTerms(
             ? null
             : new Date(segment.valid_to).toISOString(),
         localEffectiveDate: civilDate(segment.valid_from, v.timezone),
+        localLastEffectiveDate:
+          segment.valid_to === undefined
+            ? null
+            : civilDate(segment.valid_to - 1, v.timezone),
+        effectivePeriod: `${civilDate(segment.valid_from, v.timezone)} through ${segment.valid_to === undefined ? "ongoing" : civilDate(segment.valid_to - 1, v.timezone)} (inclusive local dates)`,
         amount: v.amount ? money(v.amount.minor_units, v.currency) : null,
         currency: v.currency,
         recurrence: v.recurrence,
