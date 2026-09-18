@@ -1,5 +1,24 @@
 [
   {
+    "id": "counterparty-we-owe",
+    "question": "How much do we currently owe Cedar Craft Remodeling LLC, and when is it due? Separate incurred debt from future work.",
+    "mode": "read",
+    "required": [
+      "15000",
+      "30000"
+    ],
+    "expected": "The Morgan household owes Cedar Craft $15000 dueSep30. The additional$30000 November milestone is unincurred work, not current debt. Counterparty filtering must not reverse the direction of our obligations."
+  },
+  {
+    "id": "counterparty-owes-us",
+    "question": "Does Casey Chen still owe our household any Maple Avenue rent, and when was it due?",
+    "mode": "read",
+    "required": [
+      "700"
+    ],
+    "expected": "Casey owes household$700 unpaid rent dueSep1; expected cashSep20 notpaid. Resolve counterparty and perspective without reversing debtor/creditor."
+  },
+  {
     "id": "compare-groceries-retest",
     "question": "Did our household grocery and household-supplies spending increase from July to August 2026? Show both totals, the dollar change and percentage change.",
     "mode": "read",
@@ -61,5 +80,14 @@
       "10000"
     ],
     "expected": "Complete the earlier scenario: baseline68678.11, proposed58678.11, effect-10000, minimum54128.11. Existing commitments included, no write."
+  },
+  {
+    "id": "card-postings-explanation",
+    "question": "Inspect the original $42.50 USD grocery journal with memo Scale acceptance card receipt from September 18, 2026, before its later reversal. Which accounts did the original purchase change? Did any money leave a bank account?",
+    "mode": "read",
+    "required": [
+      "42.50"
+    ],
+    "expected": "Original debits groceries42.50, creditsCedarVisa42.50. No bank account posting and no bank cash movement. Distinguish later reversal; do not say bank money moved to liability."
   }
 ]
