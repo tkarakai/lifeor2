@@ -108,10 +108,12 @@ export const timeline = query({
               : "assumption",
           amount: money(Math.abs(f.remaining), f.currency),
           currency: f.currency,
-          direction: f.remaining < 0 ? "outflow" : "inflow",
+          direction: a.entityId && (f.claim || f.version)
+            ? claimDirection((f.claim ?? f.version)!.creditor_id, (f.claim ?? f.version)!.debtor_id)
+            : f.remaining < 0 ? "outflow" : "inflow",
           dueDate: f.claim?.due_date,
           status:
-            f.claim && f.claim.due_date < w.today ? "overdue" : "expected",
+            f.claim ? (f.claim.due_date < w.today ? "overdue" : "due") : "expected",
           sourceIds: [
             f._id,
             ...(f.claim ? [f.claim._id] : []),
@@ -166,9 +168,10 @@ export const timeline = query({
             date: o.date,
             title: s.name,
             kind: "schedule_projection",
+            status: "expected",
             amount: money(o.amount, s.currency),
             currency: s.currency,
-            direction:
+            direction: a.entityId ? claimDirection(s.creditor, s.debtor) :
               route?.from && route.to
                 ? "transfer"
                 : route?.from
@@ -260,7 +263,10 @@ export const timeline = query({
     const filtered = items
       .filter(
         (i) =>
-          (!a.status || i.status === a.status) &&
+          (!a.status ||
+            (a.status === "due" ? !!i.dueDate && (inRange(i.dueDate) || (a.includeOverdue !== false && i.dueDate < from)) :
+              a.status === "expected" ? ["expected_obligation_payment", "scheduled_expectation", "assumption", "schedule_projection"].includes(i.kind) :
+              i.status === "overdue")) &&
           (!a.direction || i.direction === a.direction),
       )
       .filter(

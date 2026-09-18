@@ -89,3 +89,13 @@ bun --env-file=.env.local scripts/eval-life-queries.ts \
 Provisioning checkpoints each month and resumes an unfinished isolated sample. Sample enrichment now runs by month and uses dataset/date indexes: a large neighboring dataset must neither be scanned nor cause the small sample's final transaction to exceed the backend read limit. The original 308,000-journal fixture and the separate edit-workflow fixture remain available.
 
 `followup-write-cases.json` checks direct clarification, a next-year appointment, and a fall-back-clock edit that must remain uncommitted until the user distinguishes the repeated local time. Run it after the person/note suite on the same isolated write fixture, then run `verify-future-appointment.ts`. The oracle requires exactly the original next-year occurrence with no correction from the ambiguous request.
+
+For a clean final write-suite rerun, provision a new isolated fixture instead of replaying creates on an already-used dataset:
+
+```sh
+bun scripts/evaluation/provision-writes.ts --tag=final --credentials=write-final-credentials.json
+# Run write-cases.json with --credentials pointing to write-final-credentials.json.
+bun scripts/evaluation/verify-writes.ts --credentials=write-final-credentials.json
+```
+
+Different tags use distinct idempotency namespaces and preserve the earlier fixture and failed-attempt evidence. `verify-cash-scenarios.ts` directly checks the production scenario calculation against the independently reconciled main fixture; it does not substitute for the actual-model scenario cases.

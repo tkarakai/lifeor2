@@ -184,5 +184,32 @@
       "68678.11"
     ],
     "expected": "Four properly scoped report sections. Payroll totals39000gross/27300cash; August expenses15013.92 fullcategories; remodel85/55/40/15/30k; projectedbankclosing68678.11. No doubledincurredinvoice, companycash, or cross-report addition."
+  },
+  {
+    "id": "pay-before-month-end-final",
+    "question": "Anything we need to pay before September ends?",
+    "mode": "read",
+    "expected": "September 18\u201330 Chicago. $15,000 Cedar Craft outstanding outflow; do not count incoming rent or salary as bills we owe.",
+    "required": [
+      "15000"
+    ]
+  },
+  {
+    "id": "money-coming-in-final",
+    "question": "What money are we still waiting to receive before the end of this month?",
+    "mode": "read",
+    "expected": "$700 overdue Maple rent and $4,550 projected Alex paycheck, with due/expected distinctions. Not the remodel payable.",
+    "required": [
+      "700",
+      "4550"
+    ]
+  },
+  {
+    "id": "hypothetical-rent-original-final",
+    "question": "If Maple rent increased by $200 next month, would that improve our cash forecast? Do not change the rent schedule.",
+    "required": [],
+    "expected": "Recurring +200 starting Oct1: incremental change is200 throughOct31 (or200 permonth for longer stated horizon), never2900 extra. No writes.",
+    "mode": "read",
+    "phase": "core"
   }
 ]

@@ -4442,7 +4442,7 @@
     "name": "life.timeline",
     "title": "agentTimeline: timeline",
     "primary": true,
-    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. Filter entityId, title query (words and common synonyms), status=overdue/due/expected, or direction=inflow/outflow/transfer relative to entityId or the default household. The complete saved report is available to present; returned items are a preview. Set includeEvents=false for commitments only.",
+    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to entityId or the default household. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. The complete saved report is available to present; returned items are a preview. Set includeEvents=false for commitments only.",
     "functionName": "agentTimeline:timeline",
     "kind": "query",
     "scope": "data:read",

@@ -5,9 +5,11 @@ import {
 } from "@modelcontextprotocol/client";
 import { readFile, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
+const credentialFile = process.argv.find(a => a.startsWith("--credentials="))?.slice("--credentials=".length) ?? "write-credentials.json";
+if (!/^[a-z0-9-]+\.json$/.test(credentialFile)) throw new Error("Use a simple credential filename");
 const root = new URL("../../.convex/query-evaluation/", import.meta.url);
 const c = JSON.parse(
-  await readFile(new URL("write-credentials.json", root), "utf8"),
+  await readFile(new URL(credentialFile, root), "utf8"),
 );
 const f = c.fixture;
 const client = new Client(

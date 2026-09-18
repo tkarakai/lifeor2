@@ -79,6 +79,20 @@ test("upcoming month excludes settled claims, deduplicates remodel, and retains 
   expect(r.items.every((i: any) => i.status !== "settled")).toBe(true);
   expect(JSON.stringify(r).length).toBeLessThan(10000);
 });
+test("due filters retain claims with linked cash expectations and expected filters include scheduled receipts", async () => {
+  const bills = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "due", direction: "outflow", includeEvents: false });
+  expect(bills.items).toHaveLength(1);
+  expect(bills.items[0]).toMatchObject({ amount: "15000.00", status: "due", dueDate: "2026-09-30", kind: "expected_obligation_payment" });
+  const receipts = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "expected", direction: "inflow", includeEvents: false });
+  expect(receipts.items.map((r: any) => r.amount).sort()).toEqual(["4550.00", "700.00"]);
+  expect(receipts.items.find((r: any) => r.amount === "700.00").status).toBe("overdue");
+  const due = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", status: "due", includeEvents: false });
+  expect(due.items.map((r: any) => r.amount).sort()).toEqual(["15000.00", "700.00"]);
+  const tenant = (await query("agentLife:search", { query: "Casey Chen", kind: "entity" })).items[0].id;
+  const tenantDue = await query("agentTimeline:timeline", { from: "2026-09-18", through: "2026-09-30", entityId: tenant, direction: "outflow", includeEvents: false });
+  expect(tenantDue.items).toHaveLength(1);
+  expect(tenantDue.items[0].amount).toBe("700.00");
+});
 test("project ledger totals include capital costs and cash payments separately, not expenses", async () => {
   const search = await query("agentLife:search", {
     query: "Cedar Lane remodel",

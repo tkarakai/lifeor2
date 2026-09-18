@@ -4,6 +4,9 @@ import {
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { readFile, writeFile } from "node:fs/promises";
+const option = (name: string, fallback: string) => process.argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback;
+const fixtureTag = option("tag", "v1"), credentialFile = option("credentials", "write-credentials.json");
+if (!/^[a-z0-9-]{1,64}$/.test(fixtureTag) || !/^[a-z0-9-]+\.json$/.test(credentialFile)) throw new Error("Use simple fixture and credential names");
 const root = new URL("../../.convex/query-evaluation/", import.meta.url);
 const credentials = JSON.parse(
   await readFile(new URL("credentials.json", root), "utf8"),
@@ -23,7 +26,7 @@ await client.connect(
 async function call(name: string, args: Record<string, unknown>, key: string) {
   const r = await client.callTool({
     name,
-    arguments: { ...args, requestKey: "evaluation-write-fixture-v1-" + key },
+    arguments: { ...args, requestKey: "evaluation-write-fixture-" + fixtureTag + "-" + key },
   });
   if (r.isError)
     throw new Error(`${name} failed: ${JSON.stringify(r.structuredContent)}`);
@@ -32,7 +35,7 @@ async function call(name: string, args: Record<string, unknown>, key: string) {
 try {
   const { datasetId } = await call(
     "datasets.create",
-    { name: "Isolated write workflows" },
+    { name: fixtureTag === "v1" ? "Isolated write workflows" : "Isolated write workflows " + fixtureTag },
     "dataset",
   );
   const entity = (name: string, kind: string) =>
@@ -151,7 +154,7 @@ try {
     },
   };
   await writeFile(
-    new URL("write-credentials.json", root),
+    new URL(credentialFile, root),
     JSON.stringify(result),
     { mode: 0o600 },
   );
