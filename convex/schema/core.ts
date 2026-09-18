@@ -63,7 +63,14 @@ export const coreSchema = {
     user_id: v.string(), // Better Auth component ID; not an app-table ID,
   })
     .index("by_user", ["user_id"])
-    .index("by_occurred_at", ["occurred_at"]),
+    .index("by_occurred_at", ["occurred_at"])
+    .index("by_dataset_occurred", ["dataset_id", "occurred_at"])
+    .index("by_corrects", ["corrects_id"])
+    .index("by_dataset_kind_occurred", ["dataset_id", "kind", "occurred_at"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["dataset_id", "kind"],
+    }),
 
   // EventAffects: Links events to entities or arrangements they affect
   event_affects: defineTable({
@@ -135,5 +142,9 @@ export const coreSchema = {
   })
     .index("by_owner", ["owner_type", "owner_id"])
     .index("by_owner_name", ["owner_type", "owner_id", "name"])
-    .index("by_as_of", ["as_of"]),
+    .index("by_as_of", ["as_of"])
+    .index("by_dataset_as_of", ["dataset_id", "as_of"])
+    .index("by_subject_as_of", ["dataset_id", "subject.id", "as_of"])
+    .index("by_legacy_owner_as_of", ["dataset_id", "owner_id", "as_of"])
+    .index("by_corrects", ["corrects_id"]),
 };

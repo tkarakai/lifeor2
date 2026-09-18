@@ -1,0 +1,114 @@
+[
+  {
+    "id": "counterparty-we-owe",
+    "question": "How much do we currently owe Cedar Craft Remodeling LLC, and when is it due? Separate incurred debt from future work.",
+    "mode": "read",
+    "required": [
+      "15000",
+      "30000"
+    ],
+    "expected": "The Morgan household owes Cedar Craft $15000 dueSep30. The additional$30000 November milestone is unincurred work, not current debt. Counterparty filtering must not reverse the direction of our obligations."
+  },
+  {
+    "id": "counterparty-owes-us",
+    "question": "Does Casey Chen still owe our household any Maple Avenue rent, and when was it due?",
+    "mode": "read",
+    "required": [
+      "700"
+    ],
+    "expected": "Casey owes household$700 unpaid rent dueSep1; expected cashSep20 notpaid. Resolve counterparty and perspective without reversing debtor/creditor."
+  },
+  {
+    "id": "counterparty-tenant-perspective",
+    "question": "From Casey Chen\u2019s perspective, what unpaid Maple Avenue rent does Casey still owe the Morgan household, and when was it due?",
+    "mode": "read",
+    "required": [
+      "700"
+    ],
+    "expected": "Explicit tenant perspective:700outflow owed toMorgan household, originallydueSep1. Not2700fullmonthlyrent, not a household outflow."
+  },
+  {
+    "id": "compare-groceries-retest",
+    "question": "Did our household grocery and household-supplies spending increase from July to August 2026? Show both totals, the dollar change and percentage change.",
+    "mode": "read",
+    "required": [
+      "1046",
+      "1057",
+      "11.00",
+      "1.05"
+    ],
+    "expected": "Same household grocery scope in both periods: July $1046 baseline, August $1057 current, increase $11 and 1.05%, computed by the server."
+  },
+  {
+    "id": "compare-payroll-partial-retest",
+    "question": "Compare Alex Morgan's recorded take-home cash for September 1\u201316, 2026 with all of August 2026. Show the difference and percentage, but do not extrapolate the incomplete September period.",
+    "mode": "read",
+    "required": [
+      "4550",
+      "9100",
+      "50.00"
+    ],
+    "expected": "Explicit unequal periods: $4550 current vs $9100 baseline, difference -$4550 (-50%). Not a pay cut or full-month estimate. Gross stays separate. Filter explicitly to Alex, not every payroll subject in the household books."
+  },
+  {
+    "id": "compare-empty-periods-retest",
+    "question": "What was the percentage change in Morgan Software LLC's recorded revenue from July to August 2026?",
+    "mode": "read",
+    "expected": "Neither period contains recorded revenue. Percentage unavailable, not invented 0% or owner-funded capital treated as income."
+  },
+  {
+    "id": "ambiguous-family-other-final-retest",
+    "question": "Which Morgan should be credited with every business transaction since 2010? Infer it from the last names if needed.",
+    "mode": "read",
+    "expected": "Do not infer attribution from surnames OR ownership. Explain explicit ledger allocations are required; ask for company scope or a legitimate allocation rule. Do not present company ownership as sufficient evidence to credit transactions to a person."
+  },
+  {
+    "id": "most-profitable-year-retest",
+    "question": "Which year from 2010 through 2025 had the highest recorded net income for Juniper Design LLC, after expenses? Show the winning year and its net amount.",
+    "mode": "read",
+    "required": [
+      "2018",
+      "75.00"
+    ],
+    "expected": "2018 has $75 net; every other synthetic historical year nets zero. Rank net income, not gross revenue or alphabetical year, across the complete 308000-journal fixture."
+  },
+  {
+    "id": "additional-spending-clarification",
+    "conversation": "additional-spending-clarification",
+    "question": "If we spent an extra $10000 from Morgan household checking on October 10, 2026, how would that affect our household cash through November 30? Include the existing planned commitments. Do not record a payment.",
+    "mode": "read",
+    "expected": "Ask which of the two household checking accounts to use, or compute clearly labeled aggregate-only hypothetical effects without inventing an account. No write."
+  },
+  {
+    "id": "additional-spending-after-clarification",
+    "conversation": "additional-spending-clarification",
+    "question": "Use Household bills checking \u00b7 1042 for that hypothetical expense.",
+    "mode": "read",
+    "required": [
+      "58678.11",
+      "10000"
+    ],
+    "expected": "Complete the earlier scenario: baseline68678.11, proposed58678.11, effect-10000, minimum54128.11. Existing commitments included, no write."
+  },
+  {
+    "id": "card-postings-explanation",
+    "question": "Inspect the original $42.50 USD grocery journal with memo Scale acceptance card receipt from September 18, 2026, before its later reversal. Which accounts did the original purchase change? Did any money leave a bank account?",
+    "mode": "read",
+    "required": [
+      "42.50"
+    ],
+    "expected": "Original debits groceries42.50, creditsCedarVisa42.50. No bank account posting and no bank cash movement. Distinguish later reversal; do not say bank money moved to liability."
+  },
+  {
+    "id": "explicit-later-baseline",
+    "question": "Using August 2026 as the baseline, how much lower was our household grocery and household-supplies spending in July 2026? Show the dollar difference and the percentage relative to August.",
+    "mode": "read",
+    "required": [
+      "1046",
+      "1057",
+      "11.00",
+      "1.04"
+    ],
+    "expected": "Explicit reverse comparison: baselineAugust1057, currentJuly1046, difference-11, percentage-1.04%. Do not substitute the chronological+1.05%."
+  }
+]

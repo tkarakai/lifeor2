@@ -1,0 +1,30 @@
+[
+  {
+    "id": "relative-create",
+    "conversation": "relative-robin",
+    "question": "Record a dentist appointment for Robin Hayes next Tuesday at 3 PM, America/Chicago. Title it Robin dental follow-up.",
+    "mode": "write",
+    "expected": "Create exactly one linked appointment for the next Tuesday after the current Chicago date, 15:00 local. Use the actual workspace clock; do not guess from older events."
+  },
+  {
+    "id": "relative-two-days",
+    "conversation": "relative-robin",
+    "question": "Move Robin's dental follow-up two days later, at the same time.",
+    "mode": "write",
+    "expected": "Correct the appointment to Thursday, two civil days after its Tuesday date, 15:00 Chicago; preserve person, title and original history."
+  },
+  {
+    "id": "relative-read-current",
+    "conversation": "relative-robin",
+    "question": "When is it now?",
+    "mode": "read",
+    "expected": "Resolve the pronoun to Robin's latest appointment: Thursday at 15:00 Chicago. Do not present the original Tuesday snapshot. No writes."
+  },
+  {
+    "id": "relative-tomorrow",
+    "conversation": "relative-robin",
+    "question": "Actually make that 10:30 in the morning tomorrow.",
+    "mode": "write",
+    "expected": "One further correction to tomorrow relative to the actual current Chicago date at 10:30 local, not tomorrow relative to the appointment. Preserve both prior occurrences."
+  }
+]

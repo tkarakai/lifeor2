@@ -49,8 +49,18 @@ export const financeSchema = {
     .index("by_coa", ["coa_arrangement_id"])
     .index("by_chart", ["chart_id"])
     .index("by_user_date", ["user_id", "accounting_date"])
+    .index("by_dataset_date", ["dataset_id", "accounting_date"])
+    .index("by_dataset_chart_date", [
+      "dataset_id",
+      "chart_id",
+      "accounting_date",
+    ])
     .index("by_event", ["event_id"])
-    .index("by_reverses", ["reverses_id"]),
+    .index("by_reverses", ["reverses_id"])
+    .searchIndex("search_memo", {
+      searchField: "memo",
+      filterFields: ["dataset_id", "user_id", "chart_id"],
+    }),
   posting: defineTable({
     user_id: v.optional(v.string()),
     je_id: v.id("journal_entry"),

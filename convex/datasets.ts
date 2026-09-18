@@ -118,42 +118,48 @@ export const migrateExisting = internalMutation({
 });
 
 export async function createDataset(ctx: MutationCtx, args: { name: string }) {
-    const user = await requireUser(ctx);
-    await ensureLive(ctx, user._id);
-    const name = nonempty(args.name);
-    if (
-      (
-        await ctx.db
-          .query("dataset")
-          .withIndex("by_user", (q) => q.eq("user_id", user._id))
-          .collect()
-      ).some((x) => x.name.toLowerCase() === name.toLowerCase())
-    )
-      throw new Error("A dataset with that name already exists");
-    return ctx.db.insert("dataset", {
-      user_id: user._id,
-      name,
-      kind: "test",
-      is_default: false,
-      created_at: Date.now(),
-    });
+  const user = await requireUser(ctx);
+  await ensureLive(ctx, user._id);
+  const name = nonempty(args.name);
+  if (
+    (
+      await ctx.db
+        .query("dataset")
+        .withIndex("by_user", (q) => q.eq("user_id", user._id))
+        .collect()
+    ).some((x) => x.name.toLowerCase() === name.toLowerCase())
+  )
+    throw new Error("A dataset with that name already exists");
+  return ctx.db.insert("dataset", {
+    user_id: user._id,
+    name,
+    kind: "test",
+    is_default: false,
+    created_at: Date.now(),
+    report_index_ready: true,
+    report_obligations_ready: true,
+    report_index_version: 1,
+  });
 }
 
-export async function selectDataset(ctx: MutationCtx, args: { id: Id<"dataset"> }) {
-    const user = await requireUser(ctx),
-      dataset = await ctx.db.get(args.id);
-    if (!dataset || dataset.user_id !== user._id)
-      throw new Error("Dataset not found or access denied");
-    if (dataset.seed_status === "building")
-      throw new Error("Dataset is still being prepared");
-    const old = await ctx.db
-      .query("dataset_preference")
-      .withIndex("by_user", (q) => q.eq("user_id", user._id))
-      .unique();
-    if (old) await ctx.db.patch(old._id, { dataset_id: args.id });
-    else
-      await ctx.db.insert("dataset_preference", {
-        user_id: user._id,
-        dataset_id: args.id,
-      });
+export async function selectDataset(
+  ctx: MutationCtx,
+  args: { id: Id<"dataset"> },
+) {
+  const user = await requireUser(ctx),
+    dataset = await ctx.db.get(args.id);
+  if (!dataset || dataset.user_id !== user._id)
+    throw new Error("Dataset not found or access denied");
+  if (dataset.seed_status === "building")
+    throw new Error("Dataset is still being prepared");
+  const old = await ctx.db
+    .query("dataset_preference")
+    .withIndex("by_user", (q) => q.eq("user_id", user._id))
+    .unique();
+  if (old) await ctx.db.patch(old._id, { dataset_id: args.id });
+  else
+    await ctx.db.insert("dataset_preference", {
+      user_id: user._id,
+      dataset_id: args.id,
+    });
 }

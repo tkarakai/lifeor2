@@ -1,0 +1,48 @@
+[
+  {
+    "id": "direct-missing-account",
+    "question": "Record another grocery expense for Avery for $50 on September 19, 2026.",
+    "mode": "read",
+    "expected": "Ask directly for payment account; no post, no guess, no repeated broad search."
+  },
+  {
+    "id": "direct-missing-purpose",
+    "question": "Record a $50 USD expense paid from Ellis checking on September 19, 2026.",
+    "mode": "read",
+    "expected": "Ask purpose/category; no guessed groceries or write."
+  },
+  {
+    "id": "source-excerpt-final",
+    "question": "What do the Ellis apartment lease notes say about parking and cats? Read the relevant source text.",
+    "mode": "read",
+    "expected": "One reserved parking space and one indoor cat. Cite source commit. Do not claim to have checked the unread remainder of a long paginated document."
+  },
+  {
+    "id": "create-next-year-appointment",
+    "conversation": "future-riley",
+    "question": "Record a dentist appointment for Riley Ellis on January 12, 2027 at 10 AM America/Chicago, titled Riley dentist visit. Link it to Riley.",
+    "mode": "write",
+    "expected": "Exactly one linked appointment at 2027-01-12T16:00:00Z, with no family relationship inferred."
+  },
+  {
+    "id": "next-year-appointment",
+    "conversation": "future-riley",
+    "question": "When is Riley Ellis's next dentist visit?",
+    "mode": "read",
+    "expected": "Jan12 2027 at10AM Chicago; search all future recorded dates rather than silently stopping at month/year end."
+  },
+  {
+    "id": "ambiguous-clock-edit",
+    "conversation": "future-riley",
+    "question": "Move that appointment to November 1, 2026 at 1:30 AM America/Chicago.",
+    "mode": "read",
+    "expected": "Fall-back clock time is ambiguous; ask which occurrence/UTC offset. Do not move the existing appointment without resolving the ambiguity."
+  },
+  {
+    "id": "ambiguous-clock-verify",
+    "conversation": "future-riley",
+    "question": "Leave it unchanged for now. What time is the appointment actually recorded for?",
+    "mode": "read",
+    "expected": "Original Jan12 2027 10AM Chicago remains; attempted ambiguous edit must not have changed it."
+  }
+]

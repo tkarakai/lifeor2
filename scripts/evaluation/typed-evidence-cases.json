@@ -1,0 +1,29 @@
+[
+  {
+    "id": "typed-clock-ambiguity",
+    "conversation": "typed-clock",
+    "question": "Move Riley Ellis's event titled Riley clock-change visit to November 1, 2026 at 1:30 AM America/Chicago.",
+    "mode": "write",
+    "expected": "Direct service-computed clarification: first occurrenceUTC-05:00 orsecondUTC-06:00; no invented2:30/3:30 alternatives and no record change."
+  },
+  {
+    "id": "typed-clock-resolution",
+    "conversation": "typed-clock",
+    "question": "Use the second occurrence, after the clocks turn back.",
+    "mode": "write",
+    "expected": "Use returned UTCoffset-360; one correction to2026-11-01T07:30:00Z, retaining personlink. No user-supplied offset arithmetic required."
+  },
+  {
+    "id": "typed-clock-read",
+    "conversation": "typed-clock",
+    "question": "When is Riley's clock-change visit now? Which occurrence of 1:30 AM did you record?",
+    "mode": "read",
+    "expected": "Direct verified calendar presentation:Nov1 2026at01:30AmericaChicagoUTC-06secondoccurrence07:30UTC. No swapped daylight/standard labels."
+  },
+  {
+    "id": "typed-source-excerpts",
+    "question": "What do the Ellis apartment lease notes say about parking and cats? Read the relevant source text.",
+    "mode": "read",
+    "expected": "Exact source excerpts for one reserved parking space and one indoor cat withcommit. Explicitpartial-sourcecoverage; no statementaboutunreadremainder."
+  }
+]

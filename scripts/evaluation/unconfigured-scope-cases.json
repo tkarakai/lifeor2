@@ -1,0 +1,22 @@
+[
+  {
+    "id": "unconfigured-family-scope",
+    "question": "What's coming up this month for our family?",
+    "mode": "read",
+    "expected": "This dataset has no configured default household and no configured timezone. Ask which family/scope and relevant timezone to use. Do not reuse the Morgan household from another dataset or silently treat UTC as the user's timezone. No writes.",
+    "conversation": "unconfigured-family"
+  },
+  {
+    "id": "unconfigured-appointment-timezone",
+    "question": "Create an appointment called Avery school planning meeting for Avery next Tuesday at 3 PM.",
+    "mode": "read",
+    "expected": "Ask for the timezone before creating a timed appointment: this fresh conversation supplies none and the dataset's UTC is explicitly an unconfigured fallback. Do not guess Chicago or UTC, create an event, or modify dataset settings."
+  },
+  {
+    "id": "unconfigured-explicit-followup",
+    "conversation": "unconfigured-family",
+    "question": "Use Avery Ellis as the perspective and America/Chicago. What is coming up this month?",
+    "mode": "read",
+    "expected": "Resolve Avery in this dataset, explicitly pass perspectiveId and America/Chicago without modifying settings, and show the current September25 appointment at09:00 Chicago (14:00UTC). Do not keep asking for defaults after the user supplied them or reuse Morgan. No writes."
+  }
+]

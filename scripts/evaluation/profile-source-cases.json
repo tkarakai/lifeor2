@@ -1,0 +1,14 @@
+[
+  {
+    "id": "long-profile-birthday",
+    "question": "When is Quinn Rowan's birthday?",
+    "mode": "read",
+    "expected": "February 12; recorded date of birth February 12, 1990. Relevant source is beyond 60,000 characters. Answer from exact source, not an age inference or only the first page."
+  },
+  {
+    "id": "unknown-profile-birthplace",
+    "question": "In what city was Quinn Rowan born?",
+    "mode": "read",
+    "expected": "No birthplace is recorded. Explain unknown from these records, without inferring a city from the date of birth or unrelated records."
+  }
+]

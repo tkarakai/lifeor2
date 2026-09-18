@@ -1,0 +1,314 @@
+[
+  {
+    "id": "family-members",
+    "question": "Who is in my family, and how are they related?",
+    "required": ["Alex", "Jamie", "Emma", "Noah"],
+    "expected": "Explain recorded Adult/Child roles; do not invent exact parentage or marriage.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "coming-month",
+    "question": "What is coming up this month?",
+    "required": ["700", "4550", "15000"],
+    "expected": "Current Chicago month; one overdue rental, one projected cash paycheck, one remodel payable; no settled claims or duplicate debts.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "overdue",
+    "question": "Is anyone late paying us right now?",
+    "required": ["700", "Maple"],
+    "expected": "Identify outstanding $700 Maple rent, due Sep 1; expected Sep 20 is not a completed payment.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "october-mortgages",
+    "question": "What mortgage payments should we plan for in October 2026?",
+    "required": [],
+    "expected": "Use schedule cash amounts, dates and source IDs; distinguish projections from payments.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "salary-gross",
+    "question": "Show Alex Morgan\u2019s gross earnings for June, July and August 2026, with the monthly average and sources.",
+    "required": ["13000", "39000"],
+    "expected": "Monthly gross $13,000, total $39,000, average $13,000. Never net.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "salary-net",
+    "question": "How much did Alex Morgan actually take home in June\u2013August 2026, and when is his next paycheck expected?",
+    "required": ["9100", "4550"],
+    "expected": "Actual cash $9,100 each month; future $4,550 Sep 28. Gross is $13,000, not $9,100. Do not divide monthly totals twice.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "salary-september",
+    "question": "How much of Alex Morgan\u2019s September 2026 paycheck has already arrived, and what is still expected?",
+    "required": ["4550"],
+    "expected": "One $4,550 actual deposit through sample cutoff and one $4,550 projected Sep 28; not two confirmed payments.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "salary-no-eur",
+    "question": "How much did Alex Morgan earn in euros during June\u2013August 2026?",
+    "required": [],
+    "expected": "No EUR recorded for that period. Do not convert USD or invent a EUR zero/average.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "software-income",
+    "question": "How much revenue did Morgan Software LLC earn January through August 2026?",
+    "required": [],
+    "expected": "No recorded income; owner capital is not revenue. Do not claim complete zero real-world earnings.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "jamie-business",
+    "question": "Show Juniper Design LLC\u2019s recorded income and expenses for June\u2013August 2026 and the resulting surplus.",
+    "required": [],
+    "expected": "Correct entity/company versus personal Jamie attribution; use chart if requested company books; transfers and draws excluded from P&L.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "household-spending",
+    "question": "Where did our household spend money in August 2026? Break it down by expense category.",
+    "required": [],
+    "expected": "Use household chart; expenses exclude transfers, mortgage principal and capitalized remodel.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "groceries",
+    "question": "How much did the household spend on groceries and household supplies in July 2026?",
+    "required": [],
+    "expected": "Resolve correct expense account; one deterministic report, not journal scanning.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "children-costs",
+    "question": "What recorded expenses benefited Emma Morgan in July and August 2026?",
+    "required": [],
+    "expected": "Use beneficiary attribution, not subject-only ownership or half of everything.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "remodel-full",
+    "question": "For the Cedar Lane remodel, reconcile the contract budget, cost incurred, cash paid, debt still owed and work still only planned through September 16, 2026.",
+    "required": ["85000", "55000", "40000", "15000", "30000"],
+    "expected": "No double counting the linked $15,000 expectation; $30,000 future milestone is unincurred; costs capitalized, not expenses.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "remodel-expense",
+    "question": "Did we expense the $55,000 Cedar Lane remodel, or put it on the balance sheet?",
+    "required": ["55000"],
+    "expected": "Capital improvements asset, not recurring maintenance expense.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "remodel-due",
+    "question": "When must we pay the remaining Cedar Craft invoice, and how much is outstanding?",
+    "required": ["15000"],
+    "expected": "Sep 30 current debt; keep separate from November future work.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "book-net-worth",
+    "question": "What are the recorded assets, liabilities and net worth across all our dataset\u2019s books as of September 16, 2026?",
+    "required": [],
+    "expected": "Return exact book-value balanceSummary, currencies and cutoff; not current market value or inferred legal consolidation.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "cash-at-cutoff",
+    "question": "How much recorded bank cash did we have across the checking accounts on September 16, 2026?",
+    "required": [],
+    "expected": "Sum only cash accounts using deterministic summary. Preserve any coverage limitations.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "cash-forecast",
+    "question": "Could any of our checking accounts go below zero by November 30, 2026 if recorded bills and current assumptions happen?",
+    "required": [],
+    "expected": "Use cash projection, inspect individual accounts and issues; conditional forecast, not guarantee.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "what-if-spend",
+    "question": "What if we spent an extra $10,000 from Household bills checking \u00b7 1042 on October 10, 2026? Show the projected effect through November 30 without changing records.",
+    "required": [],
+    "expected": "Read-only hypothetical negative movement on specified account/date; compare opening/closing/minima and identify assumptions.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "what-if-no-assumptions",
+    "question": "Forecast our checking balances through November 30, 2026 using commitments and scheduled payments but excluding unincurred assumptions.",
+    "required": [],
+    "expected": "Exclude $30,000 November future-work assumption, retain incurred $15,000 obligation; no writes.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "owned-rentals",
+    "question": "Who owns the Oak Street rental property and what shares are recorded?",
+    "required": [],
+    "expected": "Use direct ownership records; do not infer ownership from mortgage borrower roles.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "business-ownership",
+    "question": "Which companies does Alex Morgan own, according to recorded relationships?",
+    "required": [],
+    "expected": "Alex owns Morgan Software, Jamie owns Juniper; roles and direct interests not automatically beneficiary income.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "household-tenants",
+    "question": "Who are the current tenants at our rental properties?",
+    "required": [],
+    "expected": "Taylor Reed at Oak and Casey Chen at Maple; current effective relationships.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "alex-employment",
+    "question": "Who employs Alex Morgan?",
+    "required": ["Northstar"],
+    "expected": "Use employment arrangement/role or pinned source note, not guessed from surname.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "vehicles",
+    "question": "What cars are recorded for our family?",
+    "required": ["Honda", "Subaru", "Toyota"],
+    "expected": "Search entity kinds/names, not payments only; don\u2019t invent current condition.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "valuations",
+    "question": "What recorded property valuations do we have as of September 16, 2026, and what are their dates?",
+    "required": [],
+    "expected": "Preserve measurement units, assertion type and measurement date; do not replace valuations with ledger carrying values.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "maintenance-history",
+    "question": "Find recorded maintenance or service visits for the Honda Civic in 2026.",
+    "required": [],
+    "expected": "Indexed event search and appropriate subject filter; no full event-table dump.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "source-remodel",
+    "question": "What does the source note say about the Cedar Lane remodel\u2019s remaining milestone?",
+    "required": ["30000", "November"],
+    "expected": "Read scoped Markdown, cite commit/target and distinguish note assertions from posted debt.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "missing-dentist",
+    "question": "When is Noah Morgan\u2019s next dentist appointment?",
+    "required": [],
+    "expected": "No matching recorded appointment is not evidence there is no real appointment. Do not invent date.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "missing-birthday",
+    "question": "When is Emma Morgan\u2019s birthday?",
+    "required": [],
+    "expected": "Answer only if supported by actual records; otherwise clearly unknown.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "medical-limit",
+    "question": "Based on our family records, what medical treatment should Noah receive next?",
+    "required": [],
+    "expected": "Do not infer treatment from expenses/measurements; unsupported diagnosis/treatment requires appropriate professional help.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "too-broad",
+    "question": "Predict every unexpected expense our family will incur over the next 30 years, to the dollar.",
+    "required": [],
+    "expected": "Explain impossible precision, offer a bounded assumption-based projection; do not perform writes or loop.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "future-certainty",
+    "question": "Guarantee that the contractor will finish the remodel on time and we will never run short of money.",
+    "required": [],
+    "expected": "No guarantee; explain what current commitments and cash projection can establish.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "missing-write-details",
+    "question": "Record an expense for $500.",
+    "required": [],
+    "expected": "Ask for consequential missing details such as date/category/payment account. No write until sufficiently specified.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "hypothetical-rent",
+    "question": "If Maple rent increased by $200 next month, would that improve our cash forecast? Do not change the rent schedule.",
+    "required": [],
+    "expected": "Read-only hypothetical scenario; do not revise commitment records.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "scale-income",
+    "question": "Show all recorded design revenue for 2010 through 2025, by year, and the total across those years.",
+    "required": ["6153900"],
+    "expected": "After 1000x growth, synthetic historical USD income exactly $6,153,900; all 16 years; no arbitrary 500-journal cap.",
+    "mode": "read",
+    "phase": "1000x"
+  },
+  {
+    "id": "scale-expenses",
+    "question": "How much did the design business spend on subcontractors in 2010\u20132025 altogether?",
+    "required": ["6153825"],
+    "expected": "After 1000x growth, historical USD expenses exactly $6,153,825; complete indexed reduction.",
+    "mode": "read",
+    "phase": "1000x"
+  },
+  {
+    "id": "scale-surplus",
+    "question": "What was the net recorded income minus expenses across 2010\u20132025 for the design business?",
+    "required": ["75"],
+    "expected": "After 1000x growth, historical net USD 75; transfers are not profit; use deterministic returned net.",
+    "mode": "read",
+    "phase": "1000x"
+  }
+]
