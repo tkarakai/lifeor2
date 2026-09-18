@@ -146,9 +146,9 @@ export function presentReport(
             amount(h.recordedAmount, h.currency),
             amount(h.proposedAmount, h.currency),
             amount(h.difference, h.currency) +
-              " per " +
-              h.frequency +
-              " period",
+              (h.interval > 1
+                ? ` per recurrence (${h.frequency}, interval ${h.interval})`
+                : ` per ${h.frequency} period`),
           ]),
         ) +
         "\n\n";
