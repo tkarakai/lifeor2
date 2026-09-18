@@ -1,0 +1,20 @@
+[
+  {
+    "id": "mixed-overdue-receivable",
+    "question": "Is anyone late paying us right now?",
+    "mode": "read",
+    "expected": "Only Casey Chen owes our household an overdue $700, due September 1. The household's own $555.55 Garden Services bill is not a receivable. Select creditor Morgan family, not all overdue claims."
+  },
+  {
+    "id": "mixed-overdue-payable",
+    "question": "Are we late paying anyone?",
+    "mode": "read",
+    "expected": "Only the household's $555.55 Garden Services invoice, due September 10, is overdue. Casey's $700 rent is not something we owe. The contractor's $15,000 due September 30 is not yet late."
+  },
+  {
+    "id": "mixed-both-directions",
+    "question": "Show all current unpaid invoices, separating what people owe our family from what our family owes other people. Include amounts that are not due yet.",
+    "mode": "read",
+    "expected": "Casey owes Morgan700; Morgan owes GardenServices555.55 and CedarCraft15000. Preserve creditor/debtor meaning and due dates. Future30000remodelwork stays separate from debt. No netting or duplicate claims."
+  }
+]

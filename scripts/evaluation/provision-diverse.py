@@ -1,8 +1,12 @@
 """Resume a separately granted sample before varied synthetic history growth."""
 from pathlib import Path
-import json, subprocess, secrets, os, time
+import json, subprocess, secrets, os, time, argparse, re
+parser=argparse.ArgumentParser(description='Provision a separately granted, resumable isolated family sample')
+parser.add_argument('--credentials',default='diverse-credentials.json')
+args=parser.parse_args()
+if not re.fullmatch(r'[a-z0-9-]+\.json',args.credentials):raise SystemExit('Use a simple private credential filename')
 root=Path(__file__).resolve().parents[2]/'.convex/query-evaluation/workspace'
-credential=root.parent/'diverse-credentials.json'
+credential=root.parent/args.credentials
 env=dict(os.environ)
 for key in ['CONVEX_DEPLOYMENT','CONVEX_DEPLOY_KEY','CONVEX_SELF_HOSTED_URL','CONVEX_SELF_HOSTED_ADMIN_KEY']:env.pop(key,None)
 for line in (root/'.env.local').read_text().splitlines():
