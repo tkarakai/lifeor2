@@ -49,6 +49,12 @@ export const financeSchema = {
     .index("by_coa", ["coa_arrangement_id"])
     .index("by_chart", ["chart_id"])
     .index("by_user_date", ["user_id", "accounting_date"])
+    .index("by_dataset_date", ["dataset_id", "accounting_date"])
+    .index("by_dataset_chart_date", [
+      "dataset_id",
+      "chart_id",
+      "accounting_date",
+    ])
     .index("by_event", ["event_id"])
     .index("by_reverses", ["reverses_id"]),
   posting: defineTable({

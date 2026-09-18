@@ -1,0 +1,57 @@
+/** Copied into the disposable evaluation deployment only; never part of production convex/. */
+import { internalAction, internalMutation } from "./_generated/server";
+import { components } from "./_generated/api";
+import { makeFunctionReference } from "convex/server";
+import { v } from "convex/values";
+import { digest } from "../lib/agent-contract";
+function isolated(){if(process.env.LIFE_QUERY_EVALUATION!=="isolated-local")throw new Error("Evaluation deployment only");}
+export const initialize=internalAction({args:{token:v.string()},handler:async(ctx,a):Promise<any>=>{
+ isolated();const now=Date.now();
+ const user=await ctx.runMutation(components.betterAuth.adapter.create,{input:{model:"user",data:{name:"Evaluation Morgan family",email:`evaluation-${now}@example.invalid`,emailVerified:true,createdAt:now,updatedAt:now}}});
+ const datasetId=await ctx.runMutation(makeFunctionReference<"mutation">("sampleData:prepareForOwner"),{userId:user._id});
+ for(let monthIndex=0;monthIndex<9;monthIndex++)await ctx.runMutation(makeFunctionReference<"mutation">("sampleData:populateMonthForOwner"),{userId:user._id,datasetId,monthIndex});
+ return await ctx.runMutation(makeFunctionReference<"mutation">("evaluationFixture:grant"),{userId:user._id,datasetId,token:a.token});
+}});
+export const grant=internalMutation({args:{userId:v.string(),datasetId:v.id("dataset"),token:v.string()},handler:async(ctx,a)=>{
+ isolated();const now=Date.now(),clientId=await ctx.db.insert("agent_client",{user_id:a.userId,name:"Isolated evaluation",redirect_uris:["http://127.0.0.1:3399/callback"],created_at:now});
+ const scopes=["data:read","data:write","finance:write","data:delete","datasets:manage"],expires_at=now+7*86400000;
+ const connectionId=await ctx.db.insert("agent_connection",{user_id:a.userId,client_id:clientId,name:"Evaluation only",dataset_ids:[a.datasetId],scopes,resource:process.env.SITE_URL+"/mcp",created_at:now,expires_at});
+ await ctx.db.insert("agent_token",{hash:digest(a.token),kind:"access",connection_id:connectionId,expires_at});
+ return {userId:a.userId,connectionId,clientId,scopes,datasetIds:[a.datasetId],datasetId:a.datasetId};
+}});
+import {scopedWriter,flushScopedWriter} from "./lib/scoped";
+import {indexJournal} from "./lib/lifeQueries/financeIndex";
+export const grow=internalMutation({args:{datasetId:v.id("dataset"),start:v.number(),count:v.number()},handler:async(raw,a)=>{
+ isolated();if(!Number.isInteger(a.start)||a.start<0||!Number.isInteger(a.count)||a.count<1||a.count>200)throw new Error("Invalid batch");
+ const d=await raw.db.get(a.datasetId);if(!d||!d.seed_version)throw new Error("Expected isolated family sample");
+ const grant=await raw.db.query("agent_connection").withIndex("by_user",q=>q.eq("user_id",d.user_id)).first();if(!grant||grant.name!=="Evaluation only")throw new Error("Not an evaluation owner");
+ const checkpoint=await raw.db.query("agent_execution").withIndex("by_key",q=>q.eq("connection_id",grant._id).eq("key","evaluation-growth-checkpoint")).unique();
+ const done=checkpoint?(checkpoint.result as any).next:(await raw.db.query("agent_execution").withIndex("by_user",q=>q.eq("user_id",d.user_id)).filter(q=>q.eq(q.field("operation"),"evaluation.grow")).collect()).reduce((n,p)=>n+(p.result as any).count,0);
+ if(done>a.start&&done>=a.start+a.count)return {start:a.start,count:0,next:done,incomeMinor:0,expenseMinor:0,replayed:true};
+ if(done!==a.start)throw new Error(`Growth cursor mismatch: expected ${done}`);
+ const ctx={...raw,db:scopedWriter(raw,{userId:d.user_id,datasetId:a.datasetId,legacy:false})};
+ const accounts=await ctx.db.query("ledger_account").withIndex("by_dataset",q=>q.eq("dataset_id",a.datasetId)).collect();
+ const cash=accounts.find(x=>x.name==="Juniper Design checking · 4470")!,income=accounts.find(x=>x.name==="Design services revenue")!,expense=accounts.find(x=>x.name==="Design subcontractors")!;
+ const people=await ctx.db.query("entity").withIndex("by_dataset",q=>q.eq("dataset_id",a.datasetId)).collect(),jamie=people.find(e=>e.display_name==="Jamie Morgan")!;
+ let incomeMinor=0,expenseMinor=0;
+ for(let i=a.start;i<a.start+a.count;i++){
+  const group=Math.floor(i/5),position=i%5,amount=position===0?10000:2500,isIncome=position===0;
+  const date=new Date(Date.UTC(2010,0,1)+(group%5844)*86400000).toISOString().slice(0,10),now=Date.now(),memo=`Synthetic historical ${isIncome?"design receipt":"subcontractor payment"} ${i}`;
+  const base={user_id:d.user_id,dataset_id:a.datasetId};
+  const eventId=await raw.db.insert("event",{...base,created_at:now,kind:isIncome?"CustomerReceipt":"ContractorPayment",title:memo,occurred_at:Date.parse(date+"T12:00:00Z"),recorded_at:now,payload_json:"{}"});
+  const journalId=await raw.db.insert("journal_entry",{...base,created_at:now,event_id:eventId,chart_id:cash.chart_id!,memo,status:"posted",accounting_date:date,posted_at:now,recorded_at:now});
+  const lines=isIncome?[[cash._id,amount],[income._id,-amount]] as const:[[expense._id,amount],[cash._id,-amount]] as const;
+  if(lines.reduce((sum,line)=>sum+line[1],0)!==0)throw new Error("Unbalanced synthetic journal");
+  for(const [j,[account_id,minor_units]]of lines.entries()){
+    const postingId=await raw.db.insert("posting",{...base,je_id:journalId,account_id,minor_units,currency:"USD",description:memo});
+    if(j===0){const set=await raw.db.insert("posting_attribution_set",{...base,posting_id:postingId,revision:1,recorded_at:now,actor:d.user_id});
+      const part=await raw.db.insert("posting_attribution",{...base,created_at:now,set_id:set,minor_units,currency:"USD",subject_entity_id:jamie._id,unclassified:false});
+      await raw.db.insert("attribution_beneficiary",{...base,attribution_id:part,entity_id:jamie._id,unassigned:false,share_bps:10000,minor_units});}
+  }
+  await indexJournal(raw,a.datasetId,journalId);
+  if(isIncome)incomeMinor+=amount;else expenseMinor+=amount;
+ }
+ await raw.db.patch(a.datasetId,{data_revision:(d.data_revision??0)+1});
+ const result={start:a.start,count:a.count,next:a.start+a.count,incomeMinor,expenseMinor};
+ if(checkpoint)await raw.db.patch(checkpoint._id,{result});else await raw.db.insert("agent_execution",{connection_id:grant._id,user_id:d.user_id,dataset_id:a.datasetId,key:"evaluation-growth-checkpoint",operation:"evaluation.growth-checkpoint",input_hash:"synthetic",result,created_at:Date.now()});return result;
+}});

@@ -1,0 +1,58 @@
+# A query contract for family data
+
+Status: implementation and real-model acceptance in progress. This is not a claim of universal query coverage.
+
+## Failure we are fixing
+
+The original “What’s coming up this month?” run on test-data1 used the configured Qwen3.8-27B-8bit model with a 32,768-token context and 2,048-token output limit. The initial database reads took about 1.3 seconds. The model instead spent its five-minute budget reading old transactions and settled obligations, paging large results, and finally compacting context. Recorded input reached 23,515 tokens before compaction. There was no observed provider context-overflow error. Discovery also used substring matches, allowing “up” to match “update.” The global prompt was disproportionately about income.
+
+The failure was not evidence that the database was too large or that a different model was required. It exposed a poor division of work between the model and server.
+
+## Division of responsibility
+
+The model interprets a question, resolves consequential ambiguity, chooses a small number of domain reports, and selects the report view. Financial answers are rendered by code from saved evidence, rather than asking the model to retype amounts. Qualitative answers can still use normal model prose. The server resolves local calendar dates, filters records, performs exact monetary arithmetic, follows database pagination, reconciles linked claims and forecasts, and reports coverage limitations. Neither record text nor saved conversation memory supplies instructions or authorization.
+
+Eight direct read tools cover workspace context, identities, relationships, events, upcoming commitments, financial reports, project costs, and cash projections. Other read and write operations are discovered on demand with whole-word relevance scoring and separate read/write intent. The client loads compact workspace metadata deterministically before inference, saving a model round for local dates and household identity. A complete household member list does not establish unrecorded kinship.
+
+Reports distinguish query completeness from completeness of the underlying real-life records. Currencies remain separate. Posted expense, capital acquisition, loan principal, transfers, gross income, actual payroll cash and forecast cash have distinct meanings. Ambiguous matches, incomplete scans and unsupported inferences are explicit, not fabricated zeros.
+
+Real Qwen tests returned correct numeric evidence but sometimes relabeled paid cash as incurred cost or divided a monthly paycheck total twice. `reports.present` therefore produces the final factual text. The client exposes `present_report` and finishes the turn with that exact text, recording zero inference usage for rendering. Once a report has been retrieved, a free-form final draft is held back; the client requires a report-selection tool call instead. This does not solve wrong scope selection: household versus company books and subject versus beneficiary remain separate inputs and separate acceptance checks.
+
+Financial calls require an explicit household/dataset scope at the MCP boundary. A household scope resolves the configured household's reporting chart; it never guesses from a surname. Category words can filter accounts without an extra ID-resolution round. Unknown or ambiguous scope fails explicitly.
+
+## Financial read model
+
+Posted journals remain authoritative. Daily reporting cells aggregate equal dimensions: account, accounting date, chart, explicit or unambiguously inherited subject, arrangement, tag set, beneficiary basis, currency and event kind. Beneficiary allocations are a separate basis and are never added to the posting totals. Source examples remain bounded.
+
+The scoped write layer tracks affected journals. Before a domain mutation commits, it subtracts old indexed contributions and inserts their replacements in that same transaction. This covers posting, attribution, beneficiary, event and direct-tag changes, including reversals and deletion. Account names and current arrangement-tag relationships are read at query time. New sample and named datasets opt into the index only when initialized correctly. Existing datasets use the source-query fallback until an operator completes the resumable `reportIndex:backfill` migration. Index readiness has a version, so a future representation change can fail over safely.
+
+Indexes select posting/beneficiary basis, account, event kind and date before aggregation. Database pages are drained inside the service; they do not enter the model context. Each report uses a fresh Convex consistent-query snapshot and also checks the dataset revision across pages. The pinned Convex SDK labels this snapshot API experimental and limits historical reads to roughly 30 seconds; indexed read latency is therefore an acceptance criterion. Incomplete or inconsistent reports never return apparent final totals.
+
+Saved reports are immutable, scoped by user, connection and dataset, stored outside source control with private permissions, and expire after 24 hours. A follow-up can inspect selected rows without putting the entire report into conversation history. Access is revalidated when reading a saved report. A saved snapshot is not presented as current data.
+
+## Focused workflows
+
+A transactionally maintained current-claim index keeps settled historical obligations out of upcoming queries. Existing datasets require `reportIndex:backfillObligations` before this index is used. Future settled claims remain available to suppress prepaid schedule occurrences.
+
+`life.timeline` combines outstanding claims, linked expected cash, recurrence and recorded events, suppressing duplicates and preserving due dates versus expected dates. `life.events` provides indexed text/date/kind search when the question concerns particular occurrences. Relationships, revisions, measurements and source Markdown have separate compact reads. Measurement and event pages use date indexes and opaque cursors rather than loading years of records into reference-table arrays.
+
+`reports.project` combines tagged ledger activity, current outstanding obligations, future unincurred assumptions and pinned source-note excerpts. Its contract explicitly separates historical accounting dates from current claim state. `reports.cashProjection` starts from recorded bank balances, uses explicit cash routes, exposes missing routes and individual-account shortfalls, and supports read-only hypothetical movements. It does not promise affordability or invent spending assumptions.
+
+Writes continue through existing scope, idempotency and concurrency controls. Focused workflows accept civil dates/times and decimal monetary strings rather than asking the model to calculate timestamps or cents. Appointment corrections preserve history and subjects; schedule changes preserve later effective segments; paid expenses create balanced posted journals. DST gaps/folds, stale revisions, unknown accounts and missing consequential details require clarification or a specific conflict response. Posted transactions are corrected with reversals.
+
+## Open-source lessons
+
+These projects were inspected for implementation patterns, not treated as proof of small-model accuracy:
+
+- [Home Assistant MCP](https://github.com/homeassistant-ai/ha-mcp): relevance-based deferred discovery, pinned entry tools, compact versus detailed representations, and read/write separation.
+- [Google Workspace MCP](https://github.com/taylorwilsdon/google_workspace_mcp): capability tiers and service-specific filters, bounded calendar pages, detail levels, and explicit cursors.
+- [DBHub](https://github.com/bytebase/dbhub): a small discovery/query surface, selectable detail, parameterized operations and result caps. LifeOR2 uses typed reports rather than granting the model arbitrary SQL.
+- [Google Calendar MCP](https://github.com/nspady/google-calendar-mcp): explicit timezones, filtered event reads and partial-failure handling. Its exact pagination behavior was not assumed correct without inspection.
+- [Actual MCP](https://github.com/s-stefanov/actual-mcp): finance-specific filters and deterministic summaries; transfers and split transactions require domain meaning.
+- [Anthropic’s tool-writing guidance](https://www.anthropic.com/engineering/writing-tools-for-agents): tools should return useful context and consolidate operations that agents otherwise perform repeatedly.
+
+## Validation approach
+
+Deterministic tests compare indexed answers with direct source-ledger scans, including currencies, attribution and account types; test atomic updates and reversals; check dataset isolation; and exercise calendar corrections and DST boundaries. Real-model tests use the actual production MCP handler, production client adapter, configured local Qwen model, and a separately deployed local Convex database. They preserve failed attempts and require semantic review; a completed response or presence of expected numbers alone is not sufficient.
+
+Scale fixtures grow transaction history across 2010–2025 while keeping the household graph small. Every synthetic journal balances, generated income/expense totals have independent mathematical expectations, and synthetic cash reconciles into the original sample opening state. The evaluation deployment and its private credentials are isolated from the normal backend. At 1,000×, the target is 308,000 journals, not 308,000 people. Measured results and remaining limitations will be recorded separately before acceptance.

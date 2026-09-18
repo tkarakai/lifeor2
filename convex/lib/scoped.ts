@@ -16,13 +16,28 @@ import {
 } from "../_generated/server";
 import type { DataModel, Id, TableNames } from "../_generated/dataModel";
 import { authComponent } from "../auth";
-import { authorizeAgent, canonical, deny, digest, type AgentPolicy } from "./agentAuth";
+import {
+  authorizeAgent,
+  canonical,
+  deny,
+  digest,
+  type AgentPolicy,
+} from "./agentAuth";
 import schema from "../schema";
+import { financeTracker } from "./lifeQueries/financeIndex";
+const indexFlushers = new WeakMap<object, () => Promise<void>>();
+export async function flushScopedWriter(db: MutationCtx["db"]) {
+  await indexFlushers.get(db)?.();
+}
 export type { QueryCtx, MutationCtx } from "../_generated/server";
 
 export const businessTables = Object.keys(schema.tables).filter(
-  (t) => !["dataset", "dataset_preference"].includes(t) && !t.startsWith("agent_"),
-) as Exclude<TableNames, "dataset" | "dataset_preference" | `agent_${string}`>[];
+  (t) =>
+    !["dataset", "dataset_preference"].includes(t) && !t.startsWith("agent_"),
+) as Exclude<
+  TableNames,
+  "dataset" | "dataset_preference" | `agent_${string}`
+>[];
 export type Scope = {
   userId: string | null;
   datasetId?: Id<"dataset">;
@@ -33,7 +48,7 @@ export async function resolveScope(
   datasetId?: Id<"dataset">,
   principal?: { _id: string },
 ): Promise<Scope> {
-  const user = principal ?? await authComponent.safeGetAuthUser(ctx);
+  const user = principal ?? (await authComponent.safeGetAuthUser(ctx));
   if (!user) {
     if (datasetId) throw new Error("Sign in to select a dataset");
     return { userId: null, legacy: false };
@@ -56,7 +71,12 @@ export async function resolveScope(
 }
 function rules(scope: Scope, ctx: QueryCtx): Rules<Scope, DataModel> {
   return Object.fromEntries(
-    businessTables.map((table) => {
+    [
+      ...businessTables,
+      "agent_finance_cell",
+      "agent_finance_entry",
+      "agent_obligation_state",
+    ].map((table) => {
       const allowed = async (
         _: Scope,
         doc: {
@@ -116,33 +136,60 @@ export function scopedWriter(
   const secured = wrapDatabaseWriter(scope, ctx.db, rules(scope, ctx), {
     defaultPolicy: "deny",
   });
-  return new Proxy(secured, {
+  const tracker = financeTracker(ctx, scope.datasetId);
+  let marked = false;
+  const markChanged = async () => {
+    if (marked || !scope.datasetId) return;
+    marked = true;
+    const dataset = await ctx.db.get(scope.datasetId);
+    if (dataset)
+      await ctx.db.patch(dataset._id, {
+        data_revision: (dataset.data_revision ?? 0) + 1,
+      });
+  };
+  const proxy = new Proxy(secured, {
     get(db, key) {
       if (key === "insert")
-        return (table: TableNames, value: Record<string, unknown>) => {
+        return async (table: TableNames, value: Record<string, unknown>) => {
           if (
             value.dataset_id !== undefined &&
             value.dataset_id !== scope.datasetId
           )
             throw new Error("Cannot write across datasets");
-          return db.insert(table, {
+          const result = await db.insert(table, {
             ...value,
             dataset_id: scope.datasetId,
           } as never);
+          await tracker.changed(result);
+          await markChanged();
+          return result;
         };
       if (key === "patch" || key === "replace")
-        return (...args: unknown[]) => {
+        return async (...args: unknown[]) => {
           const fields = args[args.length - 1] as Record<string, unknown>;
           if ("dataset_id" in fields && fields.dataset_id !== scope.datasetId)
             throw new Error("Cannot move records between datasets");
           if (key === "replace")
             args[args.length - 1] = { ...fields, dataset_id: scope.datasetId };
-          return Reflect.apply(db[key], db, args);
+          await tracker.changed(args[args.length - 2] as Id<TableNames>);
+          const result = await Reflect.apply(db[key], db, args);
+          await tracker.changed(args[args.length - 2] as Id<TableNames>);
+          await markChanged();
+          return result;
+        };
+      if (key === "delete")
+        return async (...args: unknown[]) => {
+          await tracker.changed(args[args.length - 1] as Id<TableNames>);
+          const result = await Reflect.apply(db.delete, db, args);
+          await markChanged();
+          return result;
         };
       const value = Reflect.get(db, key);
       return typeof value === "function" ? value.bind(db) : value;
     },
   });
+  indexFlushers.set(proxy, () => tracker.flush());
+  return proxy;
 }
 const args = {
   datasetId: v.optional(v.id("dataset")),
@@ -152,30 +199,61 @@ type AgentOptions = { agent?: AgentPolicy };
 export const query = customQuery(baseQuery, {
   args,
   input: async (ctx, { datasetId, agentToken }, { agent }: AgentOptions) => {
-    const grant = agentToken ? await authorizeAgent(ctx, agentToken, datasetId, agent) : null;
-    const principal = grant ? { _id: grant.user_id } : await authComponent.safeGetAuthUser(ctx);
+    const grant = agentToken
+      ? await authorizeAgent(ctx, agentToken, datasetId, agent)
+      : null;
+    const principal = grant
+      ? { _id: grant.user_id }
+      : await authComponent.safeGetAuthUser(ctx);
     const scope = await resolveScope(ctx, datasetId, principal ?? undefined);
     return {
-      ctx: { db: wrapDatabaseReader(scope, ctx.db, rules(scope, ctx), { defaultPolicy: "deny" }), scope, principal },
+      ctx: {
+        db: wrapDatabaseReader(scope, ctx.db, rules(scope, ctx), {
+          defaultPolicy: "deny",
+        }),
+        scope,
+        principal,
+      },
       args: {},
     };
   },
 });
 const scopedMutation = customMutation(baseMutation, {
   args: { ...args, requestKey: v.optional(v.string()) },
-  input: async (ctx, { datasetId, agentToken, requestKey }, { agent }: AgentOptions) => {
-    const grant = agentToken ? await authorizeAgent(ctx, agentToken, datasetId, agent) : null;
+  input: async (
+    ctx,
+    { datasetId, agentToken, requestKey },
+    { agent }: AgentOptions,
+  ) => {
+    const grant = agentToken
+      ? await authorizeAgent(ctx, agentToken, datasetId, agent)
+      : null;
     if (grant && (!requestKey || !/^[A-Za-z0-9_.:-]{16,128}$/.test(requestKey)))
-      deny("invalid_request", "A unique requestKey (16–128 characters) is required for writes.");
-    const principal = grant ? { _id: grant.user_id } : await authComponent.safeGetAuthUser(ctx);
+      deny(
+        "invalid_request",
+        "A unique requestKey (16–128 characters) is required for writes.",
+      );
+    const principal = grant
+      ? { _id: grant.user_id }
+      : await authComponent.safeGetAuthUser(ctx);
     const scope = await resolveScope(ctx, datasetId, principal ?? undefined);
     if (scope.userId && !scope.datasetId)
       scope.datasetId = await ctx.db.insert("dataset", {
-        user_id: scope.userId, name: "Live", kind: "live", is_default: true, created_at: Date.now(),
+        user_id: scope.userId,
+        name: "Live",
+        kind: "live",
+        is_default: true,
+        created_at: Date.now(),
       });
     return {
-      ctx: { db: scopedWriter(ctx, scope), scope, principal,
-        agentExecution: grant ? { grant, requestKey: requestKey!, policy: agent!, raw: ctx } : null },
+      ctx: {
+        db: scopedWriter(ctx, scope),
+        scope,
+        principal,
+        agentExecution: grant
+          ? { grant, requestKey: requestKey!, policy: agent!, raw: ctx }
+          : null,
+      },
       args: {},
     };
   },
@@ -184,24 +262,59 @@ const scopedMutation = customMutation(baseMutation, {
 // wrapper encloses the domain handler so replay, writes and audit commit in one
 // Convex transaction, including when called directly instead of through MCP.
 export const mutation: typeof scopedMutation = ((definition: any) => {
-  if (typeof definition === "function") throw new Error("Declare mutation arguments explicitly");
+  if (typeof definition === "function")
+    throw new Error("Declare mutation arguments explicitly");
   const handler = definition.handler;
-  return scopedMutation({ ...definition, handler: async (ctx, input) => {
-    const execution = ctx.agentExecution;
-    if (!execution) return handler(ctx, input);
-    const { grant, requestKey, policy, raw } = execution;
-    const inputHash = digest(canonical({ operation: policy.operation, datasetId: ctx.scope.datasetId, input }));
-    const prior = await raw.db.query("agent_execution").withIndex("by_key", q => q.eq("connection_id", grant._id).eq("key", requestKey)).unique();
-    if (prior) {
-      if (prior.input_hash !== inputHash) deny("idempotency_conflict", "This requestKey was already used for different arguments.");
-      return prior.result;
-    }
-    if (policy.revision && typeof input.expectedRevision !== "number") deny("revision_required", "Read the current revision and supply expectedRevision.");
-    const result = await handler(ctx, input);
-    await raw.db.insert("agent_execution", { connection_id: grant._id, user_id: grant.user_id,
-      dataset_id: ctx.scope.datasetId, key: requestKey, operation: policy.operation,
-      input_hash: inputHash, result: result ?? null, created_at: Date.now() });
-    await raw.db.patch(grant._id, { last_used_at: Date.now() });
-    return result;
-  }});
+  return scopedMutation({
+    ...definition,
+    handler: async (ctx, input) => {
+      const execution = ctx.agentExecution;
+      if (!execution) {
+        const result = await handler(ctx, input);
+        await flushScopedWriter(ctx.db);
+        return result;
+      }
+      const { grant, requestKey, policy, raw } = execution;
+      const inputHash = digest(
+        canonical({
+          operation: policy.operation,
+          datasetId: ctx.scope.datasetId,
+          input,
+        }),
+      );
+      const prior = await raw.db
+        .query("agent_execution")
+        .withIndex("by_key", (q) =>
+          q.eq("connection_id", grant._id).eq("key", requestKey),
+        )
+        .unique();
+      if (prior) {
+        if (prior.input_hash !== inputHash)
+          deny(
+            "idempotency_conflict",
+            "This requestKey was already used for different arguments.",
+          );
+        return prior.result;
+      }
+      if (policy.revision && typeof input.expectedRevision !== "number")
+        deny(
+          "revision_required",
+          "Read the current revision and supply expectedRevision.",
+        );
+      const result = await handler(ctx, input);
+      await flushScopedWriter(ctx.db);
+      await raw.db.insert("agent_execution", {
+        connection_id: grant._id,
+        user_id: grant.user_id,
+        dataset_id: ctx.scope.datasetId,
+        key: requestKey,
+        operation: policy.operation,
+        input_hash: inputHash,
+        result: result ?? null,
+        created_at: Date.now(),
+      });
+      await raw.db.patch(grant._id, { last_used_at: Date.now() });
+      return result;
+    },
+  });
 }) as typeof scopedMutation;

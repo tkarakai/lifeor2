@@ -7,7 +7,11 @@ import { postingAmount } from "./lib/ledger";
 import type { Doc } from "./_generated/dataModel";
 
 // Exact decimal strings prevent models from re-scaling integer minor units.
-function decimalAmount(minor: number, precision: number, divisor = 1): string {
+export function decimalAmount(
+  minor: number,
+  precision: number,
+  divisor = 1,
+): string {
   const n = BigInt(minor),
     d = BigInt(divisor);
   const magnitude = ((n < 0n ? -n : n) + d / 2n) / d;
@@ -80,7 +84,7 @@ async function portions(ctx: QueryCtx, p: Doc<"posting">) {
   if (parts.length > 100) throw new Error("Too many attribution portions.");
   return parts;
 }
-async function journalData(ctx: QueryCtx, j: Doc<"journal_entry">) {
+export async function journalData(ctx: QueryCtx, j: Doc<"journal_entry">) {
   const postings = await ctx.db
     .query("posting")
     .withIndex("by_je", (q) => q.eq("je_id", j._id))
@@ -118,14 +122,24 @@ export const searchJournals = query({
     const user = await requireUser(ctx);
     if (a.chartId) await owned(ctx, "chart_of_accounts", a.chartId, user._id);
     if (a.entityId) await owned(ctx, "entity", a.entityId, user._id);
-    const page = await ctx.db
-      .query("journal_entry")
-      .withIndex("by_user_date", (q) =>
-        q
-          .eq("user_id", user._id)
-          .gte("accounting_date", a.from)
-          .lte("accounting_date", a.to),
-      )
+    const journals = ctx.scope.legacy
+      ? ctx.db
+          .query("journal_entry")
+          .withIndex("by_user_date", (q) =>
+            q
+              .eq("user_id", user._id)
+              .gte("accounting_date", a.from)
+              .lte("accounting_date", a.to),
+          )
+      : ctx.db
+          .query("journal_entry")
+          .withIndex("by_dataset_date", (q) =>
+            q
+              .eq("dataset_id", ctx.scope.datasetId)
+              .gte("accounting_date", a.from)
+              .lte("accounting_date", a.to),
+          );
+    const page = await journals
       .order("desc")
       .paginate({ cursor: a.cursor ?? null, numItems: limit(a.limit) });
     const records = [];

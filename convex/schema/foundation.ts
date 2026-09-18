@@ -100,7 +100,9 @@ export const foundationSchema = {
     target,
     added_at: v.number(),
     removed_at: v.optional(v.number()),
-  }).index("by_tag", ["tag_id"]),
+  })
+    .index("by_tag", ["tag_id"])
+    .index("by_target", ["target.id"]),
   details_document: defineTable({
     user_id: v.string(),
     target,

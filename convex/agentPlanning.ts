@@ -1,0 +1,143 @@
+import { v } from "convex/values";
+import { query } from "./lib/scoped";
+import { workspace, referenceRows, money } from "./lib/lifeQueries/common";
+import { planningData } from "./lib/lifeQueries/planning";
+import { owned } from "./lib/access";
+export const project = query({
+  agent: { operation: "reports.projectInputs", scope: "data:read" },
+  args: { tagId: v.id("tag") },
+  handler: async (ctx, a) => {
+    const w = await workspace(ctx),
+      tag = await owned(ctx, "tag", a.tagId, w.user._id),
+      graph = await planningData(ctx);
+    const links = await ctx.db
+      .query("tag_assignment")
+      .withIndex("by_tag", (q) => q.eq("tag_id", a.tagId))
+      .take(2001);
+    if (links.length > 2000)
+      throw new Error(
+        "Project exceeds 2000 tagged records; use focused financial reports",
+      );
+    const targets = new Set(
+      links
+        .filter((l) => l.removed_at === undefined)
+        .map((l) => String(l.target.id)),
+    );
+    targets.add(a.tagId);
+    const claims = graph.claims.filter(
+      (c) =>
+        !c.archived &&
+        c.voided_at === undefined &&
+        (targets.has(c._id) ||
+          (c.arrangement_id && targets.has(c.arrangement_id))),
+    );
+    const expected = graph.expected.filter(
+      (f) =>
+        f.remaining &&
+        ((f.claim && claims.some((c) => c._id === f.claim!._id)) ||
+          (f.assumption?.context && targets.has(f.assumption.context.id))),
+    );
+    return {
+      project: { id: tag._id, name: tag.name, kind: "tag" },
+      today: w.today,
+      revision: w.dataset?.data_revision ?? 0,
+      arrangements: graph.arrangements
+        .filter((r) => targets.has(r._id))
+        .map((r) => ({
+          id: r._id,
+          name: r.name,
+          from: new Date(r.valid_from).toISOString().slice(0, 10),
+          through: r.valid_to
+            ? new Date(r.valid_to).toISOString().slice(0, 10)
+            : null,
+        })),
+      obligations: claims
+        .filter((c) => c.outstanding_minor_units > 0)
+        .map((c) => ({
+          id: c._id,
+          dueDate: c.due_date,
+          amount: money(c.outstanding_minor_units, c.currency),
+          currency: c.currency,
+          creditor: graph.name(c.creditor_id),
+          debtor: graph.name(c.debtor_id),
+        })),
+      expectations: expected.map((f) => ({
+        id: f._id,
+        date: f.expected_date,
+        amount: money(f.remaining, f.currency),
+        currency: f.currency,
+        kind: f.claim ? "linked_obligation" : "unincurred_assumption",
+        obligationId: f.claim?._id ?? null,
+        assumptionId: f.assumption?._id ?? null,
+        name: f.name,
+      })),
+      sourceTargets: [
+        { kind: "tag", id: tag._id },
+        ...graph.arrangements
+          .filter((r) => targets.has(r._id))
+          .map((r) => ({ kind: "arrangement", id: r._id })),
+      ],
+      basis:
+        "Linked obligation expectations are the same debt, not additional costs. Unincurred assumptions are future work, not current debt.",
+    };
+  },
+});
+export const projectionInputs = query({
+  agent: { operation: "reports.projectionInputs", scope: "data:read" },
+  args: {},
+  handler: async (ctx) => {
+    const w = await workspace(ctx),
+      g = await planningData(ctx),
+      accounts = await referenceRows(ctx, "ledger_account"),
+      financial = await referenceRows(ctx, "financial_account");
+    return {
+      today: w.today,
+      timezone: w.timezone,
+      revision: w.dataset?.data_revision ?? 0,
+      sampleActualsThrough: w.dataset?.seed_as_of ?? null,
+      accounts: accounts.map((a) => ({
+        id: a._id,
+        name: a.name,
+        chart: a.chart_id ?? "",
+        type: a.type,
+        currency: a.currency,
+        financialKind: financial.find((f) => f.ledger_account_id === a._id)
+          ?.kind,
+      })),
+      cashSchedules: g.cashSchedules,
+      cashRoutes: [...g.routes.values()],
+      blockedCashOccurrences: g.claims.map((c) => c.occurrence),
+      obligations: g.claims
+        .filter((c) => !c.archived && c.voided_at === undefined)
+        .map((c) => ({
+          id: c._id,
+          name: g.name(c.arrangement_id),
+          date: c.due_date,
+          currency: c.currency,
+          creditor: c.creditor_id,
+          debtor: c.debtor_id,
+          arrangement: c.arrangement_id,
+          amount: c.outstanding_minor_units,
+          original: c.original_minor_units,
+          settled: c.settled_minor_units,
+          schedule: g.cashSchedules.find(
+            (s) => s.version === c.schedule_version_id,
+          )?.id,
+          occurrence: c.occurrence,
+        })),
+      flows: g.expected.map((f) => ({
+        id: f._id,
+        name: f.name,
+        date: f.expected_date,
+        amount: f.remaining,
+        currency: f.currency,
+        account: f.account_id,
+        obligation: f.claim?._id,
+        source: f.assumption ? "Assumption" : "Expectation",
+        occurrence: f.occurrence,
+        tags: [],
+        entities: [],
+      })),
+    };
+  },
+});

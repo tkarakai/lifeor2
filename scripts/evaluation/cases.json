@@ -1,0 +1,24 @@
+[
+  {
+    "id": "coming-up",
+    "question": "What’s coming up this month?",
+    "required": ["700", "15000", "4550"],
+    "forbidden": ["30000"]
+  },
+  {
+    "id": "alex-income",
+    "question": "How much did Alex earn in June through August 2026? Show each month and the average, with sources."
+  },
+  {
+    "id": "remodel",
+    "question": "How much has the Cedar Lane remodel cost so far, how much have we paid, what remains owed, and how much is still only planned? Use records through September 16, 2026."
+  },
+  {
+    "id": "family",
+    "question": "Who is in my family, and how are they related?"
+  },
+  {
+    "id": "net-pay",
+    "question": "What is Alex’s take-home pay, and when do we expect his next paycheck?"
+  }
+]

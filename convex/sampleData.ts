@@ -4,7 +4,7 @@ import {
   internalMutation,
   type MutationCtx,
 } from "./_generated/server";
-import { query, scopedWriter } from "./lib/scoped";
+import { query, scopedWriter, flushScopedWriter } from "./lib/scoped";
 import { requireUser } from "./lib/access";
 import { ensureLive } from "./datasets";
 import { authComponent } from "./auth";
@@ -738,6 +738,12 @@ export async function buildStructure(raw: MutationCtx, userId: string) {
     ["checking-design", 1400000],
     ["equity-design", -1400000],
   ]);
+  await flushScopedWriter(ctx.db);
+  await raw.db.patch(datasetId, {
+    report_index_ready: true,
+    report_obligations_ready: true,
+    report_index_version: 1,
+  });
   return datasetId;
 }
 
@@ -1393,6 +1399,7 @@ export async function appendMonth(
     seed_next_month: monthIndex + 1,
     seed_status: monthIndex === 8 ? "ready" : "building",
   });
+  await flushScopedWriter(ctx.db);
   if (monthIndex === 8) await enhanceCashAndSubjects(raw, userId, datasetId);
   return { nextMonth: monthIndex + 1, ready: monthIndex === 8 };
 }
@@ -1661,6 +1668,7 @@ async function enhanceCashAndSubjects(
       id: id(r, "chart-household", "chart_of_accounts"),
     },
   });
+  await flushScopedWriter(ctx.db);
   return { updatedPostings, routes: routeCount, alreadyApplied: false };
 }
 export const enhanceForOwner = internalMutation({
