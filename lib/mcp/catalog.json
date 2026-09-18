@@ -4515,7 +4515,7 @@
     "name": "life.timeline",
     "title": "agentTimeline: timeline",
     "primary": true,
-    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to the default household. entityId ONLY filters the involved party and never changes direction; set perspectiveId explicitly only when asking from another person’s/company’s perspective. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. Complete nonempty results return a saved report; empty results have no handle and incomplete queries fail explicitly. Status/direction filters exclude unrelated calendar events. Use life.obligations for current unpaid claims without choosing a date window. Set includeEvents=false for commitments only.",
+    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in the configured timezone. If household perspective or timezone is unconfigured, return clarification; after the user answers, supply verified perspectiveId and timezone without changing dataset settings. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to the default household. entityId ONLY filters the involved party and never changes direction; set perspectiveId explicitly only when asking from another person’s/company’s perspective. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. Complete nonempty results return a saved report; empty results have no handle and incomplete queries fail explicitly. Status/direction filters exclude unrelated calendar events. Use life.obligations for current unpaid claims without choosing a date window. Set includeEvents=false for commitments only.",
     "functionName": "agentTimeline:timeline",
     "kind": "query",
     "scope": "data:read",
@@ -4537,6 +4537,10 @@
           "type": "string",
           "minLength": 1,
           "description": "Optional explicit incoming/outgoing-money perspective. Omit for our/my household, even when filtering another party with entityId."
+        },
+        "timezone": {
+          "type": "string",
+          "description": "Optional IANA timezone explicitly supplied by the user when the dataset has none, or when requesting a different calendar zone. Never invent a zone from the UTC fallback."
         },
         "query": {
           "type": "string"

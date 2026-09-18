@@ -3,7 +3,7 @@ import { matchesText, queryTerms } from "../../convex/lib/lifeQueries/text";
 import { commitmentReport } from "./commitment-report";
 import { documentPage } from "./document-page";
 import { timelineReport } from "./timeline-report";
-import { eventReport } from "./event-report";
+import { eventReport, eventChangeReport } from "./event-report";
 import { sourceExcerpts, sourceReport } from "./source-report";
 import {
   createMcpHandler,
@@ -143,6 +143,10 @@ export function createAgentServer(token: string, grant: Grant) {
           },
           a,
         );
+      if (["records.recordEvent", "records.rescheduleEvent"].includes(tool.name)) {
+        const result = await client.mutation(makeFunctionReference<"mutation">(tool.functionName), args) as Record<string, unknown>;
+        return eventChangeReport({ userId: grant.userId, connectionId: grant.connectionId, datasetId: String(a.datasetId) }, result);
+      }
       return tool.kind === "query"
         ? client.query(makeFunctionReference<"query">(tool.functionName), args)
         : client.mutation(

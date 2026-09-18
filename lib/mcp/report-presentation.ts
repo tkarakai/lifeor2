@@ -56,6 +56,13 @@ export function presentReport(
       text += item.sourceComplete ? "This is the complete retrieved source document.\n\n" : "Selected excerpts only. Additional text is not shown; these excerpts do not establish that there are no other terms.\n\n";
     }
     if (!report.queryComplete) text += "Source/search coverage is incomplete. More source text or search pages remain.\n";
+  } else if (report.reportType === "event_change") {
+    const weekday = new Intl.DateTimeFormat("en-US", { timeZone: report.timezone, weekday: "long" }).format(new Date(report.occurredAt));
+    text = `${report.status === "rescheduled" ? "Rescheduled" : "Recorded"}: ${escape(report.title)}.\n\n`;
+    text += `**${escape(weekday)}, ${escape(report.date)} at ${escape(report.time)}** · ${escape(report.timezone)} · ${escape(report.utcOffset)}${report.clockOccurrence ? ` · ${escape(report.clockOccurrence)}` : ""}.\n\n`;
+    text += report.subjectNames?.length ? `Linked records: ${report.subjectNames.map(escape).join(", ")}.\n\n` : "No participant records are linked.\n\n";
+    if (report.correctsId) text += `The prior occurrence is preserved as record \`${escape(report.correctsId)}\`.\n\n`;
+    text += `Saved event: \`${escape(report.id)}\`. UTC instant: ${escape(report.occurredAt)}.`;
   } else if (report.reportType === "events") {
     const f = report.filter ?? {};
     text = `Recorded events${f.query ? ` matching “${escape(f.query)}”` : ""} — ${escape(f.from ?? "all recorded history")} through ${escape(f.through ?? "all recorded future dates")}\n\n`;

@@ -42,6 +42,7 @@ export const timeline = query({
     through: v.optional(v.string()),
     entityId: v.optional(v.id("entity")),
     perspectiveId: v.optional(v.id("entity")),
+    timezone: v.optional(v.string()),
     query: v.optional(v.string()),
     status: v.optional(
       v.union(v.literal("overdue"), v.literal("due"), v.literal("expected")),
@@ -56,8 +57,22 @@ export const timeline = query({
     offset: v.optional(v.number()),
   },
   handler: async (ctx, a) => {
-    const w = await workspace(ctx),
-      from = a.from ?? w.today,
+    const configured = await workspace(ctx);
+    const missing = [
+      ...(!a.perspectiveId && !configured.household ? ["household"] : []),
+      ...(!a.timezone && !configured.timezoneConfigured ? ["timezone"] : []),
+    ];
+    if (missing.length) return {
+      status: "needs_input" as const, kind: "workspace_scope" as const, missing, executed: false,
+      question: missing.length === 2
+        ? "Which household or person should I use for the cash-flow perspective, and what timezone should I use? Neither is configured for this dataset."
+        : missing[0] === "household"
+          ? "Which household or person should I use for the cash-flow perspective? This dataset has no default household."
+          : "What timezone should I use for the calendar? This dataset has no configured timezone; UTC is only a fallback.",
+    };
+    const timezone = a.timezone ?? configured.timezone;
+    const w = { ...configured, timezone, today: civilDate(Date.now(), timezone) };
+    const from = a.from ?? w.today,
       through =
         a.through ??
         new Date(

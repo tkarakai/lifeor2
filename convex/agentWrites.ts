@@ -48,7 +48,10 @@ export const recordEvent = mutation({
       if (!id) throw new Error("Invalid linked subject ID");
       return { kind: ref.kind, id } as import("./lib/access").Target;
     });
-    for (const ref of subjects) await ownedTarget(ctx, ref, w.user._id);
+    const subjectNames = await Promise.all(subjects.map(async (ref) => {
+      const record = await ownedTarget(ctx, ref, w.user._id);
+      return "display_name" in record ? String(record.display_name) : "name" in record ? String(record.name) : String(ref.id);
+    }));
     if (a.correctsId) {
       if (
         await ctx.db
@@ -99,6 +102,7 @@ export const recordEvent = mutation({
       ...clockFacts(occurred_at, timezone),
       correctsId: a.correctsId ?? null,
       subjects,
+      subjectNames,
       status: "recorded",
     };
   },
@@ -404,6 +408,12 @@ export const rescheduleEvent = mutation({
       date: a.date,
       time: a.time,
       timezone,
+      subjects: links.map((link) => link.target ?? { kind: link.target_type, id: link.target_id }),
+      subjectNames: await Promise.all(links.map(async (link) => {
+        if (!link.target) return `${link.target_type} ${link.target_id}`;
+        const record = await ownedTarget(ctx, link.target, w.user._id);
+        return "display_name" in record ? String(record.display_name) : "name" in record ? String(record.name) : String(link.target.id);
+      })),
       status: "rescheduled",
       occurredAt: new Date(occurred_at).toISOString(),
       ...clockFacts(occurred_at, timezone),

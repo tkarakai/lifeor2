@@ -254,6 +254,7 @@ test("schedule changes preserve earlier and later effective terms and reject sta
       "2026-10-01 through 2026-11-30 (inclusive local dates)",
     );
     const report = await f.query("agentTimeline:timeline", {
+      perspectiveId: payer,
       from: "2026-09-01",
       through: "2026-12-31",
       includeEvents: false,
@@ -402,6 +403,7 @@ test("current-claim index follows payment and reversal and ignores thousands of 
     currency: "USD",
   });
   const queryArgs = {
+    perspectiveId: debtor,
     from: "2026-09-18",
     through: "2026-09-30",
     includeEvents: false,

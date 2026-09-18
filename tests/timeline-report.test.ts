@@ -21,3 +21,11 @@ test("empty lookup attempts have no report handle; later complete evidence remai
   const complete = await timelineReport({url:"http://isolated"} as any,"token",scope,{});
   expect(complete).toMatchObject({reportId:"complete",queryComplete:true,items:[{id:"claim"}]});
 });
+
+test("missing workspace defaults pass through as clarification without a saved report", async () => {
+  mocks.query.mockReset(); mocks.save.mockReset();
+  const clarification = { status: "needs_input", kind: "workspace_scope", missing: ["household", "timezone"], question: "Which household and timezone?", executed: false };
+  mocks.query.mockResolvedValue(clarification);
+  expect(await timelineReport({ url: "http://isolated" } as any, "token", scope, {})).toEqual(clarification);
+  expect(mocks.save).not.toHaveBeenCalled();
+});

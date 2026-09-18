@@ -393,3 +393,18 @@ test("current claims require a named perspective for dataset directions and sepa
     });
   }
 });
+
+
+test("calendar defaults must be configured or explicitly supplied before a timeline is read", async () => {
+  const isolated = await alice.mutation(api.datasets.create, { name: "No calendar defaults" });
+  const missing = await alice.query(ref("agentTimeline:timeline"), { datasetId: isolated });
+  expect(missing).toMatchObject({ status: "needs_input", kind: "workspace_scope", missing: ["household", "timezone"], executed: false });
+  expect(missing.items).toBeUndefined();
+  const person = await alice.mutation(api.entities.create, { datasetId: isolated, kind: "Person", display_name: "Avery" });
+  const noZone = await alice.query(ref("agentTimeline:timeline"), { datasetId: isolated, perspectiveId: person });
+  expect(noZone.missing).toEqual(["timezone"]);
+  const explicit = await alice.query(ref("agentTimeline:timeline"), { datasetId: isolated, perspectiveId: person, timezone: "America/Chicago", from: "2026-09-18", through: "2026-09-30" });
+  expect(explicit).toMatchObject({ timezone: "America/Chicago", queryComplete: true, items: [] });
+  const unchanged = await alice.query(ref("agentLife:context"), { datasetId: isolated });
+  expect(unchanged).toMatchObject({ defaultHousehold: null, timezoneConfigured: false });
+});

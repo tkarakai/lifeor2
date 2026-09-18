@@ -334,3 +334,12 @@ test("current debts show linked future work separately without adding it to unpa
   expect(answer).toContain("Future work | 2026-11-15 | -30000.00 USD");
   expect(answer).not.toContain("45000.00");
 });
+
+
+test("calendar write receipts derive the weekday from the committed instant, not model prose", () => {
+  const answer = presentReport({ reportType: "event_change", status: "rescheduled", id: "new-event", correctsId: "prior-event", title: "Dental follow-up", date: "2026-09-19", time: "10:30", timezone: "America/Chicago", utcOffset: "UTC-05:00", occurredAt: "2026-09-19T15:30:00.000Z", subjectNames: ["Avery Ellis"] });
+  expect(answer).toContain("Saturday, 2026-09-19 at 10:30");
+  expect(answer).not.toContain("Friday");
+  expect(answer).toContain("Linked records: Avery Ellis");
+  expect(answer).toContain("prior-event");
+});

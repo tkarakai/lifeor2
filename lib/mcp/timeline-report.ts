@@ -28,6 +28,7 @@ export async function timelineReport(
       makeFunctionReference<"query">("agentTimeline:timeline"),
       { ...args, agentToken: token, limit: 50, offset },
     )) as TimelinePage;
+    if (result.status === "needs_input" && result.kind === "workspace_scope") return result;
     if (!result.queryComplete)
       throw new QueryError(
         "incomplete_timeline",
