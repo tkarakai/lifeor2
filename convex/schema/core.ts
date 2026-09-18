@@ -12,7 +12,9 @@ export const coreSchema = {
     kind: v.string(), // e.g., "Person", "LLC", "House", "Car", "Bank"
     display_name: v.string(),
     user_id: v.string(), // Better Auth component ID; not an app-table ID,
-  }).index("by_user", ["user_id"]),
+  })
+    .index("by_user", ["user_id"])
+    .index("by_user_dataset", ["user_id", "dataset_id"]),
 
   // Arrangement: A relationship or agreement with temporal validity
   arrangement: defineTable({

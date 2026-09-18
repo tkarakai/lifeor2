@@ -12,8 +12,21 @@ const siteUrl = process.env.SITE_URL!;
 // The component client has methods needed for integrating Convex with Better Auth
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
-// Mock email sender for local development
+// Real delivery is required outside loopback development. Never log remote
+// login credentials or silently fall back to a development sender.
 async function sendEmail(to: string, subject: string, text: string, html: string) {
+  if (process.env.RESEND_API_KEY && process.env.AUTH_EMAIL_FROM) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: process.env.AUTH_EMAIL_FROM, to: [to], subject, text, html }),
+    });
+    if (!response.ok) throw new Error("Login email could not be delivered.");
+    return;
+  }
+  const url = new URL(siteUrl);
+  if (url.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))
+    throw new Error("Configure RESEND_API_KEY and AUTH_EMAIL_FROM before enabling remote login.");
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("📧 MOCK EMAIL SENT (from Convex)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

@@ -1,13 +1,14 @@
 import { entityAt } from "./lib/history";
 import { v } from "convex/values";
 import { mutation, query } from "./lib/scoped";
-import { authComponent } from "./auth";
+import { currentUser } from "./lib/access";
 import { owned, requireUser, expected } from "./lib/access";
 import { nonempty, changeTimeline, selectRevision } from "./lib/domain";
 export const list = query({
+  agent: { operation: "entities.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     return u
       ? Promise.all(
           (
@@ -23,6 +24,7 @@ export const list = query({
   },
 });
 export const get = query({
+  agent: { operation: "entities.get", scope: "data:read" },
   args: { id: v.id("entity") },
   handler: async (ctx, a) =>
     entityAt(
@@ -31,6 +33,7 @@ export const get = query({
     ),
 });
 export const create = mutation({
+  agent: { operation: "entities.create", scope: "data:write" },
   args: { kind: v.string(), display_name: v.string() },
   handler: async (ctx, a) => {
     const u = await requireUser(ctx),
@@ -57,6 +60,7 @@ export const create = mutation({
   },
 });
 export const update = mutation({
+  agent: { operation: "entities.update", scope: "data:write", revision: true },
   args: {
     id: v.id("entity"),
     kind: v.optional(v.string()),
@@ -113,6 +117,7 @@ export const update = mutation({
   },
 });
 export const history = query({
+  agent: { operation: "entities.history", scope: "data:read" },
   args: {
     id: v.id("entity"),
     effectiveAt: v.optional(v.number()),
@@ -135,6 +140,7 @@ export const history = query({
   },
 });
 export const remove = mutation({
+  agent: { operation: "entities.remove", scope: "data:write" },
   args: { id: v.id("entity") },
   handler: async (ctx, a) => {
     await owned(ctx, "entity", a.id, (await requireUser(ctx))._id);

@@ -21,6 +21,7 @@ import {
   Telescope,
   Trash2,
   Database,
+  Plug,
   type LucideIcon,
 } from "lucide-react";
 import "@/components/records.css";
@@ -59,6 +60,7 @@ const groups: { label: string; routes: [string, string, LucideIcon][] }[] = [
     routes: [
       ["Trash", "/dashboard/trash", Trash2],
       ["Datasets", "/dashboard/datasets", Database],
+      ["Agent connections", "/dashboard/agents", Plug],
     ],
   },
 ];

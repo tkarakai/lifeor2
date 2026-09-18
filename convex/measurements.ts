@@ -4,6 +4,7 @@ import { target } from "./schema/shared";
 import { owned, ownedTarget, requireUser, evidence } from "./lib/access";
 import { decimal, nonempty, instant, scale } from "./lib/domain";
 export const create = mutation({
+  agent: { operation: "measurements.create", scope: "data:write" },
   args: {
     subject: target,
     name: v.string(),
@@ -72,6 +73,7 @@ export const create = mutation({
   },
 });
 export const list = query({
+  agent: { operation: "measurements.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const u = await requireUser(ctx);

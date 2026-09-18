@@ -9,7 +9,10 @@ import { planningSchema } from "./schema/planning";
 
 import { datasetSchema } from "./schema/datasets";
 
+import { agentSchema } from "./schema/agents";
+
 const schema = defineSchema({
+  ...agentSchema,
   ...datasetSchema,
   ...foundationSchema,
   ...planningSchema,

@@ -2,7 +2,7 @@ import { arrangementAt, roleAt, assignmentAt } from "./lib/history";
 import { v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./lib/scoped";
 import type { Id } from "./_generated/dataModel";
-import { authComponent } from "./auth";
+import { currentUser } from "./lib/access";
 import { owned, requireUser, expected } from "./lib/access";
 import {
   nonempty,
@@ -61,9 +61,10 @@ async function createTypeImpl(
   return id;
 }
 export const listTypes = query({
+  agent: { operation: "arrangements.listTypes", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     return u
       ? (
           await ctx.db
@@ -75,6 +76,7 @@ export const listTypes = query({
   },
 });
 export const createType = mutation({
+  agent: { operation: "arrangements.createType", scope: "data:write" },
   args: { name: v.string(), templates: v.optional(v.array(template)) },
   handler: async (ctx, a) =>
     createTypeImpl(
@@ -85,6 +87,7 @@ export const createType = mutation({
     ),
 });
 export const updateType = mutation({
+  agent: { operation: "arrangements.updateType", scope: "data:write", revision: true },
   args: {
     id: v.id("arrangement_type"),
     name: v.optional(v.string()),
@@ -113,9 +116,10 @@ export const updateType = mutation({
   },
 });
 export const list = query({
+  agent: { operation: "arrangements.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     return u
       ? Promise.all(
           (
@@ -131,6 +135,7 @@ export const list = query({
   },
 });
 export const get = query({
+  agent: { operation: "arrangements.get", scope: "data:read" },
   args: { id: v.id("arrangement") },
   handler: async (ctx, a) =>
     arrangementAt(
@@ -139,9 +144,10 @@ export const get = query({
     ),
 });
 export const listValidAt = query({
+  agent: { operation: "arrangements.listValidAt", scope: "data:read" },
   args: { timestamp: v.number(), knownAt: v.optional(v.number()) },
   handler: async (ctx, a) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     if (!u) return [];
     const roots = await ctx.db
       .query("arrangement")
@@ -206,6 +212,7 @@ async function createRoleImpl(
   return id;
 }
 export const create = mutation({
+  agent: { operation: "arrangements.create", scope: "data:write" },
   args: {
     typeId: v.optional(v.id("arrangement_type")),
     kind: v.optional(v.string()),
@@ -277,6 +284,7 @@ export const create = mutation({
   },
 });
 export const update = mutation({
+  agent: { operation: "arrangements.update", scope: "data:write", revision: true },
   args: {
     id: v.id("arrangement"),
     name: v.optional(v.string()),
@@ -384,6 +392,7 @@ export const update = mutation({
   },
 });
 export const getRoleDefinitions = query({
+  agent: { operation: "arrangements.getRoleDefinitions", scope: "data:read" },
   args: { arrangementId: v.id("arrangement") },
   handler: async (ctx, a) => {
     await owned(
@@ -405,6 +414,7 @@ export const getRoleDefinitions = query({
   },
 });
 export const getRoles = query({
+  agent: { operation: "arrangements.getRoles", scope: "data:read" },
   args: { arrangementId: v.id("arrangement") },
   handler: async (ctx, a) => {
     await owned(
@@ -430,6 +440,7 @@ export const getRoles = query({
   },
 });
 export const createRole = mutation({
+  agent: { operation: "arrangements.createRole", scope: "data:write" },
   args: {
     arrangementId: v.id("arrangement"),
     name: v.string(),
@@ -447,6 +458,7 @@ export const createRole = mutation({
   },
 });
 export const updateRole = mutation({
+  agent: { operation: "arrangements.updateRole", scope: "data:write", revision: true },
   args: {
     id: v.id("arrangement_role_definition"),
     name: v.optional(v.string()),
@@ -551,6 +563,7 @@ async function assign(
   return id;
 }
 export const assignRole = mutation({
+  agent: { operation: "arrangements.assignRole", scope: "data:write" },
   args: {
     roleId: v.id("arrangement_role_definition"),
     entityId: v.id("entity"),
@@ -568,6 +581,7 @@ export const assignRole = mutation({
     ),
 });
 export const addRole = mutation({
+  agent: { operation: "arrangements.addRole", scope: "data:write" },
   args: {
     arrangementId: v.id("arrangement"),
     roleName: v.string(),
@@ -595,6 +609,7 @@ export const addRole = mutation({
   },
 });
 export const updateAssignment = mutation({
+  agent: { operation: "arrangements.updateAssignment", scope: "data:write", revision: true },
   args: {
     id: v.id("arrangement_role_assignment"),
     valid_to: v.optional(v.number()),
@@ -641,6 +656,7 @@ export const updateAssignment = mutation({
   },
 });
 export const remove = mutation({
+  agent: { operation: "arrangements.remove", scope: "data:write" },
   args: { id: v.id("arrangement") },
   handler: async (ctx, a) => {
     await owned(ctx, "arrangement", a.id, (await requireUser(ctx))._id);
@@ -648,6 +664,7 @@ export const remove = mutation({
   },
 });
 export const createOwnershipInterest = mutation({
+  agent: { operation: "arrangements.createOwnershipInterest", scope: "data:write" },
   args: {
     owner_entity_id: v.id("entity"),
     asset_entity_id: v.id("entity"),
@@ -712,6 +729,7 @@ export const createOwnershipInterest = mutation({
   },
 });
 export const history = query({
+  agent: { operation: "arrangements.history", scope: "data:read" },
   args: {
     id: v.id("arrangement"),
     effectiveAt: v.number(),
@@ -730,6 +748,7 @@ export const history = query({
   },
 });
 export const assignmentHistory = query({
+  agent: { operation: "arrangements.assignmentHistory", scope: "data:read" },
   args: {
     id: v.id("arrangement_role_assignment"),
     effectiveAt: v.number(),

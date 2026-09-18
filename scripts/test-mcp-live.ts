@@ -1,0 +1,110 @@
+/** Local integration check: isolated test account, actual OAuth/MCP and two browser contexts. */
+import { chromium } from "playwright";
+import { execFileSync } from "node:child_process";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+if (!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) throw new Error("This integration fixture is restricted to local development.");
+const email = `mcp-check-${Date.now()}@example.invalid`;
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
+const page = await context.newPage();
+const errors: string[] = [];
+page.on("pageerror", e => errors.push(e.message));
+let tokens: { access_token: string; refresh_token: string } | undefined;
+let clientId = "";
+async function rpc(method: string, params: Record<string, unknown> = {}) {
+  const response = await fetch(`${origin}/mcp`, { method: "POST", headers: { Authorization: `Bearer ${tokens!.access_token}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream", "MCP-Protocol-Version": "2026-07-28", "Mcp-Method": method, ...(typeof params.name === "string" ? { "Mcp-Name": params.name } : {}) },
+    body: JSON.stringify({ jsonrpc: "2.0", id: randomUUID(), method, params: { ...params, _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientInfo": { name: "lifeor2-live-check", version: "1" }, "io.modelcontextprotocol/clientCapabilities": { elicitation: { form: {} } } } } }) });
+  assert.equal(response.status, 200, "MCP HTTP request succeeds");
+  const payload = await response.json();
+  if (payload.error || payload.result?.isError) throw new Error(`MCP ${params.name ?? method} failed: ${JSON.stringify(payload.error ?? payload.result.structuredContent)}`);
+  return payload.result;
+}
+const call = async (name: string, args: Record<string, unknown>) => (await rpc("tools/call", { name, arguments: args })).structuredContent;
+try {
+  await page.goto(`${origin}/login`);
+  await page.getByLabel("Email address").fill(email);
+  await page.getByRole("button", { name: "Send Login Code" }).click();
+  await page.getByRole("button", { name: "Verify Code" }).waitFor();
+  // Only the fixture's own loopback mock email is read. Credentials never leave
+  // this process and are never printed or written into screenshots.
+  const raw = execFileSync("node_modules/.bin/convex", ["run", "--component", "betterAuth", "adapter:findMany", JSON.stringify({ model: "verification", where: [{ field: "value", operator: "eq", value: JSON.stringify({ email }) }], paginationOpts: { numItems: 1, cursor: null } })], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  const verification = JSON.parse(raw).page[0]; assert.ok(verification, "Mock login code exists");
+  await page.getByLabel("Login code", { exact: true }).fill(verification.identifier);
+  await page.getByRole("button", { name: "Verify Code" }).click();
+  await page.waitForURL(`${origin}/dashboard`);
+  await page.goto(`${origin}/dashboard/agents`);
+  await page.getByRole("heading", { name: "Agent connections", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Register a client", exact: true }).click();
+  await page.getByRole("textbox", { name: "Client name" }).fill("Live integration check");
+  const redirect = "http://127.0.0.1:9876/callback";
+  await page.getByLabel("Redirect URLs").fill(redirect);
+  await page.getByRole("button", { name: "Register client", exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector("dialog"));
+  const codeBlock = page.locator("code").filter({ hasText: "/oauth/clients/" }); await codeBlock.waitFor(); clientId = (await codeBlock.innerText()).trim();
+  const verifier = randomBytes(32).toString("base64url"), challenge = createHash("sha256").update(verifier).digest("base64url"), state = randomUUID();
+  const authorize = new URLSearchParams({ client_id: clientId, redirect_uri: redirect, response_type: "code", code_challenge_method: "S256", code_challenge: challenge, resource: `${origin}/mcp`, scope: "data:read data:write finance:write data:delete datasets:manage", state });
+  let callback: URL | undefined;
+  await page.route(`${redirect}**`, async route => { callback = new URL(route.request().url()); await route.fulfill({ status: 200, body: "Authorization complete" }); });
+  await page.goto(`${origin}/oauth/authorize?${authorize}`);
+  await page.getByRole("heading", { name: "Connect Live integration check", exact: true }).waitFor();
+  await page.getByLabel("Live", { exact: false }).first().check();
+  for (const label of ["Edit records", "Change financial records", "Permanently delete", "Manage datasets"]) await page.getByLabel(label, { exact: false }).check();
+  await mkdir(".convex/mcp-check", { recursive: true });
+  await page.screenshot({ path: ".convex/mcp-check/consent.png", fullPage: true });
+  await page.getByRole("button", { name: "Allow selected access" }).click();
+  await page.waitForURL(`${redirect}**`);
+  assert.equal(callback!.searchParams.get("state"), state); assert.equal(callback!.searchParams.get("iss"), origin);
+  const tokenResponse = await fetch(`${origin}/oauth/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "authorization_code", code: callback!.searchParams.get("code")!, client_id: clientId, redirect_uri: redirect, code_verifier: verifier, resource: `${origin}/mcp` }) });
+  assert.equal(tokenResponse.status, 200, "OAuth code exchange succeeds"); tokens = await tokenResponse.json();
+  await rpc("server/discover");
+  const sdk = new Client({ name: "lifeor2-sdk-check", version: "1" }, { versionNegotiation: { mode: { pin: "2026-07-28" } } });
+  await sdk.connect(new StreamableHTTPClientTransport(new URL(`${origin}/mcp`), { authProvider: { token: async () => tokens!.access_token } }));
+  assert.ok((await sdk.listTools()).tools.length > 100, "Official SDK v2 interoperates with the server");
+  await sdk.close();
+  const tools = await rpc("tools/list"); assert.ok(tools.tools.length > 100);
+  const datasets = await call("datasets.list", {}), datasetId = datasets[0]._id;
+  const secondContext = await browser.newContext({ storageState: await context.storageState(), viewport: { width: 1440, height: 1000 } });
+  const viewer = await secondContext.newPage(); viewer.on("pageerror", e => errors.push(e.message));
+  await viewer.goto(`${origin}/dashboard/entities`);
+  await viewer.getByRole("heading", { name: "Entities", exact: true }).waitFor();
+  let navigations = 0; viewer.on("framenavigated", frame => { if (frame === viewer.mainFrame()) navigations++; });
+  const args = { datasetId, requestKey: randomUUID(), kind: "Person", display_name: "Created externally over MCP" };
+  const id = await call("entities.create", args); assert.equal(await call("entities.create", args), id);
+  await viewer.getByRole("button", { name: `Open ${args.display_name}`, exact: true }).waitFor();
+  await call("entities.update", { datasetId, requestKey: randomUUID(), id, display_name: "Updated live over MCP", expectedRevision: 1 });
+  await viewer.getByRole("button", { name: "Open Updated live over MCP", exact: true }).waitFor();
+  const target = { kind: "entity", id };
+  const initial = await call("details.read", { datasetId, target });
+  const saved = await call("details.save", { datasetId, target, source: "# First external note", expectedCommit: initial.commit });
+  await viewer.getByRole("button", { name: "Open Updated live over MCP", exact: true }).click();
+  await viewer.getByRole("button", { name: "Details & history", exact: true }).click();
+  const textarea = viewer.getByLabel("Markdown source"); await textarea.waitFor();
+  await viewer.waitForFunction(() => document.querySelector<HTMLTextAreaElement>('textarea')?.value === "# First external note");
+  const next = await call("details.save", { datasetId, target, source: "# Second external note", expectedCommit: saved.commit });
+  await viewer.waitForFunction(() => document.querySelector<HTMLTextAreaElement>('textarea')?.value === "# Second external note");
+  await textarea.fill("# Unsaved local draft");
+  await call("details.save", { datasetId, target, source: "# Third external note", expectedCommit: next.commit });
+  await viewer.getByText("This document changed elsewhere.", { exact: false }).waitFor();
+  assert.equal(await textarea.inputValue(), "# Unsaved local draft");
+  assert.equal(navigations, 0, "All external changes arrived without a navigation or refresh");
+  await viewer.screenshot({ path: ".convex/mcp-check/live-draft-preserved.png", fullPage: true });
+  await page.goto(`${origin}/dashboard/agents`);
+  await page.getByRole("button", { name: "Disconnect", exact: true }).waitFor();
+  await page.screenshot({ path: ".convex/mcp-check/connections.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: ".convex/mcp-check/connections-mobile.png", fullPage: true });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, "Mobile page has no horizontal overflow");
+  assert.deepEqual(errors, []);
+  console.log(JSON.stringify({ passed: true, tools: tools.tools.length, checks: ["browser OAuth consent", "PKCE and issuer", "current protocol discovery", "idempotent writes", "separate browser receives live record changes", "live Markdown updates", "unsaved draft preserved", "mobile layout"] }));
+} catch (error) {
+  await mkdir(".convex/mcp-check", { recursive: true });
+  await page.screenshot({ path: ".convex/mcp-check/failure.png", fullPage: true }).catch(() => {});
+  throw error;
+} finally {
+  if (tokens && clientId) await fetch(`${origin}/oauth/revoke`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token: tokens.refresh_token, client_id: clientId }) });
+  await browser.close();
+}

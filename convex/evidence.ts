@@ -4,6 +4,7 @@ import { owned, ownedTarget, requireUser } from "./lib/access";
 import { nonempty, date } from "./lib/domain";
 import { target } from "./schema/shared";
 export const create = mutation({
+  agent: { operation: "evidence.create", scope: "data:write" },
   args: {
     kind: v.string(),
     namespace: v.string(),
@@ -56,6 +57,7 @@ export const create = mutation({
   },
 });
 export const link = mutation({
+  agent: { operation: "evidence.link", scope: "data:write" },
   args: {
     evidence_id: v.id("evidence_item"),
     target,
@@ -91,6 +93,7 @@ export const link = mutation({
   },
 });
 export const list = query({
+  agent: { operation: "evidence.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const u = await requireUser(ctx);

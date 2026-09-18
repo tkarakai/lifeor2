@@ -1,13 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./lib/scoped";
-import { authComponent } from "./auth";
+import { currentUser } from "./lib/access";
 import { owned, ownedTarget, requireUser } from "./lib/access";
 import { nonempty } from "./lib/domain";
 import { target } from "./schema/shared";
 export const list = query({
+  agent: { operation: "tags.list", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     return u
       ? (
           await ctx.db
@@ -19,6 +20,7 @@ export const list = query({
   },
 });
 export const create = mutation({
+  agent: { operation: "tags.create", scope: "data:write" },
   args: { name: v.string() },
   handler: async (ctx, a) => {
     const u = await requireUser(ctx),
@@ -37,6 +39,7 @@ export const create = mutation({
   },
 });
 export const update = mutation({
+  agent: { operation: "tags.update", scope: "data:write" },
   args: {
     id: v.id("tag"),
     name: v.optional(v.string()),
@@ -78,6 +81,7 @@ export const update = mutation({
   },
 });
 export const assign = mutation({
+  agent: { operation: "tags.assign", scope: "data:write" },
   args: { tagId: v.id("tag"), target },
   handler: async (ctx, a) => {
     const u = await requireUser(ctx),
@@ -106,6 +110,7 @@ export const assign = mutation({
   },
 });
 export const unassign = mutation({
+  agent: { operation: "tags.unassign", scope: "data:write" },
   args: { id: v.id("tag_assignment") },
   handler: async (ctx, a) => {
     const x = await owned(
@@ -119,6 +124,7 @@ export const unassign = mutation({
   },
 });
 export const getAssignments = query({
+  agent: { operation: "tags.getAssignments", scope: "data:read" },
   args: { tagId: v.id("tag"), asOf: v.optional(v.number()) },
   handler: async (ctx, a) => {
     await owned(ctx, "tag", a.tagId, (await requireUser(ctx))._id);

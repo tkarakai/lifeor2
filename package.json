@@ -14,10 +14,15 @@
     "convex:stop": "python3 scripts/local_convex.py stop",
     "test:local": "python3 -m unittest discover -s tests/python",
     "seed:family": "bun scripts/seed-family.ts",
-    "test:ui": "node scripts/test-records-ui.cjs"
+    "test:ui": "node scripts/test-records-ui.cjs",
+    "mcp:catalog": "bun scripts/generate-mcp-catalog.ts",
+    "mcp:check": "bun scripts/generate-mcp-catalog.ts --check",
+    "test:mcp:live": "bun scripts/test-mcp-live.ts"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.10.10",
+    "@modelcontextprotocol/server": "2.0.0",
+    "@noble/hashes": "2.0.1",
     "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.23",
     "better-auth": "^1.4.17",
@@ -42,6 +47,7 @@
     "eslint-config-next": "^16.1.4",
     "playwright": "^1.63.0",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "@modelcontextprotocol/client": "2.0.0"
   }
 }

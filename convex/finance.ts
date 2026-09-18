@@ -1,7 +1,7 @@
 import { outstanding } from "./obligations";
 import { v } from "convex/values";
 import { mutation, query } from "./lib/scoped";
-import { authComponent } from "./auth";
+import { currentUser } from "./lib/access";
 import { owned, requireUser, expected } from "./lib/access";
 import { nonempty, scale, parseMoney, add, date } from "./lib/domain";
 import { accountType } from "./schema/finance";
@@ -20,9 +20,10 @@ const chartArgs = {
   coaArrangementId: v.optional(v.id("arrangement")),
 };
 export const listCharts = query({
+  agent: { operation: "finance.listCharts", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     return u
       ? (
           await ctx.db
@@ -34,6 +35,7 @@ export const listCharts = query({
   },
 });
 export const createChart = mutation({
+  agent: { operation: "finance.createChart", scope: "finance:write" },
   args: { name: v.string(), reportingEntityId: v.optional(v.id("entity")) },
   handler: async (ctx, a) => {
     const u = await requireUser(ctx);
@@ -48,9 +50,10 @@ export const createChart = mutation({
   },
 });
 export const listAccounts = query({
+  agent: { operation: "finance.listAccounts", scope: "data:read" },
   args: chartArgs,
   handler: async (ctx, a) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     if (!u) return [];
     if (a.chartId) await owned(ctx, "chart_of_accounts", a.chartId, u._id);
     if (a.coaArrangementId)
@@ -69,6 +72,7 @@ export const listAccounts = query({
   },
 });
 export const createAccount = mutation({
+  agent: { operation: "finance.createAccount", scope: "finance:write" },
   args: {
     ...chartArgs,
     name: v.string(),
@@ -105,6 +109,7 @@ export const createAccount = mutation({
   },
 });
 export const updateAccount = mutation({
+  agent: { operation: "finance.updateAccount", scope: "finance:write" },
   args: {
     id: v.id("ledger_account"),
     name: v.optional(v.string()),
@@ -134,9 +139,10 @@ export const updateAccount = mutation({
   },
 });
 export const listJournalEntries = query({
+  agent: { operation: "finance.listJournalEntries", scope: "data:read" },
   args: chartArgs,
   handler: async (ctx, a) => {
-    const u = await authComponent.safeGetAuthUser(ctx);
+    const u = await currentUser(ctx);
     if (!u) return [];
     if (a.chartId) await owned(ctx, "chart_of_accounts", a.chartId, u._id);
     if (a.coaArrangementId)
@@ -155,6 +161,7 @@ export const listJournalEntries = query({
   },
 });
 export const getJournalEntry = query({
+  agent: { operation: "finance.getJournalEntry", scope: "data:read" },
   args: { jeId: v.id("journal_entry") },
   handler: async (ctx, a) => {
     const journalEntry = await owned(
@@ -171,6 +178,7 @@ export const getJournalEntry = query({
   },
 });
 export const getPostings = query({
+  agent: { operation: "finance.getPostings", scope: "data:read" },
   args: { jeId: v.id("journal_entry") },
   handler: async (ctx, a) => {
     await owned(ctx, "journal_entry", a.jeId, (await requireUser(ctx))._id);
@@ -181,6 +189,7 @@ export const getPostings = query({
   },
 });
 export const createJournalEntry = mutation({
+  agent: { operation: "finance.createJournalEntry", scope: "finance:write" },
   args: {
     ...chartArgs,
     eventId: v.id("event"),
@@ -225,6 +234,7 @@ export const createJournalEntry = mutation({
   },
 });
 export const postDraft = mutation({
+  agent: { operation: "finance.postDraft", scope: "finance:write" },
   args: { jeId: v.id("journal_entry") },
   handler: async (ctx, a) => {
     const old = await owned(
@@ -249,6 +259,7 @@ export const postDraft = mutation({
   },
 });
 export const getAccountBalance = query({
+  agent: { operation: "finance.getAccountBalance", scope: "data:read" },
   args: { accountId: v.id("ledger_account") },
   handler: async (ctx, a) => {
     const account = await owned(
@@ -266,6 +277,7 @@ export const getAccountBalance = query({
   },
 });
 export const getTrialBalance = query({
+  agent: { operation: "finance.getTrialBalance", scope: "data:read" },
   args: chartArgs,
   handler: async (ctx, a) => {
     const u = await requireUser(ctx);
@@ -321,6 +333,7 @@ export const getTrialBalance = query({
   },
 });
 export const createFinancialAccount = mutation({
+  agent: { operation: "finance.createFinancialAccount", scope: "finance:write" },
   args: {
     arrangement_id: v.id("arrangement"),
     ledger_account_id: v.id("ledger_account"),
@@ -371,6 +384,7 @@ export const createFinancialAccount = mutation({
   },
 });
 export const listFinancialAccounts = query({
+  agent: { operation: "finance.listFinancialAccounts", scope: "data:read" },
   args: {},
   handler: async (ctx) => {
     const u = await requireUser(ctx);
@@ -381,6 +395,7 @@ export const listFinancialAccounts = query({
   },
 });
 export const getAttribution = query({
+  agent: { operation: "finance.getAttribution", scope: "data:read" },
   args: { postingId: v.id("posting") },
   handler: async (ctx, a) => {
     await ownedPosting(ctx, a.postingId, (await requireUser(ctx))._id);
@@ -409,6 +424,7 @@ export const getAttribution = query({
   },
 });
 export const replaceAttribution = mutation({
+  agent: { operation: "finance.replaceAttribution", scope: "finance:write", revision: true },
   args: {
     postingId: v.id("posting"),
     expectedRevision: v.number(),
@@ -440,6 +456,7 @@ export const replaceAttribution = mutation({
   },
 });
 export const reverseJournalEntry = mutation({
+  agent: { operation: "finance.reverseJournalEntry", scope: "finance:write" },
   args: {
     jeId: v.id("journal_entry"),
     accounting_date: v.string(),
@@ -612,6 +629,7 @@ export const reverseJournalEntry = mutation({
   },
 });
 export const updateChart = mutation({
+  agent: { operation: "finance.updateChart", scope: "finance:write" },
   args: {
     id: v.id("chart_of_accounts"),
     name: v.optional(v.string()),

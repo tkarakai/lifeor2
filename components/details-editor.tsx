@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, useRef } from "react";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "@/lib/dataset";
 import { useDataset } from "@/lib/dataset";
 import { useRecordDraft } from "./record-ui";
 import { Button } from "./ui/button";
@@ -53,6 +55,8 @@ function Editor({
       headers: { ...init?.headers, "x-lifeor-dataset": datasetId },
     });
   }
+  const locator = useQuery(api.details.forTarget, { target: target as never });
+  const seenCommit = useRef<string | null | undefined>(undefined);
   const labelId = useId();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [draft, setDraft] = useState("");
@@ -80,6 +84,7 @@ function Editor({
       signal: controller.signal,
     })
       .then((value) => {
+        if (controller.signal.aborted) return;
         setSnapshot(value);
         setDraft(value.source ?? "");
         setNotice(
@@ -101,6 +106,19 @@ function Editor({
       });
     return () => controller.abort();
   }, [target.kind, target.id, datasetId, reload]);
+  useEffect(() => {
+    const remote = locator?.observed_commit;
+    if (!snapshot || !remote || remote === snapshot.commit || remote === seenCommit.current || busy) return;
+    if (dirty) {
+      setNotice("This document changed elsewhere. Your draft is preserved; copy it before reloading or resolve the conflict when saving.");
+      return;
+    }
+    seenCommit.current = remote;
+    setPinned(null);
+    setDiff(null);
+    setRevisions([]);
+    setReload(value => value + 1);
+  }, [locator?.observed_commit, snapshot, dirty, busy]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => {
