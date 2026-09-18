@@ -624,3 +624,17 @@ test("a prolific subject's old transaction links do not bury a current appointme
   expect(result.queryComplete).toBe(true);
   expect(result.order).toBe("most_recent_first");
 });
+
+test("relative appointment edits preserve the clock time and resolve tomorrow from today", async () => {
+  const f = await setup();
+  const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-09-18T15:00:00Z"));
+  try {
+    const person = await f.mutation("entities:create", { kind: "Person", display_name: "Avery" });
+    const created = await f.mutation("agentWrites:recordEvent", { title: "Dentist", kind: "Appointment", dateExpression: "next Tuesday", time: "15:00", subjects: [{ kind: "entity", id: person }] });
+    expect(created).toMatchObject({ date: "2026-09-22", time: "15:00", kind: "Appointment" });
+    const later = await f.mutation("agentWrites:rescheduleEvent", { id: created.id, dateExpression: "two days later", time: "same" });
+    expect(later).toMatchObject({ date: "2026-09-24", time: "15:00", correctsId: created.id, subjectNames: ["Avery"] });
+    const tomorrow = await f.mutation("agentWrites:rescheduleEvent", { id: later.id, dateExpression: "tomorrow", time: "10:30" });
+    expect(tomorrow).toMatchObject({ date: "2026-09-19", occurredAt: "2026-09-19T15:30:00.000Z", correctsId: later.id });
+  } finally { clock.mockRestore(); }
+});

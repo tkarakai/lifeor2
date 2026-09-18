@@ -11449,7 +11449,12 @@
           ]
         },
         "date": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute YYYY-MM-DD only. Omit when the user gives a relative date; use dateExpression instead. Exactly one date field is required."
+        },
+        "dateExpression": {
+          "type": "string",
+          "description": "Copy the user’s relative phrase verbatim: today, tomorrow, yesterday, next Tuesday (or any weekday), in N days/weeks, N days/weeks later/earlier. The service computes the civil date. Next weekday means its next occurrence strictly after today; later/earlier anchors to the existing event; tomorrow anchors to the actual current date. Never convert these phrases into a guessed YYYY-MM-DD."
         },
         "time": {
           "type": "string"
@@ -11518,7 +11523,6 @@
       "required": [
         "title",
         "kind",
-        "date",
         "time",
         "datasetId",
         "subjects",
@@ -11606,10 +11610,16 @@
           "description": "Stable event record ID returned by LifeOR2."
         },
         "date": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute YYYY-MM-DD only. Omit when the user gives a relative date; use dateExpression instead. Exactly one date field is required."
+        },
+        "dateExpression": {
+          "type": "string",
+          "description": "Copy the user’s relative phrase verbatim: today, tomorrow, yesterday, next Tuesday (or any weekday), in N days/weeks, N days/weeks later/earlier. The service computes the civil date. Next weekday means its next occurrence strictly after today; later/earlier anchors to the existing event; tomorrow anchors to the actual current date. Never convert these phrases into a guessed YYYY-MM-DD."
         },
         "time": {
-          "type": "string"
+          "type": "string",
+          "description": "Local HH:MM, or same to preserve the existing event’s local clock time. The service resolves same; do not recompute it."
         },
         "timezone": {
           "type": "string"
@@ -11635,7 +11645,6 @@
       },
       "required": [
         "id",
-        "date",
         "time",
         "datasetId",
         "requestKey"

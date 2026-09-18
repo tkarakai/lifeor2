@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "./lib/scoped";
+import { calendarDate } from "./lib/lifeQueries/calendarDate";
+import { civilDate } from "./lib/lifeQueries/time";
 import { workspace } from "./lib/lifeQueries/common";
 import { AmbiguousLocalTimeError, clockFacts, localInstant } from "./lib/lifeQueries/time";
 import { owned, ownedTarget, expected, requireUser } from "./lib/access";
@@ -12,7 +14,8 @@ export const recordEvent = mutation({
   args: {
     title: v.string(),
     kind: v.union(v.literal("Appointment"), v.literal("Maintenance"), v.literal("Reminder"), v.literal("Milestone"), v.literal("Event")),
-    date: v.string(),
+    date: v.optional(v.string()),
+    dateExpression: v.optional(v.string()),
     time: v.string(),
     timezone: v.optional(v.string()),
     utcOffsetMinutes: v.optional(v.number()),
@@ -38,8 +41,9 @@ export const recordEvent = mutation({
         "Specify an IANA timezone for this appointment; this dataset has no configured timezone.",
       );
     const timezone = a.timezone ?? w.timezone;
+    const resolvedDate = calendarDate(a, timezone);
     let occurred_at: number;
-    try { occurred_at = localInstant(a.date, a.time, timezone, a.utcOffsetMinutes); }
+    try { occurred_at = localInstant(resolvedDate, a.time, timezone, a.utcOffsetMinutes); }
     catch (error) { if (error instanceof AmbiguousLocalTimeError) return error.clarification; throw error; }
     if (a.subjects && a.subjects.length > 20)
       throw new Error("Limit events to 20 linked subjects");
@@ -81,7 +85,7 @@ export const recordEvent = mutation({
       payload_json: JSON.stringify({
         notes: a.notes ?? "",
         timezone,
-        localDate: a.date,
+        localDate: resolvedDate,
         localTime: a.time,
       }),
     });
@@ -96,7 +100,7 @@ export const recordEvent = mutation({
       id,
       title: a.title,
       kind: a.kind,
-      date: a.date,
+      date: resolvedDate,
       time: a.time,
       timezone,
       occurredAt: new Date(occurred_at).toISOString(),
@@ -330,7 +334,8 @@ export const rescheduleEvent = mutation({
   agent: { operation: "records.rescheduleEvent", scope: "data:write" },
   args: {
     id: v.id("event"),
-    date: v.string(),
+    date: v.optional(v.string()),
+    dateExpression: v.optional(v.string()),
     time: v.string(),
     timezone: v.optional(v.string()),
     utcOffsetMinutes: v.optional(v.number()),
@@ -362,10 +367,16 @@ export const rescheduleEvent = mutation({
         .first()
     )
       throw new Error("Financial events require a journal correction workflow");
+    const oldTimezone = JSON.parse(old.payload_json).timezone ?? timezone;
+    const oldLocalDate = civilDate(old.occurred_at, oldTimezone);
+    const resolvedDate = calendarDate(a, timezone, oldLocalDate);
+    const resolvedTime = a.time === "same"
+      ? new Intl.DateTimeFormat("en-GB", { timeZone: oldTimezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(old.occurred_at)
+      : a.time;
     let occurred_at: number;
     try { occurred_at = localInstant(
-        a.date,
-        a.time,
+        resolvedDate,
+        resolvedTime,
         timezone,
         a.utcOffsetMinutes,
       ); }
@@ -390,11 +401,11 @@ export const rescheduleEvent = mutation({
       payload_json: JSON.stringify({
         ...JSON.parse(old.payload_json),
         timezone,
-        localDate: a.date,
-        localTime: a.time,
+        localDate: resolvedDate,
+        localTime: resolvedTime,
         rescheduled: {
-          localDate: a.date,
-          localTime: a.time,
+          localDate: resolvedDate,
+          localTime: resolvedTime,
           timezone,
           reason: a.reason ?? "User-requested reschedule",
         },
@@ -407,8 +418,8 @@ export const rescheduleEvent = mutation({
       correctsId: old._id,
       title: old.title,
       kind: old.kind,
-      date: a.date,
-      time: a.time,
+      date: resolvedDate,
+      time: resolvedTime,
       timezone,
       subjects: links.map((link) => link.target ?? { kind: link.target_type, id: link.target_id }),
       subjectNames: await Promise.all(links.map(async (link) => {

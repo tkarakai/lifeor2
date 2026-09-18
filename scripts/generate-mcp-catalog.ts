@@ -176,6 +176,11 @@ for (const name of modules) {
       delete input.properties.cursor;
       input.required = input.required.filter((key: string) => key !== "cursor");
     }
+    if (["records.recordEvent", "records.rescheduleEvent"].includes(policy.operation)) {
+      input.properties.date.description = "Absolute YYYY-MM-DD only. Omit when the user gives a relative date; use dateExpression instead. Exactly one date field is required.";
+      input.properties.dateExpression.description = "Copy the user’s relative phrase verbatim: today, tomorrow, yesterday, next Tuesday (or any weekday), in N days/weeks, N days/weeks later/earlier. The service computes the civil date. Next weekday means its next occurrence strictly after today; later/earlier anchors to the existing event; tomorrow anchors to the actual current date. Never convert these phrases into a guessed YYYY-MM-DD.";
+      if (policy.operation === "records.rescheduleEvent") input.properties.time.description = "Local HH:MM, or same to preserve the existing event’s local clock time. The service resolves same; do not recompute it.";
+    }
     if (policy.operation === "records.recordEvent") {
       input.required.push("subjects");
       input.properties.subjects.description = "Required explicit participants/affected records. Resolve every person named by the user to a verified ID and link them here; title text alone does not link anyone. Use [] only when the event has no affected records.";
