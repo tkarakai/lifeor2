@@ -1,0 +1,86 @@
+name: LifeOR2 validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lifeor-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: LifeOR2 validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
+      NEXT_PUBLIC_CONVEX_SITE_URL: http://127.0.0.1:3211
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Scan Git history for secrets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/gitleaks"
+          cd "$RUNNER_TEMP/gitleaks"
+          gh release download v8.30.1 --repo gitleaks/gitleaks --pattern 'gitleaks_8.30.1_linux_x64.tar.gz' --pattern 'gitleaks_8.30.1_checksums.txt'
+          sha256sum --check --ignore-missing gitleaks_8.30.1_checksums.txt
+          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          ./gitleaks git "$GITHUB_WORKSPACE" --log-opts='--all --full-history' --redact --ignore-gitleaks-allow --no-banner
+      - run: bun install --frozen-lockfile
+      - name: Generate Convex bindings in an empty local deployment
+        env:
+          CONVEX_AGENT_MODE: anonymous
+        run: bunx convex dev --once --typecheck disable
+      - run: bun run test:local
+      - run: bun run typecheck
+      - run: bun run test -- --maxWorkers=1 --testTimeout=30000
+      - name: Check MCP catalog when present
+        run: |
+          if bun -e 'process.exit("mcp:check" in (await Bun.file("package.json").json()).scripts ? 0 : 1)'; then
+            bun run mcp:check
+          fi
+      - run: bun run build
+      - run: bunx playwright install --with-deps chromium
+      - name: Check record workspaces in Chromium
+        run: |
+          bunx next dev --hostname 127.0.0.1 --port 3000 > "$RUNNER_TEMP/lifeor-next.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for _attempt in {1..60}; do
+            if curl --fail --silent http://localhost:3000 > /dev/null; then
+              ready=true
+              break
+            fi
+            kill -0 "$server_pid"
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$RUNNER_TEMP/lifeor-next.log"
+            exit 1
+          fi
+          bun run test:ui
+      # All backend state is disposable. Never supply production credentials,
+      # user exports, or saved local deployments to pull-request jobs.
