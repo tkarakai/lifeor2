@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "./lib/scoped";
 import { workspace } from "./lib/lifeQueries/common";
-import { localInstant } from "./lib/lifeQueries/time";
+import { AmbiguousLocalTimeError, localInstant } from "./lib/lifeQueries/time";
 import { owned, ownedTarget, expected, requireUser } from "./lib/access";
 
 import { nonempty, parseMoney, overlayTimeline } from "./lib/domain";
@@ -37,8 +37,10 @@ export const recordEvent = mutation({
       throw new Error(
         "Specify an IANA timezone for this appointment; this dataset has no configured timezone.",
       );
-    const timezone = a.timezone ?? w.timezone,
-      occurred_at = localInstant(a.date, a.time, timezone, a.utcOffsetMinutes);
+    const timezone = a.timezone ?? w.timezone;
+    let occurred_at: number;
+    try { occurred_at = localInstant(a.date, a.time, timezone, a.utcOffsetMinutes); }
+    catch (error) { if (error instanceof AmbiguousLocalTimeError) return error.clarification; throw error; }
     if (a.subjects && a.subjects.length > 20)
       throw new Error("Limit events to 20 linked subjects");
     const subjects = (a.subjects ?? []).map((ref) => {
@@ -353,13 +355,15 @@ export const rescheduleEvent = mutation({
         .first()
     )
       throw new Error("Financial events require a journal correction workflow");
-    const occurred_at = localInstant(
+    let occurred_at: number;
+    try { occurred_at = localInstant(
         a.date,
         a.time,
         timezone,
         a.utcOffsetMinutes,
-      ),
-      duration =
+      ); }
+    catch (error) { if (error instanceof AmbiguousLocalTimeError) return error.clarification; throw error; }
+    const duration =
         old.ended_at === undefined ? undefined : old.ended_at - old.occurred_at;
     const links = await ctx.db
       .query("event_affects")

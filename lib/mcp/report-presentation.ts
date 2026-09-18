@@ -37,12 +37,34 @@ export function presentReport(
     throw new Error(
       "Presentation offset must be nonnegative and limit must be 1–200",
     );
-  const pagination = (count: number) =>
+  const pagination = (count: number, coverage = "Totals include all matching rows.") =>
     count > limit || offset > 0
-      ? `\n\nDetail rows ${count ? Math.min(offset + 1, count) : 0}–${Math.min(offset + limit, count)} of ${count}. Totals include all matching rows.${offset + limit < count ? ` More detail is available from offset ${offset + limit} in this saved report.` : ""}\n\n`
+      ? `\n\nDetail rows ${count ? Math.min(offset + 1, count) : 0}–${Math.min(offset + limit, count)} of ${count}. ${coverage}${offset + limit < count ? ` More detail is available from offset ${offset + limit} in this saved report.` : ""}\n\n`
       : "";
   let text = "";
-  if (report.reportType === "timeline") {
+  if (report.reportType === "source_excerpts") {
+    text = `Retrieved source text${report.query ? ` matching “${escape(report.query)}”` : ""}\n\n`;
+    for (const item of report.items.slice(offset, offset + limit)) {
+      text += `Source: ${escape(item.target?.kind)} \`${escape(item.target?.id)}\` · document \`${escape(item.documentId)}\` · commit \`${escape(item.commit)}\`\n\n`;
+      for (const excerpt of item.excerpts ?? []) {
+        const fence = "`".repeat(Math.max(3, ...[...String(excerpt.text).matchAll(/`+/g)].map(m => m[0].length + 1)));
+        text += `${fence}text\n${excerpt.text}\n${fence}\n\n`;
+        text += `Source characters ${excerpt.start}–${excerpt.end} of ${item.sourceLength}.\n\n`;
+      }
+      text += item.sourceComplete ? "This is the complete retrieved source document.\n\n" : "Selected excerpts only. Additional text is not shown; these excerpts do not establish that there are no other terms.\n\n";
+    }
+    if (!report.queryComplete) text += "Source/search coverage is incomplete. More source text or search pages remain.\n";
+  } else if (report.reportType === "events") {
+    const f = report.filter ?? {};
+    text = `Recorded events${f.query ? ` matching “${escape(f.query)}”` : ""} — ${escape(f.from ?? "all recorded history")} through ${escape(f.through ?? "all recorded future dates")}\n\n`;
+    if (f.entity) text += `Subject: ${escape(f.entity)}.\n\n`;
+    text += table(["Event", "Recorded local time", "UTC instant"], report.items.slice(offset, offset + limit).map((i: any) => [
+      i.title,
+      [i.date, i.time ?? "date only", i.time ? i.timezone : null, i.time ? i.utcOffset : null, i.clockOccurrence].filter(Boolean).join(" · "),
+      i.time ? i.occurredAt : "Date only",
+    ]));
+    text += pagination(report.items.length, "The saved report contains all matching recorded events.") + `\n\n${escape(report.coverage)}. These are recorded events, not a claim that every real-life appointment is recorded.\n\nSources: ${report.items.slice(offset, offset + limit).map((i: any) => `\`${escape(i.id)}\``).join(", ")}`;
+  } else if (report.reportType === "timeline") {
     text = `Recorded commitments and events — ${escape(report.from)} through ${escape(report.through)} (${escape(report.timezone)})\n\n`;
     const filters = report.filters;
     if (filters) {

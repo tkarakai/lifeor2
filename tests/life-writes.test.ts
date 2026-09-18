@@ -72,6 +72,19 @@ test("civil time resolves daylight saving and refuses ambiguous/nonexistent appo
   expect(() => localInstant("2026-11-01", "01:30", "America/Chicago", 0)).toThrow("does not exist");
   expect(() => localInstant("2026-03-08", "02:30", "America/Chicago", -360)).toThrow("does not exist");
 });
+test("ambiguous appointment writes return exact choices without changing records", async () => {
+  const f = await setup();
+  const ambiguous = await f.mutation("agentWrites:recordEvent", { title: "Clock visit", kind: "Appointment", date: "2026-11-01", time: "01:30", timezone: "America/Chicago" });
+  expect(ambiguous.status).toBe("needs_input");
+  expect(ambiguous.choices.map((c: any) => [c.utcOffsetMinutes, c.occurredAt])).toEqual([[-300, "2026-11-01T06:30:00.000Z"], [-360, "2026-11-01T07:30:00.000Z"]]);
+  expect((await f.query("agentLife:events", { query: "Clock visit" })).items).toEqual([]);
+  const original = await f.mutation("agentWrites:recordEvent", { title: "Clock visit", kind: "Appointment", date: "2027-01-12", time: "10:00", timezone: "America/Chicago" });
+  const pending = await f.mutation("agentWrites:rescheduleEvent", { id: original.id, date: "2026-11-01", time: "01:30", timezone: "America/Chicago" });
+  expect(pending.choices).toEqual(ambiguous.choices);
+  expect((await f.query("agentLife:events", { query: "Clock visit" })).items.map((e: any) => e.id)).toEqual([original.id]);
+  const resolved = await f.mutation("agentWrites:rescheduleEvent", { id: original.id, date: "2026-11-01", time: "01:30", timezone: "America/Chicago", utcOffsetMinutes: pending.choices[1].utcOffsetMinutes });
+  expect((await f.query("agentLife:events", { query: "Clock visit" })).items[0]).toMatchObject({ id: resolved.id, occurredAt: "2026-11-01T07:30:00.000Z", utcOffset: "UTC-06:00", clockOccurrence: "Second occurrence (UTC−06:00)" });
+});
 test("rescheduling preserves subject links, hides superseded occurrences and rejects branching edits", async () => {
   const f = await setup(),
     person = await f.mutation("entities:create", {
@@ -545,6 +558,9 @@ test("subject event lookup bypasses thousands of unrelated financial events", as
   expect(result.items.map((e: any) => e.id)).toEqual([visit.id]);
   expect(result.queryComplete).toBe(true);
   expect(result.order).toBe("subject_link_order");
+  const filtered = await f.query("agentLife:events", { entityId: car, query: "oil service", from: "2026-01-01", through: "2026-12-31" });
+  expect(filtered.items.map((e: any) => e.id)).toEqual([visit.id]);
+  expect(filtered.order).toBe("subject_link_order");
 });
 
 

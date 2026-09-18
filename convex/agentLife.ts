@@ -13,7 +13,7 @@ import {
   type LifeContext,
 } from "./lib/lifeQueries/common";
 import { date } from "./lib/domain";
-import { localInstant } from "./lib/lifeQueries/time";
+import { clockFacts, localInstant } from "./lib/lifeQueries/time";
 
 const paging = {
   limit: v.optional(v.number()),
@@ -592,10 +592,10 @@ export const events = query({
       limit = a.limit ?? 20;
     if (!Number.isInteger(limit) || limit < 1 || limit > 50)
       throw new Error("limit must be 1–50");
-    if (a.entityId) await owned(ctx, "entity", a.entityId, w.user._id);
+    const subject = a.entityId ? await owned(ctx, "entity", a.entityId, w.user._id) : null;
     const lo = a.from ? Date.parse(a.from) - 86400000 : -8640000000000000,
       hi = a.through ? Date.parse(a.through) + 2 * 86400000 : 8640000000000000;
-    const useSubjectIndex = !!(a.entityId && !a.query && !nextEvent && (await ctx.db.query("event_affects").withIndex("by_target", q => q.eq("target_type", "entity").eq("target_id", a.entityId!)).take(51)).length <= 50);
+    const useSubjectIndex = !!(a.entityId && !nextEvent && (await ctx.db.query("event_affects").withIndex("by_target", q => q.eq("target_type", "entity").eq("target_id", a.entityId!)).take(51)).length <= 50);
     const state =
       !nextEvent && !useSubjectIndex && ctx.scope.legacy && ctx.scope.datasetId
         ? a.cursor
@@ -706,6 +706,7 @@ export const events = query({
               }).format(e.occurred_at),
         occurredAt: new Date(e.occurred_at).toISOString(),
         timezone,
+        ...(payload.datePrecision === "day" ? {} : clockFacts(e.occurred_at, timezone)),
       });
     }
     const nextCursor = state
@@ -722,8 +723,8 @@ export const events = query({
       nextCursor,
       queryComplete: nextCursor === null,
       datasetCompleteness: "unknown",
-      order: nextEvent ? "earliest_first" : a.query ? "text_relevance" : subjectLinks ? "subject_link_order" : "most_recent_first",
-      filter: { from: a.from ?? null, through: a.through ?? null, query: a.query ?? null, entityId: a.entityId ?? null },
+      order: nextEvent ? "earliest_first" : subjectLinks ? "subject_link_order" : a.query ? "text_relevance" : "most_recent_first",
+      filter: { from: a.from ?? null, through: a.through ?? null, query: a.query ?? null, entityId: a.entityId ?? null, entity: subject?.display_name ?? null },
       basis:
         "Recorded events only. Omit unknown dates for title/subject lookup across recorded history. With from but no through, earliest-first search covers all recorded dates from that day: the first matching item is the next occurrence; an empty page with a cursor is not absence. Bounded title searches use the text index and bounded subject-only queries use the subject-link index. Follow nextCursor even on empty filtered pages before concluding absence. Projections and obligations use life.timeline.",
     };
