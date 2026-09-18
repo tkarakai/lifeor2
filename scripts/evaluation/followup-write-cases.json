@@ -12,6 +12,12 @@
     "expected": "Ask purpose/category; no guessed groceries or write."
   },
   {
+    "id": "source-excerpt-final",
+    "question": "What do the Ellis apartment lease notes say about parking and cats? Read the relevant source text.",
+    "mode": "read",
+    "expected": "One reserved parking space and one indoor cat. Cite source commit. Do not claim to have checked the unread remainder of a long paginated document."
+  },
+  {
     "id": "create-next-year-appointment",
     "conversation": "future-riley",
     "question": "Record a dentist appointment for Riley Ellis on January 12, 2027 at 10 AM America/Chicago, titled Riley dentist visit. Link it to Riley.",

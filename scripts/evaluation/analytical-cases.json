@@ -167,5 +167,22 @@
       "58678.11"
     ],
     "expected": "Independent additional spending: baseline closing $68678.11, scenario $58678.11, difference -$10000. No writes."
+  },
+  {
+    "id": "four-part-household-review",
+    "question": "Prepare a household review: show Alex Morgan\u2019s total gross pay and actual take-home cash for June through August 2026; our household expenses in August by category; the Cedar Lane remodel budget, incurred cost, cash paid, outstanding debt and future unincurred work as of September 16; and projected household bank cash through November 30 including the planned work. Keep actuals, debt and projections distinct.",
+    "mode": "read",
+    "required": [
+      "39000",
+      "27300",
+      "15013.92",
+      "85000",
+      "55000",
+      "40000",
+      "15000",
+      "30000",
+      "68678.11"
+    ],
+    "expected": "Four properly scoped report sections. Payroll totals39000gross/27300cash; August expenses15013.92 fullcategories; remodel85/55/40/15/30k; projectedbankclosing68678.11. No doubledincurredinvoice, companycash, or cross-report addition."
   }
 ]
