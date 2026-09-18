@@ -275,10 +275,16 @@ export function presentReport(
             a.firstNegativeDate ?? "None projected",
           ]),
         ) + "\n\n";
-      if (r.hypothetical.length)
+      if (r.hypothetical.length || r.recurringChanges?.length)
         text +=
-          `Closing without these hypothetical movements: **${amount(r.baselineClosing, r.currency)}**. Change in projected closing: **${amount(r.hypotheticalClosingChange, r.currency)}**.\n\n` +
-          "Hypothetical movements (not saved as records):\n\n" +
+          `Closing without these hypothetical changes: **${amount(r.baselineClosing, r.currency)}**. Change in projected closing: **${amount(r.hypotheticalClosingChange, r.currency)}**.\n\n`;
+      if (r.recurringChanges?.length)
+        text += "Proposed recurring terms (not saved as records):\n\n" + table(
+          ["Commitment", "Effective date", "Recorded amount", "Proposed amount", "Change per recurrence"],
+          r.recurringChanges.map((c: any) => [c.schedule, c.effectiveDate, amount(c.recordedAmount, c.currency), amount(c.proposedAmount, c.currency), amount(c.difference, c.currency) + " / " + c.frequency + (c.interval > 1 ? " (interval " + c.interval + ")" : "")]),
+        ) + "\n\n";
+      if (r.hypothetical.length)
+        text += "Additional one-off movements (not saved as records):\n\n" +
           table(
             ["Date", "Label", "Signed amount"],
             r.hypothetical.map((c: any) => [

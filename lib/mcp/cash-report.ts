@@ -1,5 +1,7 @@
 import { ConvexHttpClient } from "convex/browser";
 import { makeFunctionReference } from "convex/server";
+import { recurringScenario, type RecurringChange } from "../life-reports/recurring-scenario";
+import { QueryError } from "./query-error";
 import { bankProjection } from "../insights/cash-projection";
 import type { InsightData, Posting } from "../insights/types";
 import { baseFinancialReport as financialReport } from "./financial-report";
@@ -56,7 +58,7 @@ export async function cashReport(
     throw new Error(
       "Choose verified cash account IDs from life.search; one or more are unavailable.",
     );
-  const hypothetical = args.hypothetical as
+  const hypothetical = (args.additionalMovements ?? args.hypothetical) as
     | { date: string; accountId: string; amount: string; label: string }[]
     | undefined;
   for (const change of hypothetical ?? []) {
@@ -105,6 +107,10 @@ export async function cashReport(
           }) as Posting,
       ),
   } as InsightData;
+  const changes = (args.recurringChanges ?? []) as RecurringChange[];
+  if (changes.length && args.includeSchedules === false) throw new QueryError("invalid_scenario", "Recurring changes require schedule projections to be included.");
+  const changed = recurringScenario(data.cashSchedules ?? [], data.cashRoutes ?? [], changes, cutoff, through);
+  const scenarioData = { ...data, cashSchedules: changed.schedules };
   const reports = [];
   for (const currency of [
     ...new Set<string>(eligible.map((a: any) => a.currency)),
@@ -112,7 +118,7 @@ export async function cashReport(
     const accountIds = eligible
       .filter((a: any) => a.currency === currency)
       .map((a: any) => a.id);
-    const projection = bankProjection(data, {
+    const options = {
       accountIds,
       start: cutoff,
       cutoff,
@@ -120,7 +126,9 @@ export async function cashReport(
       schedules: args.includeSchedules !== false,
       assumptions: args.includeAssumptions !== false,
       overdue: true,
-    });
+    };
+    const baseline = bankProjection(data, options);
+    const projection = bankProjection(scenarioData, options);
     const points = projection.points.map((p) => ({
       ...p,
       values: { ...p.values },
@@ -147,9 +155,9 @@ export async function cashReport(
     const money = (n: number) => decimal(n, scale(currency));
     reports.push({
       currency,
-      baselineClosing: money(projection.points.at(-1)!.total),
+      baselineClosing: money(baseline.points.at(-1)!.total),
       hypotheticalClosingChange: money(
-        add(end.total, -projection.points.at(-1)!.total),
+        add(end.total, -baseline.points.at(-1)!.total),
       ),
       opening: money(points[0].total),
       projectedClosing: money(end.total),
@@ -170,6 +178,7 @@ export async function cashReport(
       hypothetical: (hypothetical ?? []).filter((c) =>
         accountIds.includes(c.accountId),
       ),
+      recurringChanges: changed.evidence.filter(c => c.currency === currency),
       issues: projection.issues,
     });
   }
@@ -191,7 +200,7 @@ export async function cashReport(
       unincurredAssumptions: args.includeAssumptions !== false,
     },
     basis:
-      "Recorded ledger opening cash plus current outstanding claims, explicit cash routes, schedule projections and selected assumptions. Overdue unpaid items are projected for the next day. Internal transfers net to zero across selected accounts. Missing routes are reported as issues; this is not a guarantee of affordability. Hypothetical movements are calculated only; no records were changed.",
+      "Recorded ledger opening cash plus current outstanding claims, explicit cash routes, schedule projections and selected assumptions. Overdue unpaid items are projected for the next day. Internal transfers net to zero across selected accounts. Missing routes are reported as issues; this is not a guarantee of affordability. Recurring changes replace projected schedule amounts only; existing claims, payments and opening cash stay unchanged. Additional movements add to that scenario. All hypothetical changes are calculated only; no records were changed.",
   };
   const saved = await saveReport(scope, {
     ...result,

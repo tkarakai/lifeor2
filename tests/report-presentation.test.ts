@@ -282,3 +282,15 @@ test("ranking profit periods uses income minus expenses, not the largest revenue
   expect(text).toContain("| 2026-07 | Net recorded income | Income less expenses | 75.00 USD |");
   expect(text).not.toContain("| 2026-06 | Net recorded income");
 });
+
+test('cash scenarios show the incremental baseline difference for recurring replacements without one-off movements', () => {
+ const text = presentReport({reportType:'cash',from:'2026-09-18',through:'2026-10-31',reports:[{
+  currency:'USD',opening:'1000.00',projectedClosing:'3900.00',lowestProjected:'1000.00',lowestDate:'2026-09-18',firstNegativeDate:null,
+  baselineClosing:'3700.00',hypotheticalClosingChange:'200.00',accounts:[],hypothetical:[],issues:[],
+  recurringChanges:[{schedule:'Rent',effectiveDate:'2026-10-01',recordedAmount:'2700.00',proposedAmount:'2900.00',difference:'200.00',currency:'USD',frequency:'monthly',interval:1}],
+ }],basis:'Read only'});
+ expect(text).toContain('Closing without these hypothetical changes: **3700.00 USD**');
+ expect(text).toContain('Change in projected closing: **200.00 USD**');
+ expect(text).toContain('| Rent | 2026-10-01 | 2700.00 USD | 2900.00 USD | 200.00 USD / monthly |');
+ expect(text).not.toContain('Additional one-off');
+});

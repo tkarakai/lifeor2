@@ -135,5 +135,37 @@
     "expected": "Ask for missing category/purpose, payment account and date as needed; do not say a guessed grocery category is set. No write.",
     "mode": "read",
     "phase": "core"
+  },
+  {
+    "id": "recurring-rent-october",
+    "question": "What if we raised the Maple rental rent by $200 a month starting October 1, 2026? Show the impact on our household cash through October 31. Do not change any records.",
+    "mode": "read",
+    "required": [
+      "2700",
+      "2900",
+      "200.00"
+    ],
+    "expected": "Baseline October closing $92323.94, scenario $92523.94, incremental $200. Replace recurring rent projection, not add full $2900. No writes."
+  },
+  {
+    "id": "recurring-rent-quarter",
+    "question": "If Maple rental rent became $2900 per month starting October 1, 2026, how much would that change household cash by December 31 compared with the recorded rent? Do not save the change.",
+    "mode": "read",
+    "required": [
+      "2700",
+      "2900",
+      "600.00"
+    ],
+    "expected": "Three future monthly differences of $200 = $600 improvement. Original commitments, claims and actual cash unchanged."
+  },
+  {
+    "id": "additional-spending-final",
+    "question": "If we spent an extra $10000 from Morgan household checking on October 10, 2026, how would that affect our household cash through November 30? Include the existing planned commitments. Do not record a payment.",
+    "mode": "read",
+    "required": [
+      "10000",
+      "58678.11"
+    ],
+    "expected": "Independent additional spending: baseline closing $68678.11, scenario $58678.11, difference -$10000. No writes."
   }
 ]

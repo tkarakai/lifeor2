@@ -156,7 +156,7 @@ export function createAgentServer(token: string, grant: Grant) {
     title: "Cash forecast and what-if",
     primary: true,
     description:
-      "Choose scope=household for household bank cash, scope=dataset for all books or explicitly selected company accounts. Will cash cover upcoming payments? Project each bank balance through an end date using recorded opening balances, explicit cash routes, unpaid bills, schedules and assumptions. Optional hypothetical cash movements are read-only (signed decimal amount: negative spending, positive receipt). Currencies remain separate; missing routes and account shortfalls are explicit. This is a forecast, not a guarantee.",
+      "Choose scope=household for household bank cash, scope=dataset for all books or explicitly selected company accounts. Will cash cover upcoming payments? Project each bank balance through an end date using recorded opening balances, explicit cash routes, unpaid bills, schedules and assumptions. For a rent or other recurring change, use recurringChanges with the schedule name, effectiveDate, mode change_by (signed difference) or set_amount (new full recurring amount), and amount. The server replaces the existing projection and computes the incremental impact; never add the full new rent as extra cash. additionalMovements are separate ADDITIONAL one-off cash only (negative spending, positive receipt). All scenarios are read-only. Currencies remain separate; missing routes and account shortfalls are explicit. This is a forecast, not a guarantee.",
     inputSchema: schema(
       {
         datasetId: dataset,
@@ -166,7 +166,11 @@ export function createAgentServer(token: string, grant: Grant) {
         accountIds: { type: "array", items: text, maxItems: 30 },
         includeSchedules: { type: "boolean" },
         includeAssumptions: { type: "boolean" },
-        hypothetical: {
+        recurringChanges: {
+          type: "array", maxItems: 10,
+          items: schema({ schedule: text, effectiveDate: text, mode: { type: "string", enum: ["change_by", "set_amount"] }, amount: { type: "string", pattern: "^-?[0-9]+(?:\\.[0-9]+)?$" } }),
+        },
+        additionalMovements: {
           type: "array",
           maxItems: 20,
           items: schema({
