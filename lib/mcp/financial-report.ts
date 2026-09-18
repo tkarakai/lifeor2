@@ -111,7 +111,7 @@ export async function baseFinancialReport(
     metric: args.metric,
     basis:
       args.metric === "cash_balances"
-        ? "Recorded bank/cash-account balances through cutoff, including opening entries. Only designated checking, savings and cash accounts are included; this is not a forecast or a consolidation of legal ownership."
+        ? "Recorded bank/cash-account balances through cutoff, including opening entries. Only designated checking, savings and cash accounts are included. These balances cannot establish the market value of everything owned or market net worth; that requires dated asset valuations and liabilities. This is not a forecast or a consolidation of legal ownership."
         : args.metric === "payroll"
           ? "Recorded payroll events: gross income and actual bank deposits are separate. cashDeposited and averageMonthlyCash aggregate the requested calendar-month windows; they are not per-paycheck amounts. Missing months are not verified zero; partial boundary months are not extrapolated. Future pay is a schedule projection, not this report."
           : args.metric === "profit_loss"
