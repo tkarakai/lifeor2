@@ -165,6 +165,7 @@ test("current MCP discovery and tool listing work without initialization and use
     "reports.cashProjection",
     "reports.commitment",
     "reports.commitmentScenario",
+    "reports.comparePeriods",
     "reports.finances",
     "reports.project",
   ]);
