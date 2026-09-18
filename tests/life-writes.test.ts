@@ -571,6 +571,7 @@ test("event title lookup omits unknown dates and excludes partial-word-query mat
   expect(result.queryComplete).toBe(true);
   expect(result.filter.from).toBeNull();
   expect(result.filter.through).toBeNull();
+  await expect(f.query("agentLife:events", { query: "Riley dentist visit", from: "" })).rejects.toThrow();
   const past = await f.query("agentLife:events", { query: "Riley dentist visit", through: "2026-12-31" });
   expect(past.items).toEqual([]);
 });

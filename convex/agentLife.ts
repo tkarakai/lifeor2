@@ -585,8 +585,8 @@ export const events = query({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
-    if (a.from && a.through) dateRange(a.from, a.through, 36600);
-    else { if (a.from) date(a.from); if (a.through) date(a.through); }
+    if (a.from !== undefined && a.through !== undefined) dateRange(a.from, a.through, 36600);
+    else { if (a.from !== undefined) date(a.from); if (a.through !== undefined) date(a.through); }
     const nextEvent = a.from !== undefined && a.through === undefined;
     const w = await workspace(ctx),
       limit = a.limit ?? 20;
