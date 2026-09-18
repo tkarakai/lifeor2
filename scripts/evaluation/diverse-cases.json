@@ -1,0 +1,68 @@
+[
+  {
+    "id": "diverse-income",
+    "question": "How much recorded household income did we have from 2010 through 2025?",
+    "expected": "Complete historical Income total 11276830.80 USD, no raw journal paging.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-expenses",
+    "question": "Show our household expenses from 2010 through 2025 by category, including purchases charged to cards but not double-counting card bill payments.",
+    "expected": "Total 11276830.80 USD, all ten expense categories. Card settlements are transfers, not expenses.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-net",
+    "question": "Across 2010\u20132025, what was our recorded household income less expenses?",
+    "expected": "0.00 USD net; both income and expenses 11276830.80 USD. Zero is backed by matching posted transactions, not inferred from missing data.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-child",
+    "question": "How much of the recorded 2010\u20132025 household expenses benefited Noah Morgan? Use recorded beneficiary allocation, not the spender.",
+    "expected": "1373851.44 USD beneficiary expenses, rather than all household expenses or Noah's direct accounting subject.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-groceries",
+    "question": "What is the total for household groceries and household supplies over 2010 through 2025?",
+    "expected": "1127729.83 USD, correctly filtered across full history.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-highest-year",
+    "question": "Which year from 2010 through 2025 had our highest household expenses, and what was that amount?",
+    "expected": "('2011', 76920750) in minor units; rank full yearly expense totals.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-current-cash",
+    "question": "What was our household bank cash as of September 16, 2026?",
+    "expected": "95719.77 USD; old funding/spending/card-settlement cycles leave bank balances unchanged.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-card-balance",
+    "question": "What was the recorded Cedar Visa balance as of September 16, 2026?",
+    "expected": "1804.00 USD liability; earlier historical card charges and payments cancel. Do not treat it as bank cash.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-current-spending",
+    "question": "Show our household grocery spending in August 2026.",
+    "expected": "1057.00 USD; historical 2010\u20132025 records must not leak into this date range.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-next-appointment",
+    "question": "When is Alex Morgan\u2019s next recorded appointment?",
+    "expected": "No matching future appointment is recorded; use future/date/kind filtering despite hundreds of thousands of old event links. Do not infer no future real-life appointment.",
+    "mode": "read"
+  },
+  {
+    "id": "diverse-coming-month",
+    "question": "What should our family know about the rest of this month?",
+    "expected": "From actual local Sep18: overdue 700 rent with Sep20 expected cash, 4550 projected salary Sep28, 15000 contractor due Sep30. No double counting or historical transaction dump.",
+    "mode": "read"
+  }
+]

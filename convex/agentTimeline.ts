@@ -1,3 +1,4 @@
+import { entityAt } from "./lib/history";
 import { matchesText } from "./lib/lifeQueries/text";
 import { v } from "convex/values";
 import { query } from "./lib/scoped";
@@ -62,7 +63,7 @@ export const timeline = query({
           .toISOString()
           .slice(0, 10);
     dateRange(from, through, 366);
-    if (a.entityId) await owned(ctx, "entity", a.entityId, w.user._id);
+    const subject = a.entityId ? await entityAt(ctx, await owned(ctx, "entity", a.entityId, w.user._id)) : undefined;
     const graph = await planningData(ctx),
       items: Item[] = [],
       blocked = new Set(graph.claims.map((o) => o.occurrence));
@@ -273,6 +274,7 @@ export const timeline = query({
       .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
     return {
       ...page(filtered, a.limit, a.offset),
+      filters: { subject: subject?.display_name, query: a.query, direction: a.direction, status: a.status },
       queryComplete: eventsComplete,
       from,
       through,

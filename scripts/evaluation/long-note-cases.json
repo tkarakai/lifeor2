@@ -3,8 +3,14 @@
     "id": "rent-history-final",
     "question": "What is the Ellis apartment rent before and after October 1, 2026, and why did it change?",
     "mode": "read",
-    "required": ["1800", "1950", "2026-09-30"],
-    "forbidden": ["Hypothetical comparison"],
+    "required": [
+      "1800",
+      "1950",
+      "2026-09-30"
+    ],
+    "forbidden": [
+      "Hypothetical comparison"
+    ],
     "expected": "Recorded periods end Sep 30 and start Oct 1; agreed renewal reason; no invented hypothetical amount."
   },
   {
@@ -14,10 +20,18 @@
     "expected": "Ask one direct question for the payment account, no write and no internal deliberation."
   },
   {
+    "id": "missing-category-final",
+    "question": "Record a $50 USD expense paid from Ellis checking on September 19, 2026.",
+    "mode": "read",
+    "expected": "Ask what the expense was for or its category. Do not invent groceries, do not post."
+  },
+  {
     "id": "hypothetical-rent-final",
     "question": "Suppose Ellis rent increased to $2,100 in November. What would the monthly increase be from the recorded October amount? Do not change anything.",
     "mode": "read",
-    "required": ["150"],
+    "required": [
+      "150"
+    ],
     "expected": "Read-only scenario difference $150/month from $1950 to $2100, correct effective periods, zero writes."
   },
   {
@@ -51,7 +65,9 @@
     "conversation": "new-person-note",
     "question": "What reminder preference have we recorded for Riley?",
     "mode": "read",
-    "required": ["email"],
+    "required": [
+      "email"
+    ],
     "expected": "Retrieve the just-written source note; email for appointment reminders, no invented email address or family relationship."
   }
 ]

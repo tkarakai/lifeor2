@@ -1,5 +1,5 @@
 /** Copied into the disposable evaluation deployment only; never part of production convex/. */
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { components } from "./_generated/api";
 import { makeFunctionReference } from "convex/server";
 import { v } from "convex/values";
@@ -54,4 +54,72 @@ export const grow=internalMutation({args:{datasetId:v.id("dataset"),start:v.numb
  await raw.db.patch(a.datasetId,{data_revision:(d.data_revision??0)+1});
  const result={start:a.start,count:a.count,next:a.start+a.count,incomeMinor,expenseMinor};
  if(checkpoint)await raw.db.patch(checkpoint._id,{result});else await raw.db.insert("agent_execution",{connection_id:grant._id,user_id:d.user_id,dataset_id:a.datasetId,key:"evaluation-growth-checkpoint",operation:"evaluation.growth-checkpoint",input_hash:"synthetic",result,created_at:Date.now()});return result;
+}});
+
+/** A second volume fixture: funded household spending and exact card settlement.
+ * Every six-journal group leaves bank cash and card liabilities unchanged.
+ * Category, amount, subject and beneficiary vary independently of dates.
+ */
+export const growDiverse=internalMutation({args:{datasetId:v.id("dataset"),start:v.number(),count:v.number()},handler:async(raw,a)=>{
+ isolated();if(!Number.isInteger(a.start)||a.start<0||!Number.isInteger(a.count)||a.count<1||a.count>200)throw new Error("Invalid batch");
+ const d=await raw.db.get(a.datasetId);if(!d?.seed_version||d.seed_status!=="ready")throw new Error("Expected a fully seeded isolated family sample");
+ const grant=await raw.db.query("agent_connection").withIndex("by_user",q=>q.eq("user_id",d.user_id)).first();if(grant?.name!=="Evaluation only")throw new Error("Not evaluation owner");
+ const checkpoint=await raw.db.query("agent_execution").withIndex("by_key",q=>q.eq("connection_id",grant._id).eq("key","diverse-growth-checkpoint")).unique();
+ const done=checkpoint?(checkpoint.result as any).next:0;
+ if(done>a.start&&done>=a.start+a.count)return{next:done,replayed:true};if(done!==a.start)throw new Error(`Growth cursor mismatch: ${done}`);
+ const base={user_id:d.user_id,dataset_id:a.datasetId};
+ const accounts=await raw.db.query("ledger_account").withIndex("by_dataset",q=>q.eq("dataset_id",a.datasetId)).collect();
+ const find=(name:string)=>{const r=accounts.find(x=>x.name===name);if(!r)throw new Error(`Fixture account missing: ${name}`);return r;};
+ const banks=[find("Household bills checking · 1042"),find("Household everyday checking · 2098")],cards=[find("Cedar Visa · 5512"),find("Harbor Mastercard · 8844")];
+ const expenseNames=["Groceries and household supplies","Utilities and internet","Auto and life insurance","Fuel and transportation","Dining and entertainment","School and children's activities","Household subscriptions","Medical and dental","Vehicle maintenance","Property insurance"];
+ const expenses=expenseNames.map(find);
+ let income=accounts.find(x=>x.name==="Synthetic historical household earnings");
+ if(!income){if(a.start!==0)throw new Error("Missing fixture income account");const id=await raw.db.insert("ledger_account",{...base,created_at:Date.now(),name:"Synthetic historical household earnings",type:"Income",normal_balance:"Credit",currency:"USD",chart_id:banks[0].chart_id});income=(await raw.db.get(id))!;}
+ const entities=await raw.db.query("entity").withIndex("by_dataset",q=>q.eq("dataset_id",a.datasetId)).collect();
+ const people=["Alex Morgan","Jamie Morgan","Emma Morgan","Noah Morgan"].map(name=>{const p=entities.find(e=>e.display_name===name);if(!p)throw new Error("Fixture person missing");return p;});
+ let incomeMinor=0,expenseMinor=0;
+ for(let i=a.start;i<a.start+a.count;i++){
+  const group=Math.floor(i/6),position=i%6,cycle=Math.floor(group/5844),day=group%5844;
+  const date=new Date(Date.UTC(2010,0,1)+day*86400000).toISOString().slice(0,10);
+  const amounts=[0,1,2,3].map(j=>1000+(group*37+j*191)%9000);
+  const total=amounts.reduce((a,b)=>a+b,0),cardTotal=amounts[2]+amounts[3];
+  const bank=banks[(group+cycle)%2],card=cards[(group+cycle)%2],member=people[(group+cycle)%2];
+  const expenseIndex=position-1,isExpense=position>=1&&position<=4;
+  const category=isExpense?expenses[(group*7+expenseIndex*3+cycle)%expenses.length]:null;
+  const amount=position===0?total:position===5?cardTotal:amounts[expenseIndex];
+  const memo=`Diverse synthetic ${position===0?"household earnings":position===5?"card payment":category!.name} ${i}`,now=Date.now();
+  const eventId=await raw.db.insert("event",{...base,created_at:now,kind:position===0?"HouseholdIncome":position===5?"CardPayment":"Purchase",title:memo,occurred_at:Date.parse(date+"T12:00:00Z"),recorded_at:now,payload_json:"{}"});
+  const journalId=await raw.db.insert("journal_entry",{...base,created_at:now,event_id:eventId,chart_id:bank.chart_id!,memo,status:"posted",accounting_date:date,posted_at:now,recorded_at:now});
+  const lines=position===0?[[bank._id,amount],[income._id,-amount]] as const:position===5?[[card._id,amount],[bank._id,-amount]] as const:[[category!._id,amount],[(position<=2?bank:card)._id,-amount]] as const;
+  if(lines.reduce((n,p)=>n+p[1],0)!==0)throw new Error("Unbalanced fixture");
+  for(const [j,[account_id,minor_units]]of lines.entries()){
+   const postingId=await raw.db.insert("posting",{...base,je_id:journalId,account_id,minor_units,currency:"USD",description:memo});
+   if((isExpense&&j===0)||(position===0&&j===1)){
+    const set=await raw.db.insert("posting_attribution_set",{...base,posting_id:postingId,revision:1,recorded_at:now,actor:d.user_id});
+    const part=await raw.db.insert("posting_attribution",{...base,created_at:now,set_id:set,minor_units,currency:"USD",subject_entity_id:member._id,unclassified:false});
+    const beneficiary=people[(group+cycle+Math.max(expenseIndex,0))%(date<"2018-01-01"?2:4)];
+    await raw.db.insert("attribution_beneficiary",{...base,attribution_id:part,entity_id:beneficiary._id,unassigned:false,share_bps:10000,minor_units});
+   }
+  }
+  if(isExpense)await raw.db.insert("event_affects",{dataset_id:a.datasetId,event_id:eventId,target:{kind:"entity",id:member._id},target_type:"entity",target_id:member._id,meaning:"Recorded spender"});
+  await indexJournal(raw,a.datasetId,journalId);
+  if(position===0)incomeMinor+=amount;else if(isExpense)expenseMinor+=amount;
+ }
+ await raw.db.patch(a.datasetId,{data_revision:(d.data_revision??0)+1});
+ const result={start:a.start,count:a.count,next:a.start+a.count,incomeMinor,expenseMinor};
+ if(checkpoint)await raw.db.patch(checkpoint._id,{result});else await raw.db.insert("agent_execution",{connection_id:grant._id,user_id:d.user_id,dataset_id:a.datasetId,key:"diverse-growth-checkpoint",operation:"evaluation.diverse-growth",input_hash:"synthetic",result,created_at:Date.now()});return result;
+}});
+
+export const unfinished=internalQuery({args:{},handler:async(ctx)=>{
+ isolated();const datasets=await ctx.db.query("dataset").collect();
+ for(const d of datasets.sort((a,b)=>b.created_at-a.created_at))if(d.seed_version&&d.seed_status==="building"){
+  const connection=await ctx.db.query("agent_connection").withIndex("by_user",q=>q.eq("user_id",d.user_id)).first();
+  if(!connection)return{userId:d.user_id,datasetId:d._id};
+ }return null;
+}});
+export const initializeResumable=internalAction({args:{token:v.string()},handler:async(ctx,a):Promise<any>=>{
+ isolated();let base=await ctx.runQuery(makeFunctionReference<"query">("evaluationFixture:unfinished"),{});
+ if(!base){const now=Date.now();const user=await ctx.runMutation(components.betterAuth.adapter.create,{input:{model:"user",data:{name:"Evaluation varied family",email:`evaluation-varied-${now}@example.invalid`,emailVerified:true,createdAt:now,updatedAt:now}}});
+ const datasetId=await ctx.runMutation(makeFunctionReference<"mutation">("sampleData:prepareForOwner"),{userId:user._id});base={userId:user._id,datasetId};}
+ return await ctx.runMutation(makeFunctionReference<"mutation">("evaluationFixture:grant"),{...base,token:a.token});
 }});

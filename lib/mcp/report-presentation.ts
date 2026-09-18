@@ -44,6 +44,11 @@ export function presentReport(
   let text = "";
   if (report.reportType === "timeline") {
     text = `Recorded commitments and events — ${escape(report.from)} through ${escape(report.through)} (${escape(report.timezone)})\n\n`;
+    const filters = report.filters;
+    if (filters) {
+      const labels = [filters.subject ? `Subject: ${filters.subject}` : null, filters.query ? `Matching words: ${filters.query}` : null, filters.direction ? `Direction: ${filters.direction}` : null, filters.status ? `Status: ${filters.status}` : null].filter(Boolean);
+      if (labels.length) text += labels.map(escape).join("; ") + ".\n\n";
+    }
     text += report.items.length
       ? table(
           ["Date", "Item", "Amount", "Meaning"],

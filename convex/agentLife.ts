@@ -577,7 +577,7 @@ export const events = query({
   agent: { operation: "life.events", scope: "data:read" },
   args: {
     from: v.string(),
-    through: v.string(),
+    through: v.optional(v.string()),
     query: v.optional(v.string()),
     kind: v.optional(v.string()),
     entityId: v.optional(v.id("entity")),
@@ -585,16 +585,19 @@ export const events = query({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
-    dateRange(a.from, a.through, 36600);
+    if (a.through) dateRange(a.from, a.through, 36600);
+    else date(a.from);
+    const nextEvent = a.through === undefined;
     const w = await workspace(ctx),
       limit = a.limit ?? 20;
     if (!Number.isInteger(limit) || limit < 1 || limit > 50)
       throw new Error("limit must be 1–50");
     if (a.entityId) await owned(ctx, "entity", a.entityId, w.user._id);
     const lo = Date.parse(a.from) - 86400000,
-      hi = Date.parse(a.through) + 2 * 86400000;
+      hi = a.through ? Date.parse(a.through) + 2 * 86400000 : 8640000000000000;
+    const useSubjectIndex = !!(a.entityId && !a.query && !nextEvent && (await ctx.db.query("event_affects").withIndex("by_target", q => q.eq("target_type", "entity").eq("target_id", a.entityId!)).take(51)).length <= 50);
     const state =
-      !(a.entityId && !a.query) && ctx.scope.legacy && ctx.scope.datasetId
+      !nextEvent && !useSubjectIndex && ctx.scope.legacy && ctx.scope.datasetId
         ? a.cursor
           ? (JSON.parse(a.cursor) as { legacy: boolean; cursor: string | null })
           : { legacy: false, cursor: null }
@@ -606,7 +609,9 @@ export const events = query({
     )
       throw new Error("Invalid event cursor");
     const selectedDataset = state?.legacy ? undefined : ctx.scope.datasetId;
-    const source = a.query
+    const source = nextEvent && ctx.scope.legacy
+      ? ctx.db.query("event").withIndex("by_occurred_at", q => q.gte("occurred_at", lo).lt("occurred_at", hi)).order("asc")
+      : a.query && !nextEvent
       ? ctx.db.query("event").withSearchIndex("search_title", (q) => {
           const s = q
             .search("title", a.query!)
@@ -623,7 +628,7 @@ export const events = query({
                 .gte("occurred_at", lo)
                 .lt("occurred_at", hi),
             )
-            .order("desc")
+            .order(nextEvent ? "asc" : "desc")
         : ctx.db
             .query("event")
             .withIndex("by_dataset_occurred", (q) =>
@@ -632,11 +637,11 @@ export const events = query({
                 .gte("occurred_at", lo)
                 .lt("occurred_at", hi),
             )
-            .order("desc");
+            .order(nextEvent ? "asc" : "desc");
     // A subject-only query must not page through unrelated household transactions.
     // All event links carry the canonical legacy-compatible target_type/target_id fields.
-    const subjectLinks = a.entityId && !a.query
-      ? await ctx.db.query("event_affects").withIndex("by_target", q => q.eq("target_type", "entity").eq("target_id", a.entityId!)).order("desc").paginate({ cursor: a.cursor ?? null, numItems: limit })
+    const subjectLinks = useSubjectIndex
+      ? await ctx.db.query("event_affects").withIndex("by_target", q => q.eq("target_type", "entity").eq("target_id", a.entityId!)).order(nextEvent ? "asc" : "desc").paginate({ cursor: a.cursor ?? null, numItems: limit })
       : null;
     const slice = subjectLinks
       ? { ...subjectLinks, page: (await Promise.all(subjectLinks.page.map(link => ctx.db.get(link.event_id)))).filter((e): e is NonNullable<typeof e> => e !== null) }
@@ -652,7 +657,8 @@ export const events = query({
         e.archived ||
         e.voided_at !== undefined ||
         day < a.from ||
-        day > a.through
+        (a.through && day > a.through) ||
+        (nextEvent && a.query && !matchesText(`${e.title ?? ""} ${e.kind}`, a.query))
       )
         continue;
       if (
@@ -716,9 +722,10 @@ export const events = query({
       nextCursor,
       queryComplete: nextCursor === null,
       datasetCompleteness: "unknown",
-      order: a.query ? "text_relevance" : subjectLinks ? "subject_link_order" : "most_recent_first",
+      order: nextEvent ? "earliest_first" : a.query ? "text_relevance" : subjectLinks ? "subject_link_order" : "most_recent_first",
+      filter: { from: a.from, through: a.through ?? null, query: a.query ?? null, entityId: a.entityId ?? null },
       basis:
-        "Recorded events only; title search uses the text index and subject-only queries use the subject-link index. Follow nextCursor even on empty filtered pages before concluding absence. Projections and obligations use life.timeline.",
+        "Recorded events only. Without through, earliest-first search covers all recorded future dates: the first matching item is the next occurrence; an empty page with a cursor is not absence. Bounded title searches use the text index and bounded subject-only queries use the subject-link index. Follow nextCursor even on empty filtered pages before concluding absence. Projections and obligations use life.timeline.",
     };
   },
 });

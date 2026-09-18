@@ -49,7 +49,7 @@ async function context(
     db: scopedWriter(raw, { userId, datasetId, legacy: false }),
   };
   const registry: Registry = new Map(
-    (await ctx.db.query("sample_record").collect()).map((x) => [
+    (await ctx.db.query("sample_record").withIndex("by_dataset", q => q.eq("dataset_id", datasetId)).collect()).map((x) => [
       x.key,
       x.target,
     ]),
@@ -758,12 +758,12 @@ export async function appendMonth(
     throw new Error("Invalid sample month");
   const { ctx, registry: r, dataset } = await context(raw, userId, datasetId);
   const next = dataset.seed_next_month ?? 0;
+  const month = `2026-${String(monthIndex + 1).padStart(2, "0")}`;
   if (monthIndex < next) {
-    if (next === 9) await enhanceCashAndSubjects(raw, userId, datasetId);
+    await enhanceCashAndSubjects(raw, userId, datasetId, month);
     return { nextMonth: next, ready: next === 9 };
   }
   if (monthIndex !== next) throw new Error("Build sample months in order");
-  const month = `2026-${String(monthIndex + 1).padStart(2, "0")}`;
   const now = Date.now(),
     base = { user_id: userId, created_at: now };
   const e = (key: string) => id(r, key, "entity"),
@@ -1400,7 +1400,7 @@ export async function appendMonth(
     seed_status: monthIndex === 8 ? "ready" : "building",
   });
   await flushScopedWriter(ctx.db);
-  if (monthIndex === 8) await enhanceCashAndSubjects(raw, userId, datasetId);
+  await enhanceCashAndSubjects(raw, userId, datasetId, month);
   return { nextMonth: monthIndex + 1, ready: monthIndex === 8 };
 }
 export const prepare = mutation({
@@ -1488,23 +1488,27 @@ async function enhanceCashAndSubjects(
   raw: MutationCtx,
   userId: string,
   datasetId: Id<"dataset">,
+  requestedMonth?: string,
 ) {
   const { ctx, registry: r, dataset } = await context(raw, userId, datasetId);
-  if (dataset.kind !== "test" || dataset.seed_status !== "ready")
+  if (dataset.kind !== "test" || (!requestedMonth && dataset.seed_status !== "ready"))
     throw new Error("Only a ready fictional test dataset can be enhanced");
   const marker = "cash-subjects-v1";
   if (r.has(marker))
     return { updatedPostings: 0, routes: 0, alreadyApplied: true };
-  const [journals, postings, sets, parts, beneficiaries, tags, routes] =
-    await Promise.all([
-      ctx.db.query("journal_entry").collect(),
-      ctx.db.query("posting").collect(),
-      ctx.db.query("posting_attribution_set").collect(),
-      ctx.db.query("posting_attribution").collect(),
-      ctx.db.query("attribution_beneficiary").collect(),
-      ctx.db.query("tag_assignment").collect(),
-      ctx.db.query("cash_flow_route").collect(),
-    ]);
+  const months = Array.from({ length: 9 }, (_, i) => `2026-${String(i + 1).padStart(2, "0")}`);
+  const month = requestedMonth ?? months.find(m => !r.has(`${marker}:${m}`));
+  if (!month || !months.includes(month)) throw new Error("Invalid sample enrichment month");
+  if (r.has(`${marker}:${month}`)) return { updatedPostings: 0, routes: 0, alreadyApplied: true };
+  const journals = await ctx.db.query("journal_entry").withIndex("by_dataset_date", q => q.eq("dataset_id", datasetId).gte("accounting_date", `${month}-01`).lte("accounting_date", `${month}-31`)).collect();
+  const postings = (await Promise.all(journals.map(j => ctx.db.query("posting").withIndex("by_je", q => q.eq("je_id", j._id)).collect()))).flat();
+  const sets = (await Promise.all(postings.map(p => ctx.db.query("posting_attribution_set").withIndex("by_posting", q => q.eq("posting_id", p._id)).collect()))).flat();
+  const parts = (await Promise.all(sets.map(s => ctx.db.query("posting_attribution").withIndex("by_set", q => q.eq("set_id", s._id)).collect()))).flat();
+  const beneficiaries = (await Promise.all(parts.map(p => ctx.db.query("attribution_beneficiary").withIndex("by_attribution", q => q.eq("attribution_id", p._id)).collect()))).flat();
+  const [tags, routes] = await Promise.all([
+    ctx.db.query("tag_assignment").withIndex("by_dataset", q => q.eq("dataset_id", datasetId)).collect(),
+    ctx.db.query("cash_flow_route").withIndex("by_dataset", q => q.eq("dataset_id", datasetId)).collect(),
+  ]);
   const latest = new Map<string, Doc<"posting_attribution_set">>();
   for (const set of sets)
     if ((latest.get(set.posting_id)?.revision ?? 0) < set.revision)
@@ -1654,7 +1658,7 @@ async function enhanceCashAndSubjects(
       910000,
       [15, 28],
     );
-  for (const o of await ctx.db.query("monetary_obligation").collect())
+  for (const o of await ctx.db.query("monetary_obligation").withIndex("by_dataset", q => q.eq("dataset_id", datasetId)).collect())
     if (o.arrangement_id === id(r, "remodel-contract", "arrangement"))
       await saveRoute(
         { kind: "monetary_obligation", id: o._id },
@@ -1662,14 +1666,16 @@ async function enhanceCashAndSubjects(
       );
   await ctx.db.insert("sample_record", {
     user_id: userId,
-    key: marker,
+    key: `${marker}:${month}`,
     target: {
       kind: "chart_of_accounts",
       id: id(r, "chart-household", "chart_of_accounts"),
     },
   });
+  const complete = months.every(m => m === month || r.has(`${marker}:${m}`));
+  if (complete) await ctx.db.insert("sample_record", { user_id: userId, key: marker, target: { kind: "chart_of_accounts", id: id(r, "chart-household", "chart_of_accounts") } });
   await flushScopedWriter(ctx.db);
-  return { updatedPostings, routes: routeCount, alreadyApplied: false };
+  return { updatedPostings, routes: routeCount, alreadyApplied: false, complete };
 }
 export const enhanceForOwner = internalMutation({
   args: { userId: v.string(), datasetId: v.id("dataset") },

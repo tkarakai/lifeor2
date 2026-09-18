@@ -1,8 +1,13 @@
 /** Resume synthetic history growth on the isolated evaluation deployment only. */
 import { readFile, appendFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+const option = (name: string, fallback: string) => process.argv.find(a => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=") ?? fallback;
+const variant = option("variant", "standard");
+if (!["standard", "diverse"].includes(variant)) throw new Error("Unknown fixture variant");
+const credential = option("credentials", "credentials.json");
+if (!/^[a-z-]+\.json$/.test(credential)) throw new Error("Use a simple credential filename");
 const root = new URL("../../.convex/query-evaluation/", import.meta.url),
-  creds = JSON.parse(await readFile(new URL("credentials.json", root), "utf8"));
+  creds = JSON.parse(await readFile(new URL(credential, root), "utf8"));
 const env = { ...process.env };
 for (const k of [
   "CONVEX_DEPLOYMENT",
@@ -19,7 +24,7 @@ for (const line of (
 }
 if (env.CONVEX_SELF_HOSTED_URL !== "http://127.0.0.1:3340")
   throw new Error("Refusing non-evaluation backend");
-const log = new URL("growth.jsonl", root);
+const log = new URL(`${variant === "diverse" ? "diverse-" : ""}growth.jsonl`, root);
 let history: any[] = [];
 try {
   history = (await readFile(log, "utf8"))
@@ -42,7 +47,7 @@ while (start < target) {
           "node_modules/.bin/convex",
           [
             "run",
-            "evaluationFixture:grow",
+            variant === "diverse" ? "evaluationFixture:growDiverse" : "evaluationFixture:grow",
             JSON.stringify({ datasetId: creds.datasetId, start, count }),
           ],
           {

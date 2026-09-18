@@ -527,3 +527,47 @@ test("subject event lookup bypasses thousands of unrelated financial events", as
   expect(result.queryComplete).toBe(true);
   expect(result.order).toBe("subject_link_order");
 });
+
+
+test("next appointments are earliest-first without an invented year-end cutoff", async () => {
+  const f = await setup();
+  const person = await f.mutation("entities:create", { kind: "Person", display_name: "Avery" });
+  await f.mutation("agentWrites:recordEvent", { title: "Dental checkup", kind: "Appointment", date: "2028-04-10", time: "10:00", subjects: [{ kind: "entity", id: person }] });
+  const next = await f.mutation("agentWrites:recordEvent", { title: "Dental checkup", kind: "Appointment", date: "2027-02-10", time: "09:00", subjects: [{ kind: "entity", id: person }] });
+  const result = await f.query("agentLife:events", { from: "2026-09-18", entityId: person, query: "dentist" });
+  expect(result.items[0].id).toBe(next.id);
+  expect(result.items[0].date).toBe("2027-02-10");
+  expect(result.order).toBe("earliest_first");
+  expect(result.filter.through).toBeNull();
+});
+
+
+test("next-event ordering merges visible legacy and named default-dataset records", async () => {
+  const f = await setup();
+  const named = await f.mutation("agentWrites:recordEvent", { title: "Dental checkup", kind: "Appointment", date: "2028-04-10", time: "10:00" });
+  const legacy = await f.t.run(async ctx => {
+    await ctx.db.patch(f.datasetId, { is_default: true });
+    const e = (await ctx.db.get(named.id as import("../convex/_generated/dataModel").Id<"event">))!;
+    return ctx.db.insert("event", { user_id: e.user_id, title: "Dental checkup", kind: "Appointment", occurred_at: Date.UTC(2027, 1, 10, 15), recorded_at: 0, payload_json: "{}" });
+  });
+  const result = await f.query("agentLife:events", { from: "2026-09-18", query: "dentist" });
+  expect(result.items.map((e: any) => e.id)).toEqual([legacy, named.id]);
+  expect(result.queryComplete).toBe(true);
+});
+
+
+test("a prolific subject's old transaction links do not bury a current appointment", async () => {
+  const f = await setup(), person = await f.mutation("entities:create", { kind: "Person", display_name: "Avery" });
+  const visit = await f.mutation("agentWrites:recordEvent", { title: "Checkup", kind: "Appointment", date: "2026-09-18", time: "10:00", subjects: [{ kind: "entity", id: person }] });
+  await f.t.run(async ctx => {
+    const original = (await ctx.db.get(visit.id as import("../convex/_generated/dataModel").Id<"event">))!;
+    for (let i = 0; i < 2100; i++) {
+      const id = await ctx.db.insert("event", { user_id: original.user_id, dataset_id: f.datasetId, kind: "Purchase", occurred_at: Date.UTC(2010, 0, 1), payload_json: "{}", recorded_at: 0 });
+      await ctx.db.insert("event_affects", { dataset_id: f.datasetId, event_id: id, target_type: "entity", target_id: person });
+    }
+  });
+  const result = await f.query("agentLife:events", { entityId: person, from: "2026-09-01", through: "2026-09-30" });
+  expect(result.items.map((e: any) => e.id)).toEqual([visit.id]);
+  expect(result.queryComplete).toBe(true);
+  expect(result.order).toBe("most_recent_first");
+});

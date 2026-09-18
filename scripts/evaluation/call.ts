@@ -3,9 +3,11 @@ import {
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { readFile, writeFile } from "node:fs/promises";
+const credential = process.argv[5] ?? "credentials.json";
+if (!/^[a-z-]+\.json$/.test(credential)) throw new Error("Use a simple credential filename");
 const c = JSON.parse(
   await readFile(
-    new URL("../../.convex/query-evaluation/credentials.json", import.meta.url),
+    new URL(`../../.convex/query-evaluation/${credential}`, import.meta.url),
     "utf8",
   ),
 );

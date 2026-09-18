@@ -68,3 +68,22 @@ The source workflow cases also create a new person and a previously missing note
 Preserve failed negative-test writes as evidence. If an operator explicitly reverses a failed isolated test, `verify-writes.ts --allow-corrected-negative` checks the documented original/reversal pair in private `negative-test-reversal.json` and rejects any additional journals. This is validation of compensated state, not a pass for the original model attempt. Ordinary acceptance uses the strict default.
 
 After read acceptance on the large fixture, `scale-write-cases.json` records and reverses explicitly specified bank and credit-card expenses in separate conversations, and reads their effects. Use the main isolated credentials for these cases. Run `bun scripts/evaluation/verify-scale-writes.ts` afterward: the oracle independently reads the four posted journals, checks the original amount and accounts, and requires an exact compensating reversal. This adds four historical journals to the 308,000-journal fixture without changing its net balances. Do not blindly replay this conversation on an already-used fixture.
+
+## Varied household volume fixture
+
+The second isolated owner/dataset keeps the same current sample but generates 307,692 historical journals in six-entry cycles: funding income, two bank-paid purchases, two card charges, and the corresponding card payment. Dates span 2010–2025; amounts, ten expense categories, two checking accounts, two cards, accounting subjects and explicit beneficiaries vary. Each complete cycle leaves bank cash and card debt unchanged. This is a varied transaction-volume workload with independently checkable totals, not a statistically calibrated model of household behavior. Family graph cardinality remains small.
+
+```sh
+python3 scripts/evaluation/setup.py
+python3 scripts/evaluation/provision-diverse.py
+bun scripts/evaluation/grow.ts 308000 --credentials=diverse-credentials.json --variant=diverse
+python3 scripts/evaluation/diverse-oracle.py
+bun scripts/evaluation/benchmark-diverse.ts
+# From lifeor2-client/apps/web, after growth stops:
+bun --env-file=.env.local scripts/eval-life-queries.ts \
+  --credentials=../../../lifeor2/.convex/query-evaluation/diverse-credentials.json \
+  --cases=../../../lifeor2/scripts/evaluation/diverse-cases.json \
+  --output=../../.eval-results/diverse.jsonl
+```
+
+Provisioning checkpoints each month and resumes an unfinished isolated sample. Sample enrichment now runs by month and uses dataset/date indexes: a large neighboring dataset must neither be scanned nor cause the small sample's final transaction to exceed the backend read limit. The original 308,000-journal fixture and the separate edit-workflow fixture remain available.
