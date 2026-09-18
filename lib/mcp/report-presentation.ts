@@ -287,9 +287,10 @@ export function presentReport(
       if (r.hypothetical.length)
         text += "Additional one-off movements (not saved as records):\n\n" +
           table(
-            ["Date", "Label", "Signed amount"],
+            ["Date", "Account", "Label", "Signed amount"],
             r.hypothetical.map((c: any) => [
               c.date,
+              r.accounts.find((a: any) => a.id === c.accountId)?.name ?? c.accountId,
               c.label,
               amount(c.amount, r.currency),
             ]),

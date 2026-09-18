@@ -307,3 +307,14 @@ test('ordinary period views expose net profit and its peak without requiring a s
  expect(text).toContain('| 2025 | Net recorded income | Income less expenses | 5.00 USD |');
  expect(text).toContain('| 2026 | Net recorded income | Income less expenses | 50.00 USD |');
 });
+
+test("one-off scenario assumptions identify the affected account explicitly", () => {
+  const text = presentReport({ reportType: "cash", from: "2026-09-18", through: "2026-10-31", basis: "Hypothetical only", reports: [{
+    currency: "USD", opening: "4000.00", projectedClosing: "3800.00", lowestProjected: "3800.00", lowestDate: "2026-10-10", firstNegativeDate: null,
+    baselineClosing: "4000.00", hypotheticalClosingChange: "-200.00", issues: [],
+    accounts: [{ id: "bills", name: "Bills checking", projectedClosing: "800.00", lowestProjected: "800.00" }, { id: "everyday", name: "Everyday checking", projectedClosing: "3000.00", lowestProjected: "3000.00" }],
+    hypothetical: [{ date: "2026-10-10", accountId: "bills", label: "Extra spending", amount: "-200.00" }],
+  }] });
+  expect(text).toContain("| Date | Account | Label | Signed amount |");
+  expect(text).toContain("| 2026-10-10 | Bills checking | Extra spending | -200.00 USD |");
+});
