@@ -25,6 +25,7 @@ export type FinancePage = {
   scope?: string[];
   sampleActualsThrough?: string | null;
   revision: number;
+  versioned?: boolean;
   rows: FinanceRow[];
   nextCursor: string | null;
   examinedJournals: number;
@@ -56,6 +57,7 @@ export function mergeRows(target: Map<string, FinanceRow>, rows: FinanceRow[]) {
 export async function collectFinance(
   query: (cursor?: string) => Promise<FinancePage>,
   maxPages = 10000,
+  requireVersioned = false,
 ) {
   const rows = new Map<string, FinanceRow>(),
     warnings = new Set<string>(),
@@ -71,6 +73,7 @@ export async function collectFinance(
         "QUERY_LIMIT: report exceeds scan budget. Narrow the period; no partial total is supplied.",
       );
     const p = await query(cursor);
+    if (requireVersioned && p.versioned !== true) throw new Error("PINNED_SNAPSHOT_REQUIRED");
     first ??= p;
     if (p.revision !== first.revision)
       throw new Error(

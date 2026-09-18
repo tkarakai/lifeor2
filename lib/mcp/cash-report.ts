@@ -43,6 +43,7 @@ export async function cashReport(
     },
     snapshot,
   );
+  if (input.revision !== summary.revision) throw new Error("DATA_CHANGED: cash projection inputs changed during the balance query. Retry; no mixed-version projection was supplied.");
   const full = await readReport(scope, summary.reportId),
     rows = full.report.rows as typeof summary.rows;
   const requested = args.accountIds as string[] | undefined;

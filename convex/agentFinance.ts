@@ -117,6 +117,7 @@ export const summary = query({
       return {
         ...(await indexedSummary(ctx, a, from, dataset.data_revision ?? 0)),
         scope,
+        versioned: !!dataset && !ctx.scope.legacy,
         sampleActualsThrough: dataset.seed_as_of ?? null,
       };
     const journals = ctx.scope.legacy
@@ -315,6 +316,7 @@ export const summary = query({
       scope,
       sampleActualsThrough: dataset?.seed_as_of ?? null,
       revision: dataset?.data_revision ?? 0,
+      versioned: !!dataset && !ctx.scope.legacy,
       rows: [...rows.values()],
       nextCursor: slice.isDone ? null : slice.continueCursor,
       examinedJournals: slice.page.length,
@@ -421,7 +423,9 @@ async function indexedSummary(
               .gte("date", from)
               .lte("date", a.through),
           );
-  const slice = await source.paginate({ cursor: state.cursor, numItems: 1500 });
+  // Leave room for reference/attribution reads under the 4096-document query budget.
+  // Larger bounded pages amortize authentication and reference reads over long histories.
+  const slice = await source.paginate({ cursor: state.cursor, numItems: 2500 });
   const nextCursor = !slice.isDone
     ? JSON.stringify({ index: state.index, cursor: slice.continueCursor })
     : !a.eventKind && candidates && state.index + 1 < candidates.length

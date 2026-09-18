@@ -1,6 +1,6 @@
 import { ConvexHttpClient } from "convex/browser";
 import { makeFunctionReference } from "convex/server";
-import { financialReport } from "./financial-report";
+import { baseFinancialReport as financialReport } from "./financial-report";
 import { saveReport, readReport } from "./report-store";
 import { agentDetails } from "./details";
 export async function projectReport(
@@ -46,6 +46,7 @@ export async function projectReport(
     },
     snapshot,
   );
+  if (inputs.revision !== actuals.revision) throw new Error("DATA_CHANGED: project inputs changed during the financial query. Retry; no mixed-version project totals were supplied.");
   const completeActuals = (await readReport(scope, actuals.reportId)).report;
   const service = agentDetails(
       token,

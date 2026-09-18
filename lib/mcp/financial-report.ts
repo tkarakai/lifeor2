@@ -21,9 +21,9 @@ export async function financialReport(
     if (!comparison || typeof comparison.from !== "string" || typeof comparison.through !== "string")
       throw new Error("Specify both baseline comparison dates: from and through");
     const { comparison: _comparison, ...currentArgs } = args;
-    const snapshot = snapshotClient ?? new ConvexHttpClient(client.url);
-    const current = await baseFinancialReport(client, token, scope, currentArgs, snapshot);
-    const baseline = await baseFinancialReport(client, token, scope, { ...currentArgs, from: comparison.from, through: comparison.through }, snapshot);
+    const current = await baseFinancialReport(client, token, scope, currentArgs, snapshotClient);
+    const baseline = await baseFinancialReport(client, token, scope, { ...currentArgs, from: comparison.from, through: comparison.through }, snapshotClient);
+    if (current.revision !== baseline.revision) throw new Error("DATA_CHANGED: records changed between comparison periods. Retry; no mixed-version comparison was supplied.");
     const currentFull = (await readReport(scope, current.reportId)).report;
     const baselineFull = (await readReport(scope, baseline.reportId)).report;
     const result = {
@@ -48,21 +48,36 @@ export async function baseFinancialReport(
 ) {
   const { cursor: _cursor, ...input } = args;
   const start = Date.now();
-  // Fresh per-report snapshot: normal indexed queries finish well within the
-  // backend's 30-second historical read window. Slow legacy scans fail closed.
+  // A monotonic dataset revision is read in the same transaction as each page.
+  // Equal revisions on every page establish one data version without holding an
+  // experimental backend timestamp past its short retention window. Legacy
+  // scopes without revision coverage still require a pinned snapshot.
   const snapshot = snapshotClient ?? new ConvexHttpClient(client.url);
-  const report = await collectFinance(async (cursor) => {
+  const collect = (pinned: boolean) => collectFinance(async (cursor) => {
     if (Date.now() - start > 150_000)
-      throw new Error(
-        "QUERY_LIMIT: report exceeded 150 seconds. Narrow the period; no partial total was supplied.",
-      );
-    return (await snapshot.consistentQuery(
-      makeFunctionReference<"query">("agentFinance:summary"),
-      { ...input, agentToken: token, ...(cursor ? { cursor } : {}) },
-    )) as FinancePage;
-  });
+      throw new Error("QUERY_LIMIT: report exceeded 150 seconds. Narrow the period; no partial total was supplied.");
+    const query = makeFunctionReference<"query">("agentFinance:summary");
+    const parameters = { ...input, agentToken: token, ...(cursor ? { cursor } : {}) };
+    return (await (pinned ? snapshot.consistentQuery(query, parameters) : client.query(query, parameters))) as FinancePage;
+  }, 10000, !pinned);
+  let consistency = snapshotClient ? "pinned_snapshot" : "dataset_revision";
+  let report;
+  try {
+    report = await collect(!!snapshotClient);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "PINNED_SNAPSHOT_REQUIRED" && !snapshotClient) {
+      consistency = "pinned_snapshot";
+      report = await collect(true);
+    } else if (snapshotClient && /InternalServerError|Timestamp.*too early|out_of_retention/.test(message)) {
+      // Compound callers also compare this revision with their planning inputs.
+      consistency = "dataset_revision";
+      report = await collect(false);
+    } else throw error;
+  }
   const result = {
     reportType: "financial",
+    consistency,
     ...report,
     rows: report.rows.map((r) => ({
       period: r.period,

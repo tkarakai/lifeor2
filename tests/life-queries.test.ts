@@ -55,6 +55,8 @@ test("context identifies the sample by metadata, uses local calendar and resolve
   expect(c.timezone).toBe("America/Chicago");
   expect(c.defaultHousehold.name).toBe("Morgan family");
   expect(c.sampleActualsThrough).toBeTruthy();
+  const financial = await query("agentFinance:summary", { scope: "household", metric: "income", from: "2026-08-01", through: "2026-08-31" });
+  expect(financial.versioned).toBe(true);
 });
 test("upcoming month excludes settled claims, deduplicates remodel, and retains overdue due date", async () => {
   const r = await query("agentTimeline:timeline", {

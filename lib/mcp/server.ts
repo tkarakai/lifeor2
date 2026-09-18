@@ -1,3 +1,4 @@
+import { matchesText, queryTerms } from "../../convex/lib/lifeQueries/text";
 import { commitmentReport } from "./commitment-report";
 import { documentPage } from "./document-page";
 import { timelineReport } from "./timeline-report";
@@ -376,7 +377,7 @@ export function createAgentServer(token: string, grant: Grant) {
     scope: "data:read",
     title: "Search source notes",
     description:
-      "Search words in the dataset's Markdown documents. Returns bounded excerpts with target IDs and immutable commits; use details.revision to inspect the cited version. All query words must match. Follow nextOffset before concluding absence.",
+      "Search words in the dataset's Markdown documents. Returns bounded excerpts with target IDs and immutable commits; use details.revision to inspect the cited version. All normalized query words must match (common plurals and domain synonyms are equivalent). Follow nextOffset before concluding absence.",
     inputSchema: schema(
       {
         datasetId: dataset,
@@ -404,7 +405,6 @@ export function createAgentServer(token: string, grant: Grant) {
           false,
           grant.connectionId,
         ),
-        words = String(a.query).toLowerCase().split(/\s+/).filter(Boolean),
         items = [],
         unavailable = [];
       for (const locator of locators.items) {
@@ -413,9 +413,9 @@ export function createAgentServer(token: string, grant: Grant) {
           unavailable.push(locator.id);
           continue;
         }
-        const lower = doc.source.toLowerCase();
-        if (!words.every((w) => lower.includes(w))) continue;
-        const at = lower.indexOf(words[0]),
+        if (!matchesText(doc.source, String(a.query))) continue;
+        const terms = new Set(queryTerms(String(a.query)));
+        const at = [...doc.source.matchAll(/[\p{L}\p{N}]+/gu)].find(m => queryTerms(m[0]).some(t => terms.has(t)))?.index ?? 0,
           start = Math.max(0, at - 120);
         items.push({
           documentId: locator.id,

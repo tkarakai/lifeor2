@@ -14,7 +14,7 @@ bun scripts/evaluation/call.ts datasets.saveSampleDocuments '{}'
 bun scripts/evaluation/provision-writes.ts
 ```
 
-The base family has 308 journals. Growth is resumable and restricted to the isolated URL. Keep growth stopped while measuring final values and latency.
+The base family has 308 journals. Growth is resumable and restricted to the isolated URL. Keep growth stopped while measuring final values and latency. Financial reports reject changed dataset revisions instead of returning totals assembled during an import. Named-dataset reads do not depend on the short retention period of a pinned backend timestamp; legacy unversioned scopes still require a pinned snapshot.
 
 ```sh
 bun scripts/evaluation/grow.ts 3080
@@ -87,3 +87,5 @@ bun --env-file=.env.local scripts/eval-life-queries.ts \
 ```
 
 Provisioning checkpoints each month and resumes an unfinished isolated sample. Sample enrichment now runs by month and uses dataset/date indexes: a large neighboring dataset must neither be scanned nor cause the small sample's final transaction to exceed the backend read limit. The original 308,000-journal fixture and the separate edit-workflow fixture remain available.
+
+`followup-write-cases.json` checks direct clarification, a next-year appointment, and a fall-back-clock edit that must remain uncommitted until the user distinguishes the repeated local time. Run it after the person/note suite on the same isolated write fixture, then run `verify-future-appointment.ts`. The oracle requires exactly the original next-year occurrence with no correction from the ambiguous request.
