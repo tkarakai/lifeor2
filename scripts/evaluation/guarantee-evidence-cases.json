@@ -1,0 +1,8 @@
+[
+  {
+    "id": "guarantee-evidence",
+    "mode": "read",
+    "question": "Show the Cedar Lane remodel project report and our household cash forecast through November 30, 2026. Also explain whether those records can guarantee on-time completion or that we will never run short of money.",
+    "expected": "Both verified reports: capital55000,cashpaid40000,debt15000,unincurred30000; cashclosing68678.11,min64128.11. Explicitly explain recorded plans cannot establish or guarantee completion timing and forecast is not an affordability guarantee. No writes."
+  }
+]
