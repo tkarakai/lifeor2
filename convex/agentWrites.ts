@@ -246,15 +246,18 @@ export const recordExpense = mutation({
         w.user._id,
       ),
       amount = parseMoney(a.amount, a.currency);
+    const financialAccount = await ctx.db.query("financial_account")
+      .withIndex("by_ledger", q => q.eq("ledger_account_id", cash._id)).unique();
+    const creditCard = cash.type === "Liability" && !financialAccount?.archived && financialAccount?.kind.toLowerCase().replace(/[\s-]+/g, "_") === "credit_card";
     if (
       amount <= 0 ||
       expense.type !== "Expense" ||
-      cash.type !== "Asset" ||
+      (cash.type !== "Asset" && !creditCard) ||
       cash.chart_id !== expense.chart_id ||
       !cash.chart_id
     )
       throw new Error(
-        "Use a positive amount, an expense account and an asset payment account in the same chart",
+        "Use a positive amount, an expense account and an asset payment account or designated credit card in the same chart",
       );
     if (a.subjectId) await owned(ctx, "entity", a.subjectId, w.user._id);
     const eventId = await ctx.db.insert("event", {
@@ -308,8 +311,9 @@ export const recordExpense = mutation({
       currency: a.currency,
       date: a.date,
       status: "posted",
-      basis:
-        "Expense debited; selected asset payment account credited. Use a reversal for corrections.",
+      basis: creditCard
+        ? "Expense debited; selected credit-card liability credited. This records a card charge, not a payment from bank cash. Use a reversal for corrections."
+        : "Expense debited; selected asset payment account credited. Use a reversal for corrections.",
     };
   },
 });

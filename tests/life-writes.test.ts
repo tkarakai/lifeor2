@@ -492,3 +492,38 @@ test("measurement lookup pages by date/subject, retains old owner references, an
   } while (cursor);
   expect(values).toEqual(["170", "169"]);
 }, 30000);
+
+test("card expenses increase designated card debt, leave cash untouched, and reverse exactly", async () => {
+  const f = await setup(), chart = await f.mutation("finance:createChart", { name: "Household" });
+  const account = (name: string, type: string) => f.mutation("finance:createAccount", {
+    chartId: chart, name, type, normal_balance: type === "Liability" ? "Credit" : "Debit", currency: "USD",
+  });
+  const [card, mortgage, expense] = await Promise.all([account("Card", "Liability"), account("Mortgage", "Liability"), account("Groceries", "Expense")]);
+  const arrangement = await f.mutation("arrangements:create", { kind: "Banking", name: "Card agreement", valid_from: 0 });
+  await f.mutation("finance:createFinancialAccount", { arrangement_id: arrangement, ledger_account_id: card, kind: "credit_card", currency: "USD" });
+  const args = { date: "2026-09-18", amount: "42.50", currency: "USD", paidFromAccountId: card, expenseAccountId: expense, memo: "Card receipt" };
+  await expect(f.mutation("agentWrites:recordExpense", { ...args, paidFromAccountId: mortgage })).rejects.toThrow("designated credit card");
+  const created = await f.mutation("agentWrites:recordExpense", args);
+  expect(created.basis).toContain("not a payment from bank cash");
+  const postings = await f.t.run(ctx => ctx.db.query("posting").withIndex("by_je", q => q.eq("je_id", created.journalId)).collect());
+  expect(postings.map(p => [p.account_id, p.minor_units])).toEqual(expect.arrayContaining([[expense, 4250], [card, -4250]]));
+  expect(postings).toHaveLength(2);
+  await f.mutation("finance:reverseJournalEntry", { jeId: created.journalId, accounting_date: "2026-09-18", reason: "Duplicate" });
+  const summary = await f.query("agentFinance:summary", { metric: "expenses", from: "2026-09-18", through: "2026-09-18" });
+  expect(summary.rows.reduce((n: number, r: any) => n + r.minorUnits, 0)).toBe(0);
+});
+
+
+test("subject event lookup bypasses thousands of unrelated financial events", async () => {
+  const f = await setup();
+  const car = await f.mutation("entities:create", { kind: "Car", display_name: "Test car" });
+  const visit = await f.mutation("agentWrites:recordEvent", { title: "Oil service", kind: "Maintenance", date: "2026-01-10", time: "09:00", subjects: [{ kind: "entity", id: car }] });
+  await f.t.run(async ctx => {
+    const original = (await ctx.db.get(visit.id as import("../convex/_generated/dataModel").Id<"event">))!;
+    for (let i = 0; i < 2100; i++) await ctx.db.insert("event", { user_id: original.user_id, dataset_id: f.datasetId, kind: "Purchase", title: "Unrelated purchase", occurred_at: Date.UTC(2026, 5, 1), payload_json: "{}", recorded_at: 0, created_at: 0 });
+  });
+  const result = await f.query("agentLife:events", { entityId: car, from: "2026-01-01", through: "2026-12-31" });
+  expect(result.items.map((e: any) => e.id)).toEqual([visit.id]);
+  expect(result.queryComplete).toBe(true);
+  expect(result.order).toBe("subject_link_order");
+});

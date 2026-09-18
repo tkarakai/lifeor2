@@ -82,13 +82,13 @@ const descriptions: Record<string, string> = {
   "records.changeSchedule":
     "Change a recurring commitment's amount, day of month or end date from an effective civil date. Read the current schedule revision first. Decimal amount is major currency units. Existing terms and later changes are preserved; old debts/payments and separate cash routes are unchanged. Never use for a hypothetical question.",
   "records.recordExpense":
-    "Record a paid expense as a balanced posted journal. Decimal amount is major currency units. Resolve explicit expense and asset payment accounts in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
+    "Record a cash/bank expense or credit-card charge as a balanced posted journal. Decimal amount is major currency units. Resolve an explicit expense account and asset payment account or designated credit-card liability in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. A card charge increases the selected card liability without reducing bank cash. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
   "life.events":
     "Find specific recorded events/appointments by title words, kind, subject and inclusive dates. Date-only queries are newest first; title searches are relevance ranked. Compact pages with exact timestamps and timezone. Follow cursors even on empty pages. Prefer this to listing raw events; use life.timeline for upcoming commitments.",
   "life.context":
     "Get dataset timezone, current local date, default household, charts and coverage. Use for unspecified dates or family scope.",
   "life.search":
-    "Find identities by name: people, household, organizations, arrangements/projects, ledger accounts, tags and schedules. Compact results with unique/ambiguous status. Empty query lists available identities. Do not guess IDs.",
+    "Find identities by name: people, household, organizations, arrangements/projects, ledger accounts, tags and schedules. Compact results with unique/ambiguous status. Empty query lists available identities; entityType optionally filters entity kinds such as Car or Person without matching company names. Do not guess IDs.",
   "life.timeline":
     "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in dataset timezone. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. Filter entityId, title query (words and common synonyms), status=overdue/due/expected, or direction=inflow/outflow/transfer relative to entityId or the default household. The complete saved report is available to present; returned items are a preview. Set includeEvents=false for commitments only.",
   "reports.finances":
@@ -96,11 +96,11 @@ const descriptions: Record<string, string> = {
   "life.read":
     "Read a typed record by verified ID before editing. Returns revision and facts. Commitment schedules also include complete current effective periods, decimal amounts, parties, recurrence and revision reason; use this before records.changeSchedule. Use specialized journal detail for postings.",
   "life.relationships":
-    "Who belongs to a family, who works for whom, who owns an asset? Recorded roles and direct ownership, optionally asOf date, entity or arrangement. No inferred beneficial ownership.",
+    "Read direct roles and ownership, including the other named participants of each matched arrangement. Filter by entityId, arrangementId, role words (Owner, Tenant, Employee), arrangementQuery words, and optional asOf civil date. Complete participant lists avoid extra entity/arrangement lookups. No inferred kinship, beneficial ownership or consolidation.",
   "life.history":
     "Read recorded revisions and effective dates for an entity, arrangement or commitment schedule. Use for changes over time; revision history is different from transaction history.",
   "life.measurements":
-    "Find recorded measurements/valuations for a subject in an inclusive date range. Filter name with query. Preserves units and assertion types, excludes superseded measurements.",
+    "Find recorded measurements/valuations through an inclusive cutoff date. Omit from to include all recorded history for an as-of question; do not guess progressively earlier start dates. Optional from narrows the interval. Filter measurement name with query (value also matches valuation/appraisal), or subjectId. Returns subject names, units, assertion types and dates; excludes superseded records. A complete empty result is no matching recorded evidence, not a reason to try synonyms.",
   "life.documents":
     "List source document targets in the selected dataset. Prefer notes.search to search text, details.read to read one verified target.",
   "agentQueries.searchEntities":

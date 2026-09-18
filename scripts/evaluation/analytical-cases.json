@@ -2,13 +2,24 @@
   {
     "id": "compare-groceries",
     "question": "Did our household grocery and household-supplies spending increase from July to August 2026? Show both totals, the dollar change and percentage change.",
-    "mode": "read", "required": ["1046", "1057", "11.00", "1.05"],
+    "mode": "read",
+    "required": [
+      "1046",
+      "1057",
+      "11.00",
+      "1.05"
+    ],
     "expected": "Same household grocery scope in both periods: July $1046 baseline, August $1057 current, increase $11 and 1.05%, computed by the server."
   },
   {
     "id": "compare-payroll-partial",
-    "question": "Compare Alex Morgan's recorded take-home cash for September 1–16, 2026 with all of August 2026. Show the difference and percentage, but do not extrapolate the incomplete September period.",
-    "mode": "read", "required": ["4550", "9100", "50.00"],
+    "question": "Compare Alex Morgan's recorded take-home cash for September 1\u201316, 2026 with all of August 2026. Show the difference and percentage, but do not extrapolate the incomplete September period.",
+    "mode": "read",
+    "required": [
+      "4550",
+      "9100",
+      "50.00"
+    ],
     "expected": "Explicit unequal periods: $4550 current vs $9100 baseline, difference -$4550 (-50%). Not a pay cut or full-month estimate. Gross stays separate."
   },
   {
@@ -20,7 +31,77 @@
   {
     "id": "historical-remodel-debt",
     "question": "For the Cedar Lane remodel, how much had we incurred, paid, and still owed as of September 11, 2026? Be careful not to include a later payment.",
-    "mode": "read", "required": ["55000", "25000", "30000"],
+    "mode": "read",
+    "required": [
+      "55000",
+      "25000",
+      "30000"
+    ],
     "expected": "September 11 historical cutoff: incurred/capitalized $55000, paid $25000, debt $30000. September 12's $15000 payment must not reduce the historical debt."
+  },
+  {
+    "id": "top-five-categories",
+    "question": "What were our five largest household expense categories in August 2026, in descending order?",
+    "mode": "read",
+    "required": [
+      "3900",
+      "3815.31",
+      "3430",
+      "1057",
+      "680"
+    ],
+    "expected": "Rank before limiting: payroll withholding/benefits $3900, mortgage interest $3815.31, property insurance $3430, groceries $1057, school/children activities $680. Keep all-category total distinct from the ranked page."
+  },
+  {
+    "id": "most-profitable-year",
+    "question": "Which year from 2010 through 2025 had the highest recorded net income for Juniper Design LLC, after expenses? Show the winning year and its net amount.",
+    "mode": "read",
+    "required": [
+      "2018",
+      "75.00"
+    ],
+    "expected": "2018 has $75 net; every other synthetic historical year nets zero. Rank net income, not gross revenue or alphabetical year, across the complete 308000-journal fixture."
+  },
+  {
+    "id": "euro-recovery-final",
+    "question": "How much did Alex Morgan earn in euros during June\u2013August 2026?",
+    "mode": "read",
+    "expected": "Use the focused financial report with EUR, no recorded matches, no currency conversion, no superseded income tool."
+  },
+  {
+    "id": "business-ownership-final",
+    "question": "Which companies does Alex Morgan own, according to recorded relationships?",
+    "required": [],
+    "expected": "Alex owns Morgan Software, Jamie owns Juniper; roles and direct interests not automatically beneficiary income.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "vehicles-final",
+    "question": "What cars are recorded for our family?",
+    "required": [
+      "Honda",
+      "Subaru",
+      "Toyota"
+    ],
+    "expected": "Search entity kinds/names, not payments only; don\u2019t invent current condition.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "valuations-final",
+    "question": "What recorded property valuations do we have as of September 16, 2026, and what are their dates?",
+    "required": [],
+    "expected": "Preserve measurement units, assertion type and measurement date; do not replace valuations with ledger carrying values.",
+    "mode": "read",
+    "phase": "core"
+  },
+  {
+    "id": "maintenance-final",
+    "question": "Find recorded maintenance or service visits for the Honda Civic in 2026.",
+    "required": [],
+    "expected": "Indexed event search and appropriate subject filter; no full event-table dump.",
+    "mode": "read",
+    "phase": "core"
   }
 ]

@@ -246,3 +246,29 @@ test("household and category filters cannot silently include company books", asy
   );
   expect(none.rows).toEqual([]);
 });
+
+
+test("focused relationship results include verified counterpart roles and honor local civil dates", async () => {
+  const alex = (await query("agentLife:search", { query: "Alex", kind: "entity" })).items[0].id;
+  const result = await query("agentLife:relationships", { entityId: alex, role: "Owner", arrangementQuery: "Morgan Software", asOf: "2026-09-18" });
+  expect(result.asOf).toBe("2026-09-19T04:59:59.999Z");
+  expect(result.itemsComplete).toBe(true);
+  expect(result.items).toHaveLength(1);
+  expect(result.items[0].role).toBe("Owner");
+  expect(result.items[0].participantsComplete).toBe(true);
+  expect(result.items[0].participants.some((p: any) => p.entity.name === "Morgan Software LLC")).toBe(true);
+  const cars = await query("agentLife:search", { query: "", kind: "entity", entityType: "Car" });
+  expect(cars.items.map((r: any) => r.name).sort()).toEqual(["2016 Subaru Outback", "2018 Honda Civic", "2022 Toyota Highlander"]);
+});
+
+
+test("as-of measurements search all history without guessed start dates and name their subjects", async () => {
+  const found = await query("agentLife:measurements", { through: "2026-09-16", query: "principal", limit: 50 });
+  expect(found.queryComplete).toBe(true);
+  expect(found.items.length).toBeGreaterThan(0);
+  expect(found.items.every((m: any) => m.subject.name && m.assertion === "contractual")).toBe(true);
+  const empty = await query("agentLife:measurements", { through: "2026-09-16", query: "valuation", limit: 50 });
+  expect(empty.items).toEqual([]);
+  expect(empty.queryComplete).toBe(true);
+  expect(empty.filter.from).toBe("all recorded history");
+});

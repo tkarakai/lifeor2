@@ -1,6 +1,7 @@
 /** Small domain vocabulary for lexical retrieval, not question-specific routing. */
 const aliases: Record<string, string> = {
   valuation: "value",
+  appraisal: "value",
   paycheck: "payroll",
   paycheque: "payroll",
   salary: "payroll",

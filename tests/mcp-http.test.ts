@@ -190,6 +190,15 @@ test("read-only discovery hides writes and direct tool calls return a scope chal
     'scope="data:write"',
   );
 });
+test("missing report handles return a recoverable scoped error without filesystem details", async () => {
+  const body = await (await handleMcp(request("tools/call", {
+    name: "reports.read", arguments: { datasetId: "dataset", reportId: "00000000-0000-0000-0000-000000000000" },
+  }))).json();
+  expect(body.result.isError).toBe(true);
+  expect(body.result.structuredContent.error).toMatchObject({ code: "report_unavailable" });
+  expect(body.result.structuredContent.error.message).toContain("fresh report");
+  expect(JSON.stringify(body)).not.toContain(".convex/");
+});
 test("tool calls validate schemas and inject credentials outside model arguments", async () => {
   const bad = await (
     await handleMcp(

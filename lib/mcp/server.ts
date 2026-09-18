@@ -268,6 +268,7 @@ export function createAgentServer(token: string, grant: Grant) {
         reportIds: { type: "array", items: text, minItems: 1, maxItems: 4 },
         offset: { type: "integer", minimum: 0 },
         limit: { type: "integer", minimum: 1, maximum: 200 },
+        order: { type: "string", enum: ["amount_desc", "amount_asc"], description: "For largest/smallest amounts in a single-currency financial report. by_account ranks categories; by_period ranks periods (profit_loss ranks net income). Apply limit after ranking." },
         view: {
           type: "string",
           enum: ["summary", "by_period", "by_account", "full"],
@@ -297,6 +298,7 @@ export function createAgentServer(token: string, grant: Grant) {
             a.view as never,
             a.offset as number | undefined,
             a.limit as number | undefined,
+            a.order as "amount_desc" | "amount_asc" | undefined,
           ) + `\n\nReport \`${id}\` · snapshot ${saved.snapshotAt}`,
         );
       }

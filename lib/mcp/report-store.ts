@@ -8,6 +8,7 @@ import {
 } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
+import { QueryError } from "./query-error";
 const TTL = 24 * 60 * 60 * 1000;
 type Scope = { userId: string; connectionId: string; datasetId: string };
 function directory(scope: Scope) {
@@ -67,11 +68,15 @@ export async function readReport(scope: Scope, reportId: string) {
       reportId,
     )
   )
-    throw new Error("Unknown report");
-  const data = JSON.parse(
-    await readFile(path.join(directory(scope), reportId + ".json"), "utf8"),
-  );
+    throw new QueryError("report_unavailable", "Unknown report. Use a returned reportId, or run a fresh report query.");
+  let source: string;
+  try { source = await readFile(path.join(directory(scope), reportId + ".json"), "utf8"); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new QueryError("report_unavailable", "Saved report is unavailable in this connection and dataset. Run a fresh report query.");
+    throw error;
+  }
+  const data = JSON.parse(source);
   if (data.expiresAt < Date.now())
-    throw new Error("Report expired. Run a fresh query.");
+    throw new QueryError("report_expired", "Report expired. Run a fresh query.");
   return data as { snapshotAt: string; report: Record<string, unknown> };
 }

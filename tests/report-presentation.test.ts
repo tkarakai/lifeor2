@@ -249,3 +249,36 @@ test("recurring terms and hypothetical changes preserve dates and compute labels
   expect(text).toContain("150.00 USD per monthly period");
   expect(text).toContain("300.00 USD per recurrence (monthly, interval 2)");
 });
+
+test("ranked financial views sort exact amounts before limiting and never rank unlike currencies", () => {
+  const report = {
+    reportType: "financial", metric: "expenses", from: "2026-08-01", through: "2026-08-31",
+    totals: [{ type: "Expense", currency: "USD", amount: "12.00" }],
+    rows: [
+      { period: "2026-08", account: "Alpha", type: "Expense", currency: "USD", amount: "2.00" },
+      { period: "2026-08", account: "Beta", type: "Expense", currency: "USD", amount: "10.00" },
+    ], basis: "Recorded expenses", coverage: "Fixture",
+  };
+  const text = presentReport(report, "by_account", 0, 1, "amount_desc");
+  expect(text).toContain("| All selected dates | Beta | Expense | 10.00 USD |");
+  expect(text).not.toContain("| All selected dates | Alpha");
+  expect(text).toContain("12.00 USD");
+  expect(text).toContain("of 2");
+  report.rows[1].currency = "EUR";
+  expect(() => presentReport(report, "by_account", 0, 1, "amount_desc")).toThrow("one currency");
+});
+
+test("ranking profit periods uses income minus expenses, not the largest revenue", () => {
+  const text = presentReport({
+    reportType: "financial", metric: "profit_loss", from: "2026-06-01", through: "2026-07-31",
+    profitLoss: [{ currency: "USD", income: "195.00", expense: "100.00", netRecordedIncome: "95.00" }],
+    rows: [
+      { period: "2026-06", account: "Sales", type: "Income", currency: "USD", amount: "100.00" },
+      { period: "2026-06", account: "Costs", type: "Expense", currency: "USD", amount: "80.00" },
+      { period: "2026-07", account: "Sales", type: "Income", currency: "USD", amount: "95.00" },
+      { period: "2026-07", account: "Costs", type: "Expense", currency: "USD", amount: "20.00" },
+    ], basis: "Recorded profit", coverage: "Fixture",
+  }, "by_period", 0, 1, "amount_desc");
+  expect(text).toContain("| 2026-07 | Net recorded income | Income less expenses | 75.00 USD |");
+  expect(text).not.toContain("| 2026-06 | Net recorded income");
+});

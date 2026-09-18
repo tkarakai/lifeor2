@@ -1,5 +1,6 @@
 import { decimal } from "../life-reports/finance";
 import { parseMoney, scale, add } from "../../convex/lib/domain";
+import { QueryError } from "./query-error";
 const escape = (v: unknown) =>
   String(v ?? "")
     .replace(/[\r\n]+/g, " ")
@@ -20,7 +21,12 @@ export function presentReport(
   view: "summary" | "by_period" | "by_account" | "full" = "summary",
   offset = 0,
   limit = 50,
+  order?: "amount_desc" | "amount_asc",
 ) {
+  if (order && (report.reportType !== "financial" || report.metric === "payroll"))
+    throw new QueryError("invalid_report_view", "Amount ranking requires a financial income, expense, cash, balance or profit/loss report; use the appropriate metric first.");
+  if (order && report.metric === "profit_loss" && view !== "by_period")
+    throw new QueryError("invalid_report_view", "Rank profit/loss with view=by_period; the ranked amount is net recorded income per period.");
   if (
     !Number.isInteger(offset) ||
     offset < 0 ||
@@ -408,20 +414,29 @@ export function presentReport(
         }
       >();
       for (const r of rows) {
+        const net = !!order && report.metric === "profit_loss";
         const period = view === "by_account" ? "All selected dates" : r.period,
-          account = view === "by_period" ? r.type : r.account,
-          key = JSON.stringify([period, account, r.type, r.currency]),
+          account = net ? "Net recorded income" : view === "by_period" ? r.type : r.account,
+          type = net ? "Income less expenses" : r.type,
+          key = JSON.stringify([period, account, type, r.currency]),
           old = grouped.get(key) ?? {
             period,
             account,
-            type: r.type,
+            type,
             currency: r.currency,
             minor: 0,
           };
-        old.minor = add(old.minor, parseMoney(r.amount, r.currency));
+        old.minor = add(old.minor, parseMoney(r.amount, r.currency) * (net && r.type === "Expense" ? -1 : 1));
         grouped.set(key, old);
       }
       const entries = [...grouped.values()];
+      if (order) {
+        if (new Set(entries.map(r => r.currency)).size > 1 || new Set(entries.map(r => r.type)).size > 1)
+          throw new QueryError("invalid_report_view", "Amount ranking requires one currency and comparable account types. Select a currency and a focused metric first; no currencies were converted.");
+        entries.sort((a, b) => (a.minor === b.minor ? 0 : a.minor < b.minor ? -1 : 1) * (order === "amount_desc" ? -1 : 1)
+          || a.period.localeCompare(b.period) || a.account.localeCompare(b.account));
+        text += `Details ranked by recorded amount, ${order === "amount_desc" ? "largest" : "smallest"} first. Totals below/above cover all matching records, not just the ranked page.\n\n`;
+      }
       text +=
         table(
           ["Period", "Account/category", "Type", "Recorded amount"],

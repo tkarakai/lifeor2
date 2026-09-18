@@ -2,7 +2,7 @@
   {
     "id": "scale-record-expense",
     "conversation": "scale-expense-correction",
-    "question": "Record a $12.34 USD grocery expense for Alex Morgan paid on September 18, 2026 from Household bills checking · 1042, using the household groceries and household-supplies expense category. Use the memo: Scale acceptance grocery receipt.",
+    "question": "Record a $12.34 USD grocery expense for Alex Morgan paid on September 18, 2026 from Household bills checking \u00b7 1042, using the household groceries and household-supplies expense category. Use the memo: Scale acceptance grocery receipt.",
     "mode": "write",
     "expected": "One balanced posted expense with explicit user-supplied date, amount, currency, payment account, category and person, on the dataset with 308,000 existing journals."
   },
@@ -19,5 +19,26 @@
     "question": "Show the net effect of those two entries on our household grocery expenses for September 18, 2026.",
     "mode": "read",
     "expected": "A fresh household grocery report shows zero net posted expense for that day after the original and its reversal. Do not claim that no entries exist."
+  },
+  {
+    "id": "scale-card-expense",
+    "conversation": "scale-card-correction",
+    "question": "Record a $42.50 USD grocery purchase for Alex Morgan on September 18, 2026 charged to Cedar Visa \u00b7 5512, using the household groceries and household-supplies expense category. Memo: Scale acceptance card receipt.",
+    "mode": "write",
+    "expected": "One balanced expense/card-liability journal, no bank cash reduction. Explicit payment account and amount."
+  },
+  {
+    "id": "scale-card-effect",
+    "conversation": "scale-card-correction",
+    "question": "Show the effect of that charge on our household accounts on September 18, 2026. Did it reduce our bank cash?",
+    "mode": "read",
+    "expected": "42.50 grocery expense and 42.50 increased Cedar Visa liability. Zero change in bank cash. Prior checking expense and reversal net zero."
+  },
+  {
+    "id": "scale-card-reverse",
+    "conversation": "scale-card-correction",
+    "question": "That card receipt was also a duplicate. Reverse just the $42.50 Cedar Visa charge you recorded, dated September 18, 2026, reason Duplicate card receipt. Keep the original history.",
+    "mode": "write",
+    "expected": "Exactly one compensating card journal linked to that 42.50 expense. No other changes."
   }
 ]

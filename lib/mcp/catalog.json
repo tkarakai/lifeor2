@@ -4226,7 +4226,7 @@
   {
     "name": "life.measurements",
     "title": "agentLife: measurements",
-    "description": "Find recorded measurements/valuations for a subject in an inclusive date range. Filter name with query. Preserves units and assertion types, excludes superseded measurements.",
+    "description": "Find recorded measurements/valuations through an inclusive cutoff date. Omit from to include all recorded history for an as-of question; do not guess progressively earlier start dates. Optional from narrows the interval. Filter measurement name with query (value also matches valuation/appraisal), or subjectId. Returns subject names, units, assertion types and dates; excludes superseded records. A complete empty result is no matching recorded evidence, not a reason to try synonyms.",
     "functionName": "agentLife:measurements",
     "kind": "query",
     "scope": "data:read",
@@ -4260,7 +4260,6 @@
         }
       },
       "required": [
-        "from",
         "through",
         "datasetId"
       ],
@@ -4330,7 +4329,7 @@
     "name": "life.relationships",
     "title": "agentLife: relationships",
     "primary": true,
-    "description": "Who belongs to a family, who works for whom, who owns an asset? Recorded roles and direct ownership, optionally asOf date, entity or arrangement. No inferred beneficial ownership.",
+    "description": "Read direct roles and ownership, including the other named participants of each matched arrangement. Filter by entityId, arrangementId, role words (Owner, Tenant, Employee), arrangementQuery words, and optional asOf civil date. Complete participant lists avoid extra entity/arrangement lookups. No inferred kinship, beneficial ownership or consolidation.",
     "functionName": "agentLife:relationships",
     "kind": "query",
     "scope": "data:read",
@@ -4348,6 +4347,12 @@
           "description": "Stable arrangement record ID returned by LifeOR2."
         },
         "asOf": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "arrangementQuery": {
           "type": "string"
         },
         "limit": {
@@ -4375,7 +4380,7 @@
     "name": "life.search",
     "title": "agentLife: search",
     "primary": true,
-    "description": "Find identities by name: people, household, organizations, arrangements/projects, ledger accounts, tags and schedules. Compact results with unique/ambiguous status. Empty query lists available identities. Do not guess IDs.",
+    "description": "Find identities by name: people, household, organizations, arrangements/projects, ledger accounts, tags and schedules. Compact results with unique/ambiguous status. Empty query lists available identities; entityType optionally filters entity kinds such as Car or Person without matching company names. Do not guess IDs.",
     "functionName": "agentLife:search",
     "kind": "query",
     "scope": "data:read",
@@ -4383,6 +4388,9 @@
       "type": "object",
       "properties": {
         "query": {
+          "type": "string"
+        },
+        "entityType": {
           "type": "string"
         },
         "kind": {
@@ -11416,7 +11424,7 @@
   {
     "name": "records.recordExpense",
     "title": "agentWrites: record expense",
-    "description": "Record a paid expense as a balanced posted journal. Decimal amount is major currency units. Resolve explicit expense and asset payment accounts in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
+    "description": "Record a cash/bank expense or credit-card charge as a balanced posted journal. Decimal amount is major currency units. Resolve an explicit expense account and asset payment account or designated credit-card liability in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. A card charge increases the selected card liability without reducing bank cash. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
     "functionName": "agentWrites:recordExpense",
     "kind": "mutation",
     "scope": "finance:write",

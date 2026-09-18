@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { ConvexHttpClient } from "convex/browser";
 import { convexBetterAuthNextJs } from "@convex-dev/better-auth/nextjs";
 import { ConvexError } from "convex/values";
+import { QueryError } from "./query-error";
 
 export function appOrigin() {
   const value = process.env.NEXT_PUBLIC_SITE_URL;
@@ -119,6 +120,7 @@ export async function boundedBody(request: Request, max = 1024 * 1024) {
   return Buffer.concat(chunks).toString("utf8");
 }
 export function safeError(error: unknown): { code: string; message: string } {
+  if (error instanceof QueryError) return { code: error.code, message: error.message };
   if (
     error instanceof ConvexError &&
     error.data &&
