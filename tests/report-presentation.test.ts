@@ -232,10 +232,20 @@ test("recurring terms and hypothetical changes preserve dates and compute labels
         currency: "USD",
         frequency: "monthly",
       },
+      {
+        effectiveDate: "2027-01-01",
+        recordedAmount: "1950.00",
+        proposedAmount: "2250.00",
+        difference: "300.00",
+        currency: "USD",
+        frequency: "monthly",
+        interval: 2,
+      },
     ],
     basis: "No changes saved",
   });
   expect(text).toContain("2026-01-01 through 2026-09-30");
   expect(text).toContain("2026-10-01 through ongoing");
   expect(text).toContain("150.00 USD per monthly period");
+  expect(text).toContain("300.00 USD per recurrence (monthly, interval 2)");
 });
