@@ -1,0 +1,23 @@
+[
+  {
+    "id": "scale-record-expense",
+    "conversation": "scale-expense-correction",
+    "question": "Record a $12.34 USD grocery expense for Alex Morgan paid on September 18, 2026 from Household bills checking · 1042, using the household groceries and household-supplies expense category. Use the memo: Scale acceptance grocery receipt.",
+    "mode": "write",
+    "expected": "One balanced posted expense with explicit user-supplied date, amount, currency, payment account, category and person, on the dataset with 308,000 existing journals."
+  },
+  {
+    "id": "scale-reverse-expense",
+    "conversation": "scale-expense-correction",
+    "question": "That receipt was a duplicate. Reverse the expense you just recorded, with an accounting date of September 18, 2026 and reason Duplicate receipt. Preserve the original history.",
+    "mode": "write",
+    "expected": "One compensating journal referencing exactly the previous expense; no deletion, no second expense, correct postings and reason."
+  },
+  {
+    "id": "scale-verify-correction",
+    "conversation": "scale-expense-correction",
+    "question": "Show the net effect of those two entries on our household grocery expenses for September 18, 2026.",
+    "mode": "read",
+    "expected": "A fresh household grocery report shows zero net posted expense for that day after the original and its reversal. Do not claim that no entries exist."
+  }
+]
