@@ -77,7 +77,7 @@ export async function commitmentReport(
     hypothetical,
     queryComplete: true,
     basis:
-      "Recorded recurring terms, not evidence of payment or newly incurred debt. Hypothetical amounts are comparisons only; no records were changed.",
+      "Recorded recurring terms, not evidence of payment or newly incurred debt. This report reads the recorded revisions without modifying them. Any hypothetical amounts are comparisons only.",
   };
   return { ...result, ...(await saveReport(scope, result)) };
 }

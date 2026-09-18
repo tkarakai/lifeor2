@@ -201,7 +201,7 @@ export async function cashReport(
       unincurredAssumptions: args.includeAssumptions !== false,
     },
     basis:
-      "Recorded ledger opening cash plus current outstanding claims, explicit cash routes, schedule projections and selected assumptions. Overdue unpaid items are projected for the next day. Internal transfers net to zero across selected accounts. Missing routes are reported as issues; this is not a guarantee of affordability. Recurring changes replace projected schedule amounts only; existing claims, payments and opening cash stay unchanged. Additional movements add to that scenario. All hypothetical changes are calculated only; no records were changed.",
+      "Recorded ledger opening cash plus current outstanding claims, explicit cash routes, schedule projections and selected assumptions. Overdue unpaid items are projected for the next day. Internal transfers net to zero across selected accounts. Missing routes are reported as issues; this is not a guarantee of affordability. Recurring changes replace projected schedule amounts only; existing claims, payments and opening cash stay unchanged. Additional movements add to that scenario. This report calculates hypothetical changes without modifying records.",
   };
   const saved = await saveReport(scope, {
     ...result,
