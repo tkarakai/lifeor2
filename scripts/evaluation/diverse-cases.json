@@ -32,7 +32,7 @@
   {
     "id": "diverse-highest-year",
     "question": "Which year from 2010 through 2025 had our highest household expenses, and what was that amount?",
-    "expected": "('2011', 76920750) in minor units; rank full yearly expense totals.",
+    "expected": "2011 has the highest recorded household expenses: $769207.50 USD. Rank complete yearly totals.",
     "mode": "read"
   },
   {
