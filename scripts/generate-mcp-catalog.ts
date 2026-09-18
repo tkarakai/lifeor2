@@ -94,7 +94,7 @@ const descriptions: Record<string, string> = {
   "reports.finances":
     "Choose scope=household for personal/household books; scope=dataset for all books or an explicit chart/person filter. Use accountQuery for a requested expense/revenue category (e.g. groceries). Compute complete recorded financial totals over inclusive from/through dates (YYYY-MM-DD). metric: cash_balances (recorded bank cash as of through, all selected checking/savings/cash accounts in one call), payroll (gross income, actual take-home deposits and monthly averages separately; PayrollDeposit events), profit_loss (income, expense and net surplus), income (gross recognized), expenses (excludes capital purchases), balances (all history through cutoff), cashflow (signed bank-account changes; use eventKind=PayrollDeposit for recorded take-home pay), activity (signed debits/credits by account, including project capital costs). groupBy: month (default), year or total. Optional currency code and verified chart/person/beneficiary/project/tag/account IDs. Server consumes all database pages; never scan journals to calculate totals. Decimal amounts are major currency units. Currencies remain separate. reportId supports drill-down via reports.read.",
   "life.read":
-    "Read a typed record by verified ID before editing. Returns revision and facts. Use specialized get/read operation for related versions or postings.",
+    "Read a typed record by verified ID before editing. Returns revision and facts. Commitment schedules also include complete current effective periods, decimal amounts, parties, recurrence and revision reason; use this before records.changeSchedule. Use specialized journal detail for postings.",
   "life.relationships":
     "Who belongs to a family, who works for whom, who owns an asset? Recorded roles and direct ownership, optionally asOf date, entity or arrangement. No inferred beneficial ownership.",
   "life.history":
@@ -114,7 +114,7 @@ const descriptions: Record<string, string> = {
   "finance.listJournalEntries":
     "List journal HEADERS only, without amounts. Prefer agentQueries.searchJournals for bounded date/person searches and agentQueries.incomeSummary for monthly earnings.",
   "entities.update":
-    "Change entity facts from an effective date, preserving history. Read the current revision first.",
+    "Change entity facts, preserving history and identity. Read the current revision first. For a name correction now, omit effectiveAt: the server uses its current time. Never calculate a Unix timestamp just to make a current correction.",
   "arrangements.update":
     "Revise an arrangement's effective timeline, roles and terms while preserving history.",
   "finance.createJournalEntry":

@@ -89,12 +89,20 @@ export const projectionInputs = query({
     const w = await workspace(ctx),
       g = await planningData(ctx),
       accounts = await referenceRows(ctx, "ledger_account"),
-      financial = await referenceRows(ctx, "financial_account");
+      financial = await referenceRows(ctx, "financial_account"),
+      householdCharts = (await referenceRows(ctx, "chart_of_accounts")).filter(
+        (c) =>
+          !c.archived && c.reporting_entity_id === w.household && w.household,
+      );
     return {
       today: w.today,
       timezone: w.timezone,
       revision: w.dataset?.data_revision ?? 0,
       sampleActualsThrough: w.dataset?.seed_as_of ?? null,
+      defaultHouseholdChart:
+        householdCharts.length === 1
+          ? { id: householdCharts[0]._id, name: householdCharts[0].name }
+          : null,
       accounts: accounts.map((a) => ({
         id: a._id,
         name: a.name,

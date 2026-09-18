@@ -18,6 +18,12 @@ export async function cashReport(
     makeFunctionReference<"query">("agentPlanning:projectionInputs"),
     { agentToken: token, datasetId: scope.datasetId },
   );
+  if (args.scope === "household" && !input.defaultHouseholdChart)
+    throw new Error(
+      "QUERY_LIMIT: no unique default household books are configured. Select explicit accounts with scope=dataset.",
+    );
+  const householdChart =
+    args.scope === "household" ? input.defaultHouseholdChart : null;
   const cutoff = String(args.asOf ?? input.today),
     through = String(args.through);
   dateRange(cutoff, through, 366);
@@ -30,6 +36,7 @@ export async function cashReport(
       from: cutoff,
       through: cutoff,
       metric: "cash_balances",
+      scope: args.scope ?? "dataset",
       groupBy: "total",
     },
     snapshot,
@@ -42,6 +49,7 @@ export async function cashReport(
       ["checking", "savings", "cash"].includes(
         a.financialKind?.toLowerCase(),
       ) &&
+      (!householdChart || a.chart === householdChart.id) &&
       (!requested || requested.includes(a.id)),
   );
   if (requested?.some((id) => !eligible.some((a: any) => a.id === id)))
@@ -167,6 +175,9 @@ export async function cashReport(
   }
   const result = {
     reportType: "cash",
+    scope: householdChart
+      ? `Books: ${householdChart.name}`
+      : "Selected cash accounts across dataset books",
     from: cutoff,
     through,
     reports,

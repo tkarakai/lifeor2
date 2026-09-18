@@ -9,6 +9,8 @@ import {
   page,
   dateRange,
   civilDate,
+  money,
+  type LifeContext,
 } from "./lib/lifeQueries/common";
 import { date } from "./lib/domain";
 
@@ -190,6 +192,47 @@ const readable = v.union(
   v.literal("monetary_obligation"),
   v.literal("event"),
 );
+async function scheduleTerms(
+  ctx: LifeContext,
+  id: import("./_generated/dataModel").Id<"commitment_schedule">,
+) {
+  const revisions = await ctx.db
+    .query("commitment_schedule_revision")
+    .withIndex("by_schedule", (q) => q.eq("schedule_id", id))
+    .take(201);
+  if (revisions.length > 200)
+    throw new Error(
+      "QUERY_LIMIT: schedule exceeds 200 revisions; inspect a narrower history",
+    );
+  const latest = revisions.sort((a, b) => b.revision - a.revision)[0];
+  if (!latest) return { periods: [], revisionReason: null };
+  const periods = await Promise.all(
+    latest.segments.map(async (segment) => {
+      const v = await ctx.db.get(segment.facts.version_id);
+      if (!v) throw new Error("Missing schedule version");
+      const debtor = await ctx.db.get(v.debtor_id),
+        creditor = await ctx.db.get(v.creditor_id);
+      return {
+        versionId: v._id,
+        effectiveFrom: new Date(segment.valid_from).toISOString(),
+        effectiveToExclusive:
+          segment.valid_to === undefined
+            ? null
+            : new Date(segment.valid_to).toISOString(),
+        localEffectiveDate: civilDate(segment.valid_from, v.timezone),
+        amount: v.amount ? money(v.amount.minor_units, v.currency) : null,
+        currency: v.currency,
+        recurrence: v.recurrence,
+        startDate: v.start_date,
+        endDate: v.end_date ?? null,
+        timezone: v.timezone,
+        debtor: { id: v.debtor_id, name: debtor?.display_name },
+        creditor: { id: v.creditor_id, name: creditor?.display_name },
+      };
+    }),
+  );
+  return { periods, revisionReason: latest.reason ?? null };
+}
 export const read = query({
   agent: { operation: "life.read", scope: "data:read" },
   args: { kind: readable, id: v.string() },
@@ -211,7 +254,17 @@ export const read = query({
             )
           : r;
     const { _creationTime, user_id, dataset_id, ...record } = current;
-    return { kind: a.kind, record, queryComplete: true };
+    return {
+      kind: a.kind,
+      record,
+      ...(a.kind === "commitment_schedule"
+        ? await scheduleTerms(
+            ctx,
+            id as import("./_generated/dataModel").Id<"commitment_schedule">,
+          )
+        : {}),
+      queryComplete: true,
+    };
   },
 });
 export const relationships = query({

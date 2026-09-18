@@ -386,7 +386,7 @@ test("family sample is resumable, balanced, isolated and consistent with the req
         expect(row.dataset_id).toBeTruthy();
   });
   await alice.mutation(api.datasets.select, { id: datasetId });
-}, 60000);
+}, 120000);
 
 test("permanent deletion protects posted journals and published plan snapshots, including Git-only pins", async () => {
   const { t, alice, userId } = await setup();

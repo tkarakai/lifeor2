@@ -203,6 +203,19 @@ test("schedule changes preserve earlier and later effective terms and reject sta
       amount: "1950.00",
       reason: "Autumn agreement",
     });
+    const editable = await f.query("agentLife:read", {
+      kind: "commitment_schedule",
+      id: schedule,
+    });
+    expect(editable.record.revision).toBe(3);
+    expect(
+      editable.periods.map((p: any) => [p.localEffectiveDate, p.amount]),
+    ).toEqual([
+      ["2026-01-01", "1800.00"],
+      ["2026-10-01", "1950.00"],
+      ["2026-12-01", "2100.00"],
+    ]);
+    expect(editable.revisionReason).toBe("Autumn agreement");
     const report = await f.query("agentTimeline:timeline", {
       from: "2026-09-01",
       through: "2026-12-31",

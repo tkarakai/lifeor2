@@ -1274,7 +1274,7 @@
   {
     "name": "entities.update",
     "title": "entities: update",
-    "description": "Change entity facts from an effective date, preserving history. Read the current revision first.",
+    "description": "Change entity facts, preserving history and identity. Read the current revision first. For a name correction now, omit effectiveAt: the server uses its current time. Never calculate a Unix timestamp just to make a current correction.",
     "functionName": "entities:update",
     "kind": "mutation",
     "scope": "data:write",
@@ -4264,7 +4264,7 @@
   {
     "name": "life.read",
     "title": "agentLife: read",
-    "description": "Read a typed record by verified ID before editing. Returns revision and facts. Use specialized get/read operation for related versions or postings.",
+    "description": "Read a typed record by verified ID before editing. Returns revision and facts. Commitment schedules also include complete current effective periods, decimal amounts, parties, recurrence and revision reason; use this before records.changeSchedule. Use specialized journal detail for postings.",
     "functionName": "agentLife:read",
     "kind": "query",
     "scope": "data:read",

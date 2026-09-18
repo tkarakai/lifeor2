@@ -87,6 +87,26 @@ export async function financialReport(
     ...result,
     ...saved,
     rows: result.rows.slice(0, args.metric === "payroll" ? 0 : 8),
+    totals: result.totals.map((total) =>
+      "months" in total && total.months
+        ? {
+            ...total,
+            months: total.months.slice(0, 8),
+            monthCount: total.months.length,
+            monthsComplete: total.months.length <= 8,
+          }
+        : total,
+    ),
+    ...("payroll" in result && result.payroll
+      ? {
+          payroll: result.payroll.map((p) => ({
+            ...p,
+            months: p.months.slice(0, 8),
+            monthCount: p.months.length,
+            monthsComplete: p.months.length <= 8,
+          })),
+        }
+      : {}),
     rowCount: result.rows.length,
     nextOffset:
       result.rows.length > (args.metric === "payroll" ? 0 : 8)

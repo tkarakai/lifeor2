@@ -1,3 +1,13 @@
+const exactAdd = (a: number, b: number) => {
+  const value = a + b;
+  if (
+    !Number.isSafeInteger(a) ||
+    !Number.isSafeInteger(b) ||
+    !Number.isSafeInteger(value)
+  )
+    throw new Error("Report exceeds exact integer range");
+  return value;
+};
 /** Transport-independent deterministic reduction. Large database pages never enter LLM context. */
 export type FinanceRow = {
   key: string;
@@ -158,7 +168,7 @@ export function summarizeFinance(
     totals.set(key, old);
     if (/^\d{4}-\d{2}$/.test(r.period)) {
       const map = monthly.get(key) ?? new Map<string, number>();
-      map.set(r.period, (map.get(r.period) ?? 0) + r.minorUnits);
+      map.set(r.period, exactAdd(map.get(r.period) ?? 0, r.minorUnits));
       monthly.set(key, map);
     }
   }
@@ -166,7 +176,7 @@ export function summarizeFinance(
     const sum = (test: (r: FinanceRow) => boolean) =>
       rows
         .filter((r) => r.currency === currency && test(r))
-        .reduce((n, r) => n + r.minorUnits, 0);
+        .reduce((n, r) => exactAdd(n, r.minorUnits), 0);
     const assets = sum((r) => r.type === "Asset"),
       liabilities = sum((r) => r.type === "Liability"),
       cash = sum((r) => r.cash);
@@ -174,7 +184,7 @@ export function summarizeFinance(
       currency,
       assets: decimal(assets, precision(currency)),
       liabilities: decimal(liabilities, precision(currency)),
-      netWorth: decimal(assets - liabilities, precision(currency)),
+      netWorth: decimal(exactAdd(assets, -liabilities), precision(currency)),
       cash: decimal(cash, precision(currency)),
     };
   });
@@ -186,14 +196,17 @@ export function summarizeFinance(
         currency,
         income: decimal(income, precision(currency)),
         expense: decimal(expense, precision(currency)),
-        netRecordedIncome: decimal(income - expense, precision(currency)),
+        netRecordedIncome: decimal(
+          exactAdd(income, -expense),
+          precision(currency),
+        ),
       };
     },
   );
   const payroll = [...new Set(rows.map((r) => r.currency))].map((currency) => {
     const selected = rows.filter((r) => r.currency === currency),
       sum = (list: FinanceRow[], test: (r: FinanceRow) => boolean) =>
-        list.filter(test).reduce((n, r) => n + r.minorUnits, 0),
+        list.filter(test).reduce((n, r) => exactAdd(n, r.minorUnits), 0),
       amount = (n: number) => decimal(n, precision(currency));
     const cash = sum(selected, (r) => r.cash),
       gross = sum(selected, (r) => r.type === "Income");

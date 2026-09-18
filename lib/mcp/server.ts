@@ -152,10 +152,11 @@ export function createAgentServer(token: string, grant: Grant) {
     title: "Cash forecast and what-if",
     primary: true,
     description:
-      "Will cash cover upcoming payments? Project each bank balance through an end date using recorded opening balances, explicit cash routes, unpaid bills, schedules and assumptions. Optional hypothetical cash movements are read-only (signed decimal amount: negative spending, positive receipt). Currencies remain separate; missing routes and account shortfalls are explicit. This is a forecast, not a guarantee.",
+      "Choose scope=household for household bank cash, scope=dataset for all books or explicitly selected company accounts. Will cash cover upcoming payments? Project each bank balance through an end date using recorded opening balances, explicit cash routes, unpaid bills, schedules and assumptions. Optional hypothetical cash movements are read-only (signed decimal amount: negative spending, positive receipt). Currencies remain separate; missing routes and account shortfalls are explicit. This is a forecast, not a guarantee.",
     inputSchema: schema(
       {
         datasetId: dataset,
+        scope: { type: "string", enum: ["household", "dataset"] },
         through: text,
         asOf: { type: "string" },
         accountIds: { type: "array", items: text, maxItems: 30 },
@@ -172,7 +173,7 @@ export function createAgentServer(token: string, grant: Grant) {
           }),
         },
       },
-      ["datasetId", "through"],
+      ["datasetId", "scope", "through"],
     ),
     write: false,
     call: (a) =>

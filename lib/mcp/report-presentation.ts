@@ -181,6 +181,7 @@ export function presentReport(
     text += `Source journals: ${sourceList(rows)}.\n\n${escape(report.coverage)}`;
   } else if (report.reportType === "cash") {
     text = `Cash projection — ${escape(report.from)} through ${escape(report.through)}\n\n`;
+    if (report.scope) text += escape(report.scope) + ".\n\n";
     if (report.included)
       text += `Outstanding commitments included; scheduled payments ${report.included.schedules ? "included" : "excluded"}; unincurred assumptions ${report.included.unincurredAssumptions ? "included" : "excluded"}.\n\n`;
     for (const r of report.reports) {
