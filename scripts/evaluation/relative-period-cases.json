@@ -1,0 +1,26 @@
+[
+  {
+    "id": "last-month-household-expenses",
+    "question": "How much did our household spend last month? Show the categories.",
+    "mode": "read",
+    "expected": "September18 fixture clock: August1–31 household posted expenses15013.92USD, all categories. Exclude company books, transfers, mortgage principal and capital improvements; disclose recorded-data coverage."
+  },
+  {
+    "id": "last-month-grocery-comparison",
+    "question": "Compare our grocery spending last month with the month before. Did it go up?",
+    "mode": "read",
+    "expected": "July2026 baseline1046USD; August2026 current1057USD; increase11USD or1.05%. Correct chronological comparison with exact periods, not two copies of the same month."
+  },
+  {
+    "id": "next-month-mortgages",
+    "question": "What mortgage payments are scheduled for next month?",
+    "mode": "read",
+    "expected": "October2026, three scheduled payments onOctober1:3775.44,1454.50,1778.25USD, total7008.19. Keep schedule projections distinct from posted payments or total mortgage principal."
+  },
+  {
+    "id": "this-month-spending-so-far",
+    "question": "How much has our household spent this month so far?",
+    "mode": "read",
+    "expected": "September1 through currentChicagoSeptember18, household recorded expenses8573.66USD. Sample actuals onlythroughSeptember16; do not extrapolate or claim later missing records are confirmedzero."
+  }
+]

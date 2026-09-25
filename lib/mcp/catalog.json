@@ -2,7 +2,7 @@
   {
     "name": "agentQueries.incomeSummary",
     "title": "Monthly income",
-    "primary": true,
+    "replacedBy": "reports.finances",
     "description": "Calculate a person's monthly income, salary/earnings totals and average over fromMonth..toMonth (YYYY-MM). Resolve entityId first. Deterministic gross recognized Income-account totals, NOT net take-home pay. Includes signed reversals, explicit attribution, separate currencies, missing-month warnings and source journal IDs. Prefer this to listing all journals for income questions.",
     "functionName": "agentQueries:incomeSummary",
     "kind": "query",
@@ -48,7 +48,7 @@
   {
     "name": "agentQueries.searchEntities",
     "title": "Find people and organizations",
-    "primary": true,
+    "replacedBy": "life.search",
     "description": "Find people, family members, companies and households by name; query can be empty. Omit limit for the default 50-row scan within the dataset (maximum 50). Paginated: follow nextCursor before concluding uniqueness or absence. Returns compact IDs and names.",
     "functionName": "agentQueries:searchEntities",
     "kind": "query",
@@ -66,7 +66,9 @@
           "type": "string"
         },
         "limit": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
         },
         "datasetId": {
           "type": "string",
@@ -84,7 +86,7 @@
   {
     "name": "agentQueries.searchJournals",
     "title": "Search financial records",
-    "description": "Search financial journal records by inclusive from/to dates (YYYY-MM-DD), memo text, chart and explicitly attributed person/entity. Returns bounded pages WITH posting amounts in minor units, currencies and account types. Follow nextCursor even for empty pages.",
+    "description": "Find individual financial transactions and receipts by 1–16 literal indexed memo words (text, each at most 32 characters), optionally narrowed by inclusive from/to dates, chart and attributed person. Omit unknown dates and unrequested chart/person filters: memo search covers recorded history across the selected dataset. Each journal identifies its chart and full postings. A complete singleExactMemoMatch already establishes the receipt's recorded date, amounts and accounts; answer from it instead of searching other books to reconfirm. Results are relevance ranked with text, newest accounting date otherwise. Posting amount strings are signed major currency units, positive debit/negative credit; minorUnits are integer ledger units. Follow nextCursor even on empty filtered pages; a partial page cannot establish uniqueness or absence. Use reports.finances for aggregate totals, not transaction paging.",
     "functionName": "agentQueries:searchJournals",
     "kind": "query",
     "scope": "data:read",
@@ -114,7 +116,9 @@
           "type": "string"
         },
         "limit": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
         },
         "datasetId": {
           "type": "string",
@@ -123,8 +127,6 @@
         }
       },
       "required": [
-        "from",
-        "to",
         "datasetId"
       ],
       "additionalProperties": false
@@ -133,7 +135,7 @@
   {
     "name": "arrangements.addRole",
     "title": "arrangements: add role",
-    "description": "arrangements: add role. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: add role. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:addRole",
     "kind": "mutation",
     "scope": "data:write",
@@ -182,7 +184,7 @@
   {
     "name": "arrangements.assignmentHistory",
     "title": "arrangements: assignment history",
-    "description": "arrangements: assignment history. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: assignment history. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:assignmentHistory",
     "kind": "query",
     "scope": "data:read",
@@ -218,7 +220,7 @@
   {
     "name": "arrangements.assignRole",
     "title": "arrangements: assign role",
-    "description": "arrangements: assign role. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: assign role. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:assignRole",
     "kind": "mutation",
     "scope": "data:write",
@@ -267,7 +269,7 @@
   {
     "name": "arrangements.create",
     "title": "arrangements: create",
-    "description": "arrangements: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:create",
     "kind": "mutation",
     "scope": "data:write",
@@ -325,7 +327,7 @@
   {
     "name": "arrangements.createOwnershipInterest",
     "title": "arrangements: create ownership interest",
-    "description": "arrangements: create ownership interest. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: create ownership interest. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:createOwnershipInterest",
     "kind": "mutation",
     "scope": "data:write",
@@ -393,7 +395,7 @@
   {
     "name": "arrangements.createRole",
     "title": "arrangements: create role",
-    "description": "arrangements: create role. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: create role. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:createRole",
     "kind": "mutation",
     "scope": "data:write",
@@ -452,7 +454,7 @@
   {
     "name": "arrangements.createType",
     "title": "arrangements: create type",
-    "description": "arrangements: create type. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: create type. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:createType",
     "kind": "mutation",
     "scope": "data:write",
@@ -523,7 +525,7 @@
   {
     "name": "arrangements.get",
     "title": "arrangements: get",
-    "description": "arrangements: get. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: get. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:get",
     "kind": "query",
     "scope": "data:read",
@@ -551,7 +553,7 @@
   {
     "name": "arrangements.getRoleDefinitions",
     "title": "arrangements: get role definitions",
-    "description": "arrangements: get role definitions. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: get role definitions. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:getRoleDefinitions",
     "kind": "query",
     "scope": "data:read",
@@ -579,7 +581,7 @@
   {
     "name": "arrangements.getRoles",
     "title": "arrangements: get roles",
-    "description": "arrangements: get roles. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: get roles. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:getRoles",
     "kind": "query",
     "scope": "data:read",
@@ -607,7 +609,7 @@
   {
     "name": "arrangements.history",
     "title": "arrangements: history",
-    "description": "arrangements: history. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: history. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:history",
     "kind": "query",
     "scope": "data:read",
@@ -643,7 +645,8 @@
   {
     "name": "arrangements.list",
     "title": "arrangements: list",
-    "description": "arrangements: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "replacedBy": "life.search",
+    "description": "arrangements: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:list",
     "kind": "query",
     "scope": "data:read",
@@ -665,7 +668,7 @@
   {
     "name": "arrangements.listTypes",
     "title": "arrangements: list types",
-    "description": "arrangements: list types. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: list types. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:listTypes",
     "kind": "query",
     "scope": "data:read",
@@ -687,7 +690,7 @@
   {
     "name": "arrangements.listValidAt",
     "title": "arrangements: list valid at",
-    "description": "arrangements: list valid at. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: list valid at. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:listValidAt",
     "kind": "query",
     "scope": "data:read",
@@ -716,7 +719,7 @@
   {
     "name": "arrangements.remove",
     "title": "arrangements: remove",
-    "description": "arrangements: remove. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: remove. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:remove",
     "kind": "mutation",
     "scope": "data:write",
@@ -825,7 +828,7 @@
   {
     "name": "arrangements.updateAssignment",
     "title": "arrangements: update assignment",
-    "description": "arrangements: update assignment. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: update assignment. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:updateAssignment",
     "kind": "mutation",
     "scope": "data:write",
@@ -871,7 +874,7 @@
   {
     "name": "arrangements.updateRole",
     "title": "arrangements: update role",
-    "description": "arrangements: update role. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: update role. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:updateRole",
     "kind": "mutation",
     "scope": "data:write",
@@ -938,7 +941,7 @@
   {
     "name": "arrangements.updateType",
     "title": "arrangements: update type",
-    "description": "arrangements: update type. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "arrangements: update type. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "arrangements:updateType",
     "kind": "mutation",
     "scope": "data:write",
@@ -1018,7 +1021,7 @@
   {
     "name": "cashRouting.save",
     "title": "cashRouting: save",
-    "description": "cashRouting: save. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "cashRouting: save. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "cashRouting:save",
     "kind": "mutation",
     "scope": "finance:write",
@@ -1114,7 +1117,7 @@
   {
     "name": "entities.create",
     "title": "entities: create",
-    "description": "entities: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "entities: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "entities:create",
     "kind": "mutation",
     "scope": "data:write",
@@ -1152,7 +1155,7 @@
   {
     "name": "entities.get",
     "title": "entities: get",
-    "description": "entities: get. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "entities: get. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "entities:get",
     "kind": "query",
     "scope": "data:read",
@@ -1180,7 +1183,7 @@
   {
     "name": "entities.history",
     "title": "entities: history",
-    "description": "entities: history. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "entities: history. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "entities:history",
     "kind": "query",
     "scope": "data:read",
@@ -1214,7 +1217,8 @@
   {
     "name": "entities.list",
     "title": "entities: list",
-    "description": "entities: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "replacedBy": "life.search",
+    "description": "entities: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "entities:list",
     "kind": "query",
     "scope": "data:read",
@@ -1236,7 +1240,7 @@
   {
     "name": "entities.remove",
     "title": "entities: remove",
-    "description": "entities: remove. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "entities: remove. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "entities:remove",
     "kind": "mutation",
     "scope": "data:write",
@@ -1272,7 +1276,7 @@
   {
     "name": "entities.update",
     "title": "entities: update",
-    "description": "Change entity facts from an effective date, preserving history. Read the current revision first.",
+    "description": "Change entity facts, preserving history and identity. Read the current revision first. For a name correction now, omit effectiveAt: the server uses its current time. Never calculate a Unix timestamp just to make a current correction.",
     "functionName": "entities:update",
     "kind": "mutation",
     "scope": "data:write",
@@ -1324,7 +1328,7 @@
   {
     "name": "events.addAffects",
     "title": "events: add affects",
-    "description": "events: add affects. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "events: add affects. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:addAffects",
     "kind": "mutation",
     "scope": "data:write",
@@ -2142,7 +2146,7 @@
   {
     "name": "events.create",
     "title": "events: create",
-    "description": "events: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "events: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:create",
     "kind": "mutation",
     "scope": "data:write",
@@ -2194,7 +2198,7 @@
   {
     "name": "events.get",
     "title": "events: get",
-    "description": "events: get. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "events: get. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:get",
     "kind": "query",
     "scope": "data:read",
@@ -2222,7 +2226,7 @@
   {
     "name": "events.getAffects",
     "title": "events: get affects",
-    "description": "events: get affects. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "events: get affects. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:getAffects",
     "kind": "query",
     "scope": "data:read",
@@ -2250,7 +2254,8 @@
   {
     "name": "events.list",
     "title": "events: list",
-    "description": "events: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "replacedBy": "life.events",
+    "description": "events: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:list",
     "kind": "query",
     "scope": "data:read",
@@ -2272,7 +2277,7 @@
   {
     "name": "events.remove",
     "title": "events: remove",
-    "description": "events: remove. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "events: remove. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:remove",
     "kind": "mutation",
     "scope": "data:write",
@@ -2308,7 +2313,7 @@
   {
     "name": "events.voidEvent",
     "title": "events: void event",
-    "description": "events: void event. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "events: void event. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "events:voidEvent",
     "kind": "mutation",
     "scope": "data:write",
@@ -2348,7 +2353,7 @@
   {
     "name": "evidence.create",
     "title": "evidence: create",
-    "description": "evidence: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "evidence: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "evidence:create",
     "kind": "mutation",
     "scope": "data:write",
@@ -2401,7 +2406,7 @@
   {
     "name": "evidence.link",
     "title": "evidence: link",
-    "description": "evidence: link. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "evidence: link. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "evidence:link",
     "kind": "mutation",
     "scope": "data:write",
@@ -3218,7 +3223,7 @@
   {
     "name": "evidence.list",
     "title": "evidence: list",
-    "description": "evidence: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "evidence: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "evidence:list",
     "kind": "query",
     "scope": "data:read",
@@ -3240,7 +3245,7 @@
   {
     "name": "finance.createAccount",
     "title": "finance: create account",
-    "description": "finance: create account. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: create account. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:createAccount",
     "kind": "mutation",
     "scope": "finance:write",
@@ -3331,7 +3336,7 @@
   {
     "name": "finance.createChart",
     "title": "finance: create chart",
-    "description": "finance: create chart. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: create chart. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:createChart",
     "kind": "mutation",
     "scope": "finance:write",
@@ -3370,7 +3375,7 @@
   {
     "name": "finance.createFinancialAccount",
     "title": "finance: create financial account",
-    "description": "finance: create financial account. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: create financial account. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:createFinancialAccount",
     "kind": "mutation",
     "scope": "finance:write",
@@ -3538,7 +3543,7 @@
   {
     "name": "finance.getAccountBalance",
     "title": "finance: get account balance",
-    "description": "finance: get account balance. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: get account balance. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:getAccountBalance",
     "kind": "query",
     "scope": "data:read",
@@ -3566,7 +3571,7 @@
   {
     "name": "finance.getAttribution",
     "title": "finance: get attribution",
-    "description": "finance: get attribution. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: get attribution. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:getAttribution",
     "kind": "query",
     "scope": "data:read",
@@ -3622,7 +3627,7 @@
   {
     "name": "finance.getPostings",
     "title": "finance: get postings",
-    "description": "finance: get postings. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: get postings. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:getPostings",
     "kind": "query",
     "scope": "data:read",
@@ -3650,7 +3655,7 @@
   {
     "name": "finance.getTrialBalance",
     "title": "finance: get trial balance",
-    "description": "finance: get trial balance. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: get trial balance. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:getTrialBalance",
     "kind": "query",
     "scope": "data:read",
@@ -3682,7 +3687,7 @@
   {
     "name": "finance.listAccounts",
     "title": "finance: list accounts",
-    "description": "finance: list accounts. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: list accounts. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:listAccounts",
     "kind": "query",
     "scope": "data:read",
@@ -3714,7 +3719,7 @@
   {
     "name": "finance.listCharts",
     "title": "finance: list charts",
-    "description": "finance: list charts. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: list charts. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:listCharts",
     "kind": "query",
     "scope": "data:read",
@@ -3736,7 +3741,7 @@
   {
     "name": "finance.listFinancialAccounts",
     "title": "finance: list financial accounts",
-    "description": "finance: list financial accounts. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: list financial accounts. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:listFinancialAccounts",
     "kind": "query",
     "scope": "data:read",
@@ -3758,6 +3763,7 @@
   {
     "name": "finance.listJournalEntries",
     "title": "finance: list journal entries",
+    "replacedBy": "agentQueries.searchJournals",
     "description": "List journal HEADERS only, without amounts. Prefer agentQueries.searchJournals for bounded date/person searches and agentQueries.incomeSummary for monthly earnings.",
     "functionName": "finance:listJournalEntries",
     "kind": "query",
@@ -3790,7 +3796,7 @@
   {
     "name": "finance.postDraft",
     "title": "finance: post draft",
-    "description": "finance: post draft. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: post draft. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:postDraft",
     "kind": "mutation",
     "scope": "finance:write",
@@ -3826,7 +3832,7 @@
   {
     "name": "finance.replaceAttribution",
     "title": "finance: replace attribution",
-    "description": "finance: replace attribution. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: replace attribution. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:replaceAttribution",
     "kind": "mutation",
     "scope": "finance:write",
@@ -3973,7 +3979,7 @@
   {
     "name": "finance.updateAccount",
     "title": "finance: update account",
-    "description": "finance: update account. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: update account. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:updateAccount",
     "kind": "mutation",
     "scope": "finance:write",
@@ -4020,7 +4026,7 @@
   {
     "name": "finance.updateChart",
     "title": "finance: update chart",
-    "description": "finance: update chart. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "finance: update chart. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "finance:updateChart",
     "kind": "mutation",
     "scope": "finance:write",
@@ -4060,9 +4066,543 @@
     }
   },
   {
+    "name": "life.context",
+    "title": "agentLife: context",
+    "primary": true,
+    "description": "Get dataset timezone, current local date, default household, charts and coverage. Use for unspecified dates or family scope.",
+    "functionName": "agentLife:context",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.documents",
+    "title": "agentLife: documents",
+    "description": "List source document targets in the selected dataset. Prefer notes.search to search text, details.read to read one verified target.",
+    "functionName": "agentLife:documents",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.events",
+    "title": "agentLife: events",
+    "primary": true,
+    "description": "Find recorded events/appointments by title words, kind, subject and optional inclusive dates. Omit both dates to locate an existing event whose current date is unknown, including before rescheduling; never substitute its proposed new date or guess a year-end cutoff. Event titles belong here, not life.search. For the next appointment, set from=today and OMIT through: returns earliest matches across all future recorded dates, not a guessed year-end cutoff. Otherwise date-only queries are newest first; title searches are relevance ranked. Returns a saved report with exact local times, UTC offsets and repeated-clock occurrences. Use present_report for the final calendar answer; use event IDs when editing. The MCP service follows pages within its query budget. Prefer this to listing raw events; use life.timeline for upcoming commitments.",
+    "functionName": "agentLife:events",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "through": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "Optional exact, case-sensitive stored event type, such as Appointment. Omit if the stored type is unknown; use query with title words instead. Legacy event types can differ from the focused calendar-create categories."
+        },
+        "entityId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable entity record ID returned by LifeOR2."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.history",
+    "title": "agentLife: history",
+    "description": "Read recorded revisions and effective dates for an entity, arrangement or commitment schedule. Use for changes over time; revision history is different from transaction history.",
+    "functionName": "agentLife:history",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "const": "entity",
+              "type": "string"
+            },
+            {
+              "const": "arrangement",
+              "type": "string"
+            },
+            {
+              "const": "commitment_schedule",
+              "type": "string"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.measurements",
+    "title": "agentLife: measurements",
+    "description": "Find recorded measurements/valuations through an inclusive cutoff date. Omit from to include all recorded history for an as-of question; do not guess progressively earlier start dates. Optional from narrows the interval. Filter measurement name with query (value also matches valuation/appraisal), or subjectId. Returns subject names, units, assertion types and dates; excludes superseded records. A complete empty result is no matching recorded evidence, not a reason to try synonyms.",
+    "functionName": "agentLife:measurements",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "through": {
+          "type": "string"
+        },
+        "subjectId": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "through",
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.obligations",
+    "title": "agentObligations: current",
+    "primary": true,
+    "description": "Who owes whom now? Current unpaid recorded invoices/claims, with explicit debtor, creditor, amount and due date. Choose direction=receivable for money owed TO us (anyone late paying us), payable for money WE owe (are we late paying anyone), both only for both sides. scope=household uses the configured household perspective. For another person/company use scope=dataset and perspectiveQuery; for all dataset parties use both. Optional debtorQuery (who owes), creditorQuery (who is owed), partyQuery (either side) accept unique names; query filters agreement/schedule words. With no dueThrough, includes all outstanding claims, even future due dates; overdueOnly selects late claims. Excludes projections, duplicate expected payments and loan principal. Present the exact saved report.",
+    "functionName": "agentObligations:current",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "anyOf": [
+            {
+              "const": "household",
+              "type": "string"
+            },
+            {
+              "const": "dataset",
+              "type": "string"
+            }
+          ]
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "const": "receivable",
+              "type": "string"
+            },
+            {
+              "const": "payable",
+              "type": "string"
+            },
+            {
+              "const": "both",
+              "type": "string"
+            }
+          ],
+          "description": "Required intent: receivable = owed TO the perspective; payable = owed BY the perspective; both = both sides. Household scope supplies our household perspective."
+        },
+        "perspectiveQuery": {
+          "type": "string",
+          "description": "Unique person/company name for the receivable/payable perspective. Omit for our household. This differs from partyQuery, which only filters a counterparty."
+        },
+        "debtorQuery": {
+          "type": "string"
+        },
+        "creditorQuery": {
+          "type": "string"
+        },
+        "partyQuery": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "overdueOnly": {
+          "type": "boolean"
+        },
+        "dueThrough": {
+          "type": "string"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "scope",
+        "datasetId",
+        "direction"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.read",
+    "title": "agentLife: read",
+    "description": "Read a typed record by verified ID before editing. Returns revision and facts. Commitment schedules also include complete current effective periods, decimal amounts, parties, recurrence and revision reason; use this before records.changeSchedule. Use specialized journal detail for postings.",
+    "functionName": "agentLife:read",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "const": "entity",
+              "type": "string"
+            },
+            {
+              "const": "arrangement",
+              "type": "string"
+            },
+            {
+              "const": "ledger_account",
+              "type": "string"
+            },
+            {
+              "const": "tag",
+              "type": "string"
+            },
+            {
+              "const": "commitment_schedule",
+              "type": "string"
+            },
+            {
+              "const": "monetary_obligation",
+              "type": "string"
+            },
+            {
+              "const": "event",
+              "type": "string"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.relationships",
+    "title": "agentLife: relationships",
+    "primary": true,
+    "description": "Read direct roles and ownership, including the other named participants of each matched arrangement. Filter by entityId, arrangementId, role words (Owner, Tenant, Employee), arrangementQuery words, and optional asOf civil date. Complete participant lists avoid extra entity/arrangement lookups. No inferred kinship, beneficial ownership or consolidation.",
+    "functionName": "agentLife:relationships",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entityId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable entity record ID returned by LifeOR2."
+        },
+        "arrangementId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable arrangement record ID returned by LifeOR2."
+        },
+        "asOf": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "arrangementQuery": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.search",
+    "title": "agentLife: search",
+    "primary": true,
+    "description": "Find identities by name: people, household, organizations, arrangements/projects, ledger accounts, tags and schedules. Compact results with unique/ambiguous status. Empty query lists available identities; entityType optionally filters entity kinds such as Car or Person without matching company names. Do not guess IDs.",
+    "functionName": "agentLife:search",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "entityType": {
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "entity",
+              "type": "string"
+            },
+            {
+              "const": "arrangement",
+              "type": "string"
+            },
+            {
+              "const": "account",
+              "type": "string"
+            },
+            {
+              "const": "tag",
+              "type": "string"
+            },
+            {
+              "const": "schedule",
+              "type": "string"
+            }
+          ]
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "query",
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "life.timeline",
+    "title": "agentTimeline: timeline",
+    "primary": true,
+    "description": "What is coming up? Upcoming events, commitments, due/overdue bills, rent, scheduled salary and expected payments in an inclusive date range. Defaults today through month end in the configured timezone. If household perspective or timezone is unconfigured, return clarification; after the user answers, supply verified perspectiveId and timezone without changing dataset settings. Settled obligations excluded, linked forecasts deduplicated. Projections clearly labeled. entityId narrows to that direct party/subject; omit it for the overall household calendar. Filter title query (words and common synonyms), direction=outflow for payments we owe, inflow for money we receive, or transfer, relative to the default household. entityId ONLY filters the involved party and never changes direction; set perspectiveId explicitly only when asking from another person’s/company’s perspective. status=due includes unpaid claims due in range and included arrears, even when linked to an expected payment; overdue selects past-due claims; expected selects cash expectations and schedule projections. Complete nonempty results return a saved report; empty results have no handle and incomplete queries fail explicitly. Status/direction filters exclude unrelated calendar events. Use life.obligations for current unpaid claims without choosing a date window. Set includeEvents=false for commitments only.",
+    "functionName": "agentTimeline:timeline",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "through": {
+          "type": "string"
+        },
+        "entityId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Filter records involving this party/subject. Direction remains relative to the default household; this does not change perspective."
+        },
+        "perspectiveId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional explicit incoming/outgoing-money perspective. Omit for our/my household, even when filtering another party with entityId."
+        },
+        "timezone": {
+          "type": "string",
+          "description": "Optional IANA timezone explicitly supplied by the user when the dataset has none, or when requesting a different calendar zone. Never invent a zone from the UTC fallback."
+        },
+        "query": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "const": "overdue",
+              "type": "string"
+            },
+            {
+              "const": "due",
+              "type": "string"
+            },
+            {
+              "const": "expected",
+              "type": "string"
+            }
+          ]
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "const": "inflow",
+              "type": "string"
+            },
+            {
+              "const": "outflow",
+              "type": "string"
+            },
+            {
+              "const": "transfer",
+              "type": "string"
+            }
+          ]
+        },
+        "includeEvents": {
+          "type": "boolean"
+        },
+        "includeOverdue": {
+          "type": "boolean"
+        },
+        "includeProjections": {
+          "type": "boolean"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "datasetId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "measurements.create",
     "title": "measurements: create",
-    "description": "measurements: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "measurements: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "measurements:create",
     "kind": "mutation",
     "scope": "data:write",
@@ -5697,7 +6237,8 @@
   {
     "name": "measurements.list",
     "title": "measurements: list",
-    "description": "measurements: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "replacedBy": "life.measurements",
+    "description": "measurements: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "measurements:list",
     "kind": "query",
     "scope": "data:read",
@@ -5719,7 +6260,7 @@
   {
     "name": "obligations.adjust",
     "title": "obligations: adjust",
-    "description": "obligations: adjust. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: adjust. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:adjust",
     "kind": "mutation",
     "scope": "finance:write",
@@ -5838,7 +6379,7 @@
   {
     "name": "obligations.create",
     "title": "obligations: create",
-    "description": "obligations: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:create",
     "kind": "mutation",
     "scope": "finance:write",
@@ -5923,7 +6464,7 @@
   {
     "name": "obligations.createSchedule",
     "title": "obligations: create schedule",
-    "description": "obligations: create schedule. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: create schedule. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:createSchedule",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6074,7 +6615,7 @@
   {
     "name": "obligations.list",
     "title": "obligations: list",
-    "description": "obligations: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:list",
     "kind": "query",
     "scope": "data:read",
@@ -6096,7 +6637,7 @@
   {
     "name": "obligations.listSchedules",
     "title": "obligations: list schedules",
-    "description": "obligations: list schedules. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: list schedules. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:listSchedules",
     "kind": "query",
     "scope": "data:read",
@@ -6118,7 +6659,7 @@
   {
     "name": "obligations.reviseSchedule",
     "title": "obligations: revise schedule",
-    "description": "obligations: revise schedule. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: revise schedule. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:reviseSchedule",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6273,7 +6814,7 @@
   {
     "name": "obligations.scheduleAt",
     "title": "obligations: schedule at",
-    "description": "obligations: schedule at. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: schedule at. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:scheduleAt",
     "kind": "query",
     "scope": "data:read",
@@ -6308,7 +6849,7 @@
   {
     "name": "obligations.settle",
     "title": "obligations: settle",
-    "description": "obligations: settle. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: settle. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:settle",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6371,7 +6912,7 @@
   {
     "name": "obligations.voidObligation",
     "title": "obligations: void obligation",
-    "description": "obligations: void obligation. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "obligations: void obligation. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "obligations:voidObligation",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6411,7 +6952,7 @@
   {
     "name": "observations.addStatementLine",
     "title": "observations: add statement line",
-    "description": "observations: add statement line. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "observations: add statement line. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "observations:addStatementLine",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6489,7 +7030,7 @@
   {
     "name": "observations.createStatement",
     "title": "observations: create statement",
-    "description": "observations: create statement. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "observations: create statement. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "observations:createStatement",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6571,7 +7112,7 @@
   {
     "name": "observations.list",
     "title": "observations: list",
-    "description": "observations: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "observations: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "observations:list",
     "kind": "query",
     "scope": "data:read",
@@ -6599,7 +7140,7 @@
   {
     "name": "observations.match",
     "title": "observations: match",
-    "description": "observations: match. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "observations: match. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "observations:match",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6655,7 +7196,7 @@
   {
     "name": "observations.observeBalance",
     "title": "observations: observe balance",
-    "description": "observations: observe balance. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "observations: observe balance. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "observations:observeBalance",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6751,7 +7292,7 @@
   {
     "name": "observations.reconcile",
     "title": "observations: reconcile",
-    "description": "observations: reconcile. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "observations: reconcile. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "observations:reconcile",
     "kind": "mutation",
     "scope": "finance:write",
@@ -6808,7 +7349,7 @@
   {
     "name": "planning.createAssumption",
     "title": "planning: create assumption",
-    "description": "planning: create assumption. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create assumption. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createAssumption",
     "kind": "mutation",
     "scope": "data:write",
@@ -7667,7 +8208,7 @@
   {
     "name": "planning.createBudgetTarget",
     "title": "planning: create budget target",
-    "description": "planning: create budget target. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create budget target. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createBudgetTarget",
     "kind": "mutation",
     "scope": "data:write",
@@ -7762,7 +8303,7 @@
   {
     "name": "planning.createExpectedFlow",
     "title": "planning: create expected flow",
-    "description": "planning: create expected flow. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create expected flow. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createExpectedFlow",
     "kind": "mutation",
     "scope": "data:write",
@@ -7837,7 +8378,7 @@
   {
     "name": "planning.createForecastRun",
     "title": "planning: create forecast run",
-    "description": "planning: create forecast run. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create forecast run. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createForecastRun",
     "kind": "mutation",
     "scope": "data:write",
@@ -7903,7 +8444,7 @@
   {
     "name": "planning.createPlan",
     "title": "planning: create plan",
-    "description": "planning: create plan. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create plan. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createPlan",
     "kind": "mutation",
     "scope": "data:write",
@@ -7937,7 +8478,7 @@
   {
     "name": "planning.createPlanVersion",
     "title": "planning: create plan version",
-    "description": "planning: create plan version. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create plan version. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createPlanVersion",
     "kind": "mutation",
     "scope": "data:write",
@@ -9574,7 +10115,7 @@
   {
     "name": "planning.createScenario",
     "title": "planning: create scenario",
-    "description": "planning: create scenario. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create scenario. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createScenario",
     "kind": "mutation",
     "scope": "data:write",
@@ -9608,7 +10149,7 @@
   {
     "name": "planning.createScenarioVersion",
     "title": "planning: create scenario version",
-    "description": "planning: create scenario version. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: create scenario version. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:createScenarioVersion",
     "kind": "mutation",
     "scope": "data:write",
@@ -10540,7 +11081,7 @@
   {
     "name": "planning.fulfillExpectedFlow",
     "title": "planning: fulfill expected flow",
-    "description": "planning: fulfill expected flow. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: fulfill expected flow. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:fulfillExpectedFlow",
     "kind": "mutation",
     "scope": "data:write",
@@ -10586,7 +11127,7 @@
   {
     "name": "planning.listAssumptions",
     "title": "planning: list assumptions",
-    "description": "planning: list assumptions. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list assumptions. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listAssumptions",
     "kind": "query",
     "scope": "data:read",
@@ -10608,7 +11149,7 @@
   {
     "name": "planning.listBudgetTargets",
     "title": "planning: list budget targets",
-    "description": "planning: list budget targets. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list budget targets. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listBudgetTargets",
     "kind": "query",
     "scope": "data:read",
@@ -10636,7 +11177,7 @@
   {
     "name": "planning.listExpectedFlows",
     "title": "planning: list expected flows",
-    "description": "planning: list expected flows. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list expected flows. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listExpectedFlows",
     "kind": "query",
     "scope": "data:read",
@@ -10658,7 +11199,7 @@
   {
     "name": "planning.listForecastRuns",
     "title": "planning: list forecast runs",
-    "description": "planning: list forecast runs. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list forecast runs. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listForecastRuns",
     "kind": "query",
     "scope": "data:read",
@@ -10680,7 +11221,7 @@
   {
     "name": "planning.listPlans",
     "title": "planning: list plans",
-    "description": "planning: list plans. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list plans. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listPlans",
     "kind": "query",
     "scope": "data:read",
@@ -10702,7 +11243,7 @@
   {
     "name": "planning.listPlanVersions",
     "title": "planning: list plan versions",
-    "description": "planning: list plan versions. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list plan versions. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listPlanVersions",
     "kind": "query",
     "scope": "data:read",
@@ -10730,7 +11271,7 @@
   {
     "name": "planning.listScenarios",
     "title": "planning: list scenarios",
-    "description": "planning: list scenarios. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list scenarios. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listScenarios",
     "kind": "query",
     "scope": "data:read",
@@ -10752,7 +11293,7 @@
   {
     "name": "planning.listScenarioVersions",
     "title": "planning: list scenario versions",
-    "description": "planning: list scenario versions. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "planning: list scenario versions. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "planning:listScenarioVersions",
     "kind": "query",
     "scope": "data:read",
@@ -10814,9 +11355,443 @@
     }
   },
   {
+    "name": "records.changeSchedule",
+    "title": "agentWrites: change schedule",
+    "description": "Change a recurring commitment's amount, day of month or end date from an effective civil date. Read the current schedule revision first. Decimal amount is major currency units. Existing terms and later changes are preserved; old debts/payments and separate cash routes are unchanged. Never use for a hypothetical question.",
+    "functionName": "agentWrites:changeSchedule",
+    "kind": "mutation",
+    "scope": "finance:write",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable commitment_schedule record ID returned by LifeOR2."
+        },
+        "expectedRevision": {
+          "type": "number"
+        },
+        "effectiveDate": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "dayOfMonth": {
+          "type": "number"
+        },
+        "endDate": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        },
+        "requestKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "description": "Unique operation key (UUID recommended). Reuse only when retrying exactly the same operation and arguments."
+        }
+      },
+      "required": [
+        "id",
+        "expectedRevision",
+        "effectiveDate",
+        "reason",
+        "datasetId",
+        "requestKey"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "records.recordEvent",
+    "title": "agentWrites: record event",
+    "description": "Create a calendar record: kind Appointment for meetings/visits (including doctor or dentist), Maintenance for servicing, Reminder, Milestone, or Event for other nonfinancial occurrences. Put specifics in the title, never invent an event type. Use date YYYY-MM-DD and local time HH:MM; timezone defaults to dataset configuration. Explicitly supply subjects: link every named person or other affected record using verified IDs (life.search when needed). Use an empty list only when no record is involved; a name in the title does not create a link. Ask if appointment time is missing. For correction of a nonfinancial event, read the old event and supply correctsId; history is retained. DST gaps/folds require clarification.",
+    "functionName": "agentWrites:recordEvent",
+    "kind": "mutation",
+    "scope": "data:write",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "Appointment",
+              "type": "string"
+            },
+            {
+              "const": "Maintenance",
+              "type": "string"
+            },
+            {
+              "const": "Reminder",
+              "type": "string"
+            },
+            {
+              "const": "Milestone",
+              "type": "string"
+            },
+            {
+              "const": "Event",
+              "type": "string"
+            }
+          ]
+        },
+        "date": {
+          "type": "string",
+          "description": "Absolute YYYY-MM-DD only. Omit when the user gives a relative date; use dateExpression instead. Exactly one date field is required."
+        },
+        "dateExpression": {
+          "type": "string",
+          "description": "Copy the user’s relative phrase verbatim: today, tomorrow, yesterday, next Tuesday (or any weekday), in N days/weeks, N days/weeks later/earlier. The service computes the civil date. Next weekday means its next occurrence strictly after today; later/earlier anchors to the existing event; tomorrow anchors to the actual current date. Never convert these phrases into a guessed YYYY-MM-DD."
+        },
+        "time": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "utcOffsetMinutes": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "subjects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "entity",
+                    "type": "string"
+                  },
+                  {
+                    "const": "arrangement",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tag",
+                    "type": "string"
+                  }
+                ]
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Required explicit participants/affected records. Resolve every person named by the user to a verified ID and link them here; title text alone does not link anyone. Use [] only when the event has no affected records.",
+          "maxItems": 20
+        },
+        "correctsId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable event record ID returned by LifeOR2."
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        },
+        "requestKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "description": "Unique operation key (UUID recommended). Reuse only when retrying exactly the same operation and arguments."
+        }
+      },
+      "required": [
+        "title",
+        "kind",
+        "time",
+        "datasetId",
+        "subjects",
+        "requestKey"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "records.recordExpense",
+    "title": "agentWrites: record expense",
+    "description": "Record a cash/bank expense or credit-card charge as a balanced posted journal. Decimal amount is major currency units. Resolve an explicit expense account and asset payment account or designated credit-card liability in the same chart; ask which payment account if the user did not specify it in this conversation. A sole available account or an earlier database transaction does not establish the payment method for this expense. A card charge increases the selected card liability without reducing bank cash. Subject attribution is optional, never inferred. For loans, asset purchases, transfers or corrections use the corresponding ledger workflow instead.",
+    "functionName": "agentWrites:recordExpense",
+    "kind": "mutation",
+    "scope": "finance:write",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "paidFromAccountId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable ledger_account record ID returned by LifeOR2."
+        },
+        "expenseAccountId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable ledger_account record ID returned by LifeOR2."
+        },
+        "memo": {
+          "type": "string"
+        },
+        "subjectId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable entity record ID returned by LifeOR2."
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        },
+        "requestKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "description": "Unique operation key (UUID recommended). Reuse only when retrying exactly the same operation and arguments."
+        }
+      },
+      "required": [
+        "date",
+        "amount",
+        "currency",
+        "paidFromAccountId",
+        "expenseAccountId",
+        "memo",
+        "datasetId",
+        "requestKey"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "records.rescheduleEvent",
+    "title": "agentWrites: reschedule event",
+    "description": "Move an existing nonfinancial appointment/event to a local date and time. Read the current event ID first. Preserves its title, duration, subject links, notes and prior history. Already superseded records produce a conflict instead of branching history.",
+    "functionName": "agentWrites:rescheduleEvent",
+    "kind": "mutation",
+    "scope": "data:write",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable event record ID returned by LifeOR2."
+        },
+        "date": {
+          "type": "string",
+          "description": "Absolute YYYY-MM-DD only. Omit when the user gives a relative date; use dateExpression instead. Exactly one date field is required."
+        },
+        "dateExpression": {
+          "type": "string",
+          "description": "Copy the user’s relative phrase verbatim: today, tomorrow, yesterday, next Tuesday (or any weekday), in N days/weeks, N days/weeks later/earlier. The service computes the civil date. Next weekday means its next occurrence strictly after today; later/earlier anchors to the existing event; tomorrow anchors to the actual current date. Never convert these phrases into a guessed YYYY-MM-DD."
+        },
+        "time": {
+          "type": "string",
+          "description": "Local HH:MM, or same to preserve the existing event’s local clock time. The service resolves same; do not recompute it."
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "utcOffsetMinutes": {
+          "type": "number"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        },
+        "requestKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "description": "Unique operation key (UUID recommended). Reuse only when retrying exactly the same operation and arguments."
+        }
+      },
+      "required": [
+        "id",
+        "time",
+        "datasetId",
+        "requestKey"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "reports.finances",
+    "title": "agentFinance: summary",
+    "primary": true,
+    "description": "Choose scope=household for personal/household books; scope=dataset for all books or an explicit chart/person filter. Use accountQuery for a requested expense/revenue category (e.g. groceries). Compute complete recorded financial totals over inclusive from/through dates (YYYY-MM-DD). metric: cash_balances (recorded bank cash as of through, all selected checking/savings/cash accounts in one call), payroll (gross income, actual take-home deposits and monthly averages separately; PayrollDeposit events), profit_loss (income, expense and net surplus), income (gross recognized), expenses (excludes capital purchases), balances (all history through cutoff), cashflow (signed bank-account changes; use eventKind=PayrollDeposit for recorded take-home pay), activity (signed debits/credits by account, including project capital costs). groupBy: month (default), year or total. Optional currency code and verified chart/person/beneficiary/project/tag/account IDs. Server consumes all database pages; never scan journals to calculate totals. Decimal amounts are major currency units. Currencies remain separate. reportId supports drill-down via reports.read.",
+    "functionName": "agentFinance:summary",
+    "kind": "query",
+    "scope": "data:read",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "anyOf": [
+            {
+              "const": "household",
+              "type": "string"
+            },
+            {
+              "const": "dataset",
+              "type": "string"
+            }
+          ]
+        },
+        "accountQuery": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "eventKind": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "through": {
+          "type": "string"
+        },
+        "metric": {
+          "anyOf": [
+            {
+              "const": "income",
+              "type": "string"
+            },
+            {
+              "const": "expenses",
+              "type": "string"
+            },
+            {
+              "const": "balances",
+              "type": "string"
+            },
+            {
+              "const": "cash_balances",
+              "type": "string"
+            },
+            {
+              "const": "activity",
+              "type": "string"
+            },
+            {
+              "const": "cashflow",
+              "type": "string"
+            },
+            {
+              "const": "profit_loss",
+              "type": "string"
+            },
+            {
+              "const": "payroll",
+              "type": "string"
+            }
+          ]
+        },
+        "groupBy": {
+          "anyOf": [
+            {
+              "const": "month",
+              "type": "string"
+            },
+            {
+              "const": "year",
+              "type": "string"
+            },
+            {
+              "const": "total",
+              "type": "string"
+            }
+          ]
+        },
+        "chartId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Scope to a company's or household's ledger books; IDs and names are in life.context.charts. Omit for all dataset books."
+        },
+        "entityId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Set this when the user names a person: filters explicitly attributed subject income/costs. Omission includes all subjects in the selected books. For a company's books use chartId, not its entity ID or its owner's ID."
+        },
+        "beneficiaryId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who benefited from an expense: use this for benefited/helped/beneficiary questions. Distinct from the accounting subject (entityId); never infer a share."
+        },
+        "arrangementId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable arrangement record ID returned by LifeOR2."
+        },
+        "tagId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable tag record ID returned by LifeOR2."
+        },
+        "accountId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable ledger_account record ID returned by LifeOR2."
+        },
+        "datasetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit authorized dataset ID. Obtain it using datasets.list. Never infer it from the browser's active dataset."
+        }
+      },
+      "required": [
+        "from",
+        "through",
+        "metric",
+        "datasetId",
+        "scope"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "tags.assign",
     "title": "tags: assign",
-    "description": "tags: assign. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "tags: assign. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "tags:assign",
     "kind": "mutation",
     "scope": "data:write",
@@ -11617,7 +12592,7 @@
   {
     "name": "tags.create",
     "title": "tags: create",
-    "description": "tags: create. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "tags: create. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "tags:create",
     "kind": "mutation",
     "scope": "data:write",
@@ -11651,7 +12626,7 @@
   {
     "name": "tags.getAssignments",
     "title": "tags: get assignments",
-    "description": "tags: get assignments. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "tags: get assignments. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "tags:getAssignments",
     "kind": "query",
     "scope": "data:read",
@@ -11682,7 +12657,7 @@
   {
     "name": "tags.list",
     "title": "tags: list",
-    "description": "tags: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "tags: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "tags:list",
     "kind": "query",
     "scope": "data:read",
@@ -11704,7 +12679,7 @@
   {
     "name": "tags.unassign",
     "title": "tags: unassign",
-    "description": "tags: unassign. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "tags: unassign. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "tags:unassign",
     "kind": "mutation",
     "scope": "data:write",
@@ -11740,7 +12715,7 @@
   {
     "name": "tags.update",
     "title": "tags: update",
-    "description": "tags: update. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "tags: update. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "tags:update",
     "kind": "mutation",
     "scope": "data:write",
@@ -11782,7 +12757,7 @@
   {
     "name": "trash.inspect",
     "title": "trash: inspect",
-    "description": "trash: inspect. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "trash: inspect. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "trash:inspect",
     "kind": "query",
     "scope": "data:read",
@@ -12569,7 +13544,7 @@
   {
     "name": "trash.list",
     "title": "trash: list",
-    "description": "trash: list. Uses the same validation, ownership rules, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
+    "description": "trash: list. Uses the same validation, authorization, history and dataset isolation as the LifeOR2 UI. Dates are YYYY-MM-DD; timestamps are Unix milliseconds; monetary minor_units are exact integers.",
     "functionName": "trash:list",
     "kind": "query",
     "scope": "data:read",

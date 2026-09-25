@@ -39,20 +39,30 @@ export class DetailsService {
       throw error;
     }
     const cache = commit ? "pinned" as const : await this.observation(locator._id, document);
-    return { documentId: locator._id, repositoryKey: this.repositoryKey, path: locator.path, ...document, parsed: document.source === null ? null : parseDetails(document.source), cache };
+    return { documentId: locator._id, target: locator.target, repositoryKey: this.repositoryKey, path: locator.path, ...document, parsed: document.source === null ? null : parseDetails(document.source), cache };
   }
   async read(id: string, commit?: string) { return this.readLocator(await this.locator(id), commit); }
   async forTarget(target: DetailsTarget) {
     const user = await this.user();
     // Backend forTarget validates the target even when it has no document.
     const locator = await this.backend.forTarget(target);
-    if (!locator) return { documentId: null, availability: "missing" as const, source: null, commit: null, parsed: null, cache: "current" as const };
+    if (!locator) return { documentId: null, target, availability: "missing" as const, source: null, commit: null, parsed: null, cache: "current" as const };
     return this.readLocator(this.validate(locator, user._id));
   }
   async saveTarget(target: DetailsTarget, source: string, expectedCommit: string | null) {
     const user = await this.user();
     const locator = this.validate(await this.backend.ensure(target, this.repositoryKey), user._id);
     return this.saveLocator(locator, source, expectedCommit);
+  }
+  async appendTarget(target: DetailsTarget, text: string, expectedCommit: string | null) {
+    if (!text.trim()) throw new DetailsError("invalid_source", "Append text must not be empty.");
+    const current = await this.forTarget(target);
+    const base = expectedCommit === null ? null : current.documentId ? await this.read(current.documentId, expectedCommit) : null;
+    if (expectedCommit !== null && !base) throw new DetailsError("stale_revision", "Read the document's current commit before appending.", 409);
+    const source = base?.source ?? "";
+    const next = source + (source ? source.endsWith("\n\n") ? "" : source.endsWith("\n") ? "\n" : "\n\n" : "") + text + "\n";
+    const saved = await this.saveTarget(target, next, expectedCommit);
+    return {documentId: saved.documentId, commit: saved.commit, changed: saved.changed, appendedText: text, warning: saved.warning};
   }
   private async saveLocator(locator: DetailsLocator, source: string, expectedCommit: string | null) {
     if (expectedCommit === null) {

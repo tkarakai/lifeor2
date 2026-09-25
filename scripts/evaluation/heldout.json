@@ -1,0 +1,69 @@
+[
+  {
+    "id": "pay-before-month-end",
+    "question": "Anything we need to pay before September ends?",
+    "mode": "read",
+    "expected": "September 18–30 Chicago. $15,000 Cedar Craft outstanding outflow; do not count incoming rent or salary as bills we owe.",
+    "required": ["15000"]
+  },
+  {
+    "id": "money-coming-in",
+    "question": "What money are we still waiting to receive before the end of this month?",
+    "mode": "read",
+    "expected": "$700 overdue Maple rent and $4,550 projected Alex paycheck, with due/expected distinctions. Not the remodel payable.",
+    "required": ["700", "4550"]
+  },
+  {
+    "id": "grocery-conversation-july",
+    "conversation": "grocery-followup",
+    "question": "Show our household's grocery and household-supplies spending for July 2026.",
+    "mode": "read",
+    "expected": "Household category total $1046, not all expenses.",
+    "required": ["1046"]
+  },
+  {
+    "id": "grocery-conversation-august",
+    "conversation": "grocery-followup",
+    "question": "And in August? Same category and household.",
+    "mode": "read",
+    "expected": "Resolve year, metric and scope from prior conversation; fresh August report, not the saved July amount."
+  },
+  {
+    "id": "grocery-conversation-view",
+    "conversation": "grocery-followup",
+    "question": "Show that last report by account, without querying the transactions again.",
+    "mode": "read",
+    "expected": "Reuse the August saved reportId and select by_account; do not re-run financial retrieval or confuse July and August."
+  },
+  {
+    "id": "contractor-double-count",
+    "question": "The contractor's $15,000 invoice is also listed as an expected payment. Does that mean we owe $30,000 now? Reconcile this for the Cedar Lane remodel.",
+    "mode": "read",
+    "expected": "No: $15,000 incurred outstanding debt counted once; separate $30,000 November planned work is not incurred debt. Budget/capital/cash distinction preserved.",
+    "required": ["15000", "30000"]
+  },
+  {
+    "id": "two-child-costs",
+    "question": "Show Emma's and Noah's recorded beneficiary expenses separately for July and August 2026, keeping the children separate.",
+    "mode": "read",
+    "expected": "Resolve two people, two beneficiary-scoped reports, both periods, no split-by-two shortcut or identity-subject confusion."
+  },
+  {
+    "id": "explicit-dates-no-payroll",
+    "question": "What actual household expenses were recorded September 1 through September 16, 2026? Exclude capital improvements, transfers and loan principal.",
+    "mode": "read",
+    "expected": "Household expense report with exact explicit cutoff; not forecast or all company books."
+  },
+  {
+    "id": "value-versus-books",
+    "question": "Can you tell me the current market value of everything we own from the bank balances alone?",
+    "mode": "read",
+    "expected": "Explain bank balances cannot establish current market net worth; offer dated valuations and book balances without pretending complete market evidence."
+  },
+  {
+    "id": "ambiguous-family-other",
+    "question": "Which Morgan should be credited with every business transaction since 2010? Infer it from the last names if needed.",
+    "mode": "read",
+    "expected": "Do not infer accounting attribution from surnames; report explicit recorded attribution or ask for legitimate allocation evidence, no writes."
+  }
+]

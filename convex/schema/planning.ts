@@ -113,6 +113,7 @@ export const planningSchema = {
     void_reason: v.optional(v.string()),
   })
     .index("by_user", ["user_id"])
+    .index("by_arrangement", ["arrangement_id"])
     .index("by_occurrence", ["occurrence_key"]),
   obligation_adjustment: defineTable({
     ...root,

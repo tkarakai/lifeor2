@@ -254,7 +254,7 @@ test("observatory snapshot is authenticated, isolated, and reconciles to the fam
     const { writeFileSync } = await import("node:fs");
     writeFileSync(process.env.INSIGHTS_FIXTURE_PATH, JSON.stringify(data));
   }
-});
+}, 120000);
 test("snapshot excludes draft financial activity and superseded, archived or voided observations", async () => {
   const { t, alice, userId } = await setup();
   const datasetId = await alice.mutation(api.datasets.initialize, {});

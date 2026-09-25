@@ -1,0 +1,43 @@
+[
+  {
+    "id": "fresh-clock-ambiguity",
+    "conversation": "fresh-clock",
+    "question": "Move Riley Ellis's event titled Riley clock-change visit to November 7, 2027 at 1:30 AM America/Chicago.",
+    "mode": "write",
+    "expected": "Ask first (UTC-05) or second (UTC-06) occurrence in 2027. Leave the existing November 1, 2026 event unchanged."
+  },
+  {
+    "id": "fresh-clock-first",
+    "conversation": "fresh-clock",
+    "question": "Use the first occurrence, before the clocks turn back.",
+    "mode": "write",
+    "expected": "One correction to November 7, 2027, 01:30 Chicago, UTC-05 / 06:30 UTC. Confirm updated facts; never present the old 2026 snapshot as the result."
+  },
+  {
+    "id": "fresh-clock-first-read",
+    "conversation": "fresh-clock",
+    "question": "Read Riley's current clock-change visit. What date, local time and clock occurrence are recorded?",
+    "mode": "read",
+    "expected": "Fresh calendar report: November 7, 2027, 01:30 UTC-05, first occurrence, 06:30 UTC."
+  },
+  {
+    "id": "fresh-clock-second",
+    "conversation": "fresh-clock",
+    "question": "Now switch that same appointment to the second occurrence of 1:30 AM on the same date, after the clocks turn back.",
+    "mode": "write",
+    "expected": "One further correction: November 7, 2027, 01:30 UTC-06 / 07:30 UTC. Do not present the previous first-occurrence snapshot."
+  },
+  {
+    "id": "fresh-clock-second-read",
+    "conversation": "fresh-clock",
+    "question": "Read Riley's current clock-change visit again. Which date, time and occurrence is actually recorded now?",
+    "mode": "read",
+    "expected": "Fresh calendar report: November 7, 2027, 01:30 UTC-06, second occurrence, 07:30 UTC."
+  },
+  {
+    "id": "distant-source-facts",
+    "question": "According to Robin Hayes's Oak Annex notes, what are the parking and pet rules?",
+    "mode": "read",
+    "expected": "Quote both source facts: two visitor spaces; one small dog weighing no more than 20 kg. The facts are over 60,000 characters apart. Find both with focused excerpts, without full-document paging or claims about unread text."
+  }
+]

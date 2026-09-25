@@ -23,6 +23,13 @@ export const datasetSchema = {
     seed_next_month: v.optional(v.number()),
     seed_version: v.optional(v.string()),
     seed_as_of: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    data_revision: v.optional(v.number()),
+    report_obligations_ready: v.optional(v.boolean()),
+    report_index_ready: v.optional(v.boolean()),
+    report_index_version: v.optional(v.number()),
+    household_entity_id: v.optional(v.id("entity")),
+    household_arrangement_id: v.optional(v.id("arrangement")),
     seed_status: v.optional(v.union(v.literal("building"), v.literal("ready"))),
   }).index("by_user", ["user_id"]),
   dataset_preference: defineTable({
