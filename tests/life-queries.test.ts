@@ -14,11 +14,13 @@ const t = convexTest(schema, modules);
 t.registerComponent("betterAuth", authSchema, authModules);
 let alice: ReturnType<typeof t.withIdentity>, datasetId: string;
 const ref = (name: string) => makeFunctionReference<"query">(name);
-let restoreClock: (() => void) | undefined;
-afterAll(() => restoreClock?.());
+const fixtureTime = new Date("2026-09-18T15:00:00Z");
+afterAll(() => vi.useRealTimers());
 beforeAll(async () => {
-  const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-09-18T15:00:00Z"));
-  restoreClock = () => clock.mockRestore();
+  // Better Auth reads new Date(), while the reports read Date.now(). Freeze
+  // both, leaving scheduling timers real so Convex operations can complete.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(fixtureTime);
   const now = Date.now(),
     u = await t.mutation(components.betterAuth.adapter.create, {
       input: {
@@ -54,6 +56,16 @@ beforeAll(async () => {
 }, 120000);
 const query = (name: string, args: Record<string, unknown> = {}) =>
   alice.query(ref(name), { datasetId, ...args });
+test("session expiry follows the same frozen clock as report queries", async () => {
+  await expect(query("agentLife:context")).resolves.toHaveProperty("timezone", "America/Chicago");
+  try {
+    vi.setSystemTime(new Date("2026-09-20T15:00:00Z"));
+    await expect(query("agentLife:context")).rejects.toThrow("Sign in to select a dataset");
+  } finally {
+    vi.setSystemTime(fixtureTime);
+  }
+  await expect(query("agentLife:context")).resolves.toHaveProperty("timezone", "America/Chicago");
+});
 test("context identifies the sample by metadata, uses local calendar and resolves household", async () => {
   const c = await query("agentLife:context");
   expect(c.timezone).toBe("America/Chicago");
